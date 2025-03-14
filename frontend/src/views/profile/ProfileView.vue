@@ -20,6 +20,10 @@
               class="profile-menu"
               router
             >
+              <el-menu-item index="/profile/settings">
+                <el-icon><Setting /></el-icon>
+                <span>个人设置</span>
+              </el-menu-item>
               <el-menu-item index="/profile/my-posts">
                 <el-icon><Document /></el-icon>
                 <span>我的发布</span>
@@ -36,10 +40,6 @@
                 <el-icon><ChatDotRound /></el-icon>
                 <span>我的消息</span>
                 <el-badge v-if="unreadMessageCount > 0" :value="unreadMessageCount" class="menu-badge" />
-              </el-menu-item>
-              <el-menu-item index="/profile/settings">
-                <el-icon><Setting /></el-icon>
-                <span>个人设置</span>
               </el-menu-item>
             </el-menu>
           </el-card>

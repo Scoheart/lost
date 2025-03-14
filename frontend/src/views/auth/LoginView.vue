@@ -117,13 +117,22 @@ const handleSubmit = async () => {
       error.value = ''
 
       try {
-        const result = await userStore.login({
-          username: loginForm.username,
-          password: loginForm.password,
-          rememberMe: loginForm.rememberMe,
-        })
+        console.log('Submitting login for:', loginForm.username)
+        const result = await userStore.login(
+          loginForm.username,
+          loginForm.password
+        )
 
         if (result.success) {
+          console.log('Login successful')
+
+          // 检查登录状态
+          console.log('Auth state after login:',
+            'token:', !!userStore.token,
+            'user:', !!userStore.user,
+            'isAuthenticated:', userStore.isAuthenticated
+          )
+
           ElMessage.success('登录成功！')
 
           // 如果有重定向参数，则重定向到指定页面

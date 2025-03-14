@@ -6,20 +6,20 @@ import vueDevTools from 'vite-plugin-vue-devtools'
 
 // https://vite.dev/config/
 export default defineConfig({
-  plugins: [
-    vue(),
-    vueDevTools(),
-  ],
+  plugins: [vue(), vueDevTools()],
   resolve: {
     alias: {
-      '@': fileURLToPath(new URL('./src', import.meta.url))
+      '@': fileURLToPath(new URL('./src', import.meta.url)),
     },
   },
   server: {
     port: 3333,
     host: true,
     proxy: {
-      '/api': 'http://localhost:8080/api'
-    }
-  }
+      '/api': {
+        target: 'http://192.168.10.56:8080',
+        changeOrigin: true,
+      },
+    },
+  },
 })

@@ -2,206 +2,129 @@
   <div class="settings-container">
     <h2 class="page-title">个人设置</h2>
 
-    <el-tabs v-model="activeTab">
-      <!-- 个人信息设置 -->
-      <el-tab-pane label="个人信息" name="profile">
-        <el-card shadow="never">
-          <el-form
-            ref="profileFormRef"
-            :model="profileForm"
-            :rules="profileRules"
-            label-width="100px"
-            status-icon
+    <!-- 个人信息设置 -->
+    <el-card shadow="never" class="settings-card">
+      <h3 class="section-title">基本信息</h3>
+      <el-form
+        ref="profileFormRef"
+        :model="profileForm"
+        :rules="profileRules"
+        label-width="100px"
+        status-icon
+      >
+        <el-form-item label="用户头像">
+          <el-upload
+            class="avatar-uploader"
+            :action="uploadUrl"
+            :headers="uploadHeaders"
+            :show-file-list="false"
+            :on-success="handleAvatarSuccess"
+            :before-upload="beforeAvatarUpload"
           >
-            <el-form-item label="用户头像">
-              <el-upload
-                class="avatar-uploader"
-                :action="uploadUrl"
-                :headers="uploadHeaders"
-                :show-file-list="false"
-                :on-success="handleAvatarSuccess"
-                :before-upload="beforeAvatarUpload"
-              >
-                <el-avatar v-if="avatarUrl" :size="90" :src="avatarUrl" />
-                <el-icon v-else class="avatar-uploader-icon"><Plus /></el-icon>
-              </el-upload>
-              <div class="upload-hint">点击上传头像，图片格式为 JPG/PNG，不超过 2MB</div>
-            </el-form-item>
+            <el-avatar v-if="avatarUrl" :size="90" :src="avatarUrl" />
+            <el-icon v-else class="avatar-uploader-icon"><Plus /></el-icon>
+          </el-upload>
+          <div class="upload-hint">点击上传头像，图片格式为 JPG/PNG，不超过 2MB</div>
+        </el-form-item>
 
-            <el-form-item label="用户名" prop="username">
-              <el-input v-model="profileForm.username" disabled placeholder="用户名不可修改" />
-            </el-form-item>
+        <el-form-item label="用户名" prop="username">
+          <el-input v-model="profileForm.username" disabled placeholder="用户名不可修改" />
+        </el-form-item>
 
-            <el-form-item label="电子邮箱" prop="email">
-              <el-input v-model="profileForm.email" placeholder="请输入您的电子邮箱" />
-            </el-form-item>
+        <el-form-item label="电子邮箱" prop="email">
+          <el-input v-model="profileForm.email" placeholder="请输入您的电子邮箱" />
+        </el-form-item>
 
-            <el-form-item label="手机号码" prop="phone">
-              <el-input v-model="profileForm.phone" placeholder="请输入您的手机号码" />
-            </el-form-item>
+        <el-form-item label="手机号码" prop="phone">
+          <el-input v-model="profileForm.phone" placeholder="请输入您的手机号码" />
+        </el-form-item>
 
-            <el-form-item label="姓名" prop="realName">
-              <el-input v-model="profileForm.realName" placeholder="请输入您的真实姓名" />
-            </el-form-item>
+        <el-form-item label="姓名" prop="realName">
+          <el-input v-model="profileForm.realName" placeholder="请输入您的真实姓名" />
+        </el-form-item>
 
-            <el-form-item label="注册时间">
-              <div>{{ formatDate(userInfo.createdAt) }}</div>
-            </el-form-item>
+        <el-form-item label="注册时间">
+          <div>{{ userCreatedAt }}</div>
+        </el-form-item>
 
-            <el-form-item>
-              <el-button type="primary" @click="updateProfile" :loading="profileLoading">
-                保存修改
-              </el-button>
-            </el-form-item>
-          </el-form>
-        </el-card>
-      </el-tab-pane>
+        <el-form-item>
+          <el-button type="primary" @click="updateProfile" :loading="profileLoading">
+            保存修改
+          </el-button>
+        </el-form-item>
+      </el-form>
+    </el-card>
 
-      <!-- 安全设置 -->
-      <el-tab-pane label="安全设置" name="security">
-        <el-card shadow="never">
-          <h3 class="section-title">修改密码</h3>
-          <el-form
-            ref="passwordFormRef"
-            :model="passwordForm"
-            :rules="passwordRules"
-            label-width="100px"
-            status-icon
-          >
-            <el-form-item label="当前密码" prop="currentPassword">
-              <el-input
-                v-model="passwordForm.currentPassword"
-                type="password"
-                placeholder="请输入当前密码"
-                show-password
-              />
-            </el-form-item>
+    <!-- 修改密码 -->
+    <el-card shadow="never" class="settings-card">
+      <h3 class="section-title">修改密码</h3>
+      <el-form
+        ref="passwordFormRef"
+        :model="passwordForm"
+        :rules="passwordRules"
+        label-width="100px"
+        status-icon
+      >
+        <el-form-item label="当前密码" prop="currentPassword">
+          <el-input
+            v-model="passwordForm.currentPassword"
+            type="password"
+            placeholder="请输入当前密码"
+            show-password
+          />
+        </el-form-item>
 
-            <el-form-item label="新密码" prop="newPassword">
-              <el-input
-                v-model="passwordForm.newPassword"
-                type="password"
-                placeholder="请输入新密码"
-                show-password
-              />
-            </el-form-item>
+        <el-form-item label="新密码" prop="newPassword">
+          <el-input
+            v-model="passwordForm.newPassword"
+            type="password"
+            placeholder="请输入新密码"
+            show-password
+          />
+        </el-form-item>
 
-            <el-form-item label="确认密码" prop="confirmPassword">
-              <el-input
-                v-model="passwordForm.confirmPassword"
-                type="password"
-                placeholder="请再次输入新密码"
-                show-password
-              />
-            </el-form-item>
+        <el-form-item label="确认密码" prop="confirmPassword">
+          <el-input
+            v-model="passwordForm.confirmPassword"
+            type="password"
+            placeholder="请再次输入新密码"
+            show-password
+          />
+        </el-form-item>
 
-            <el-form-item>
-              <el-button type="primary" @click="updatePassword" :loading="passwordLoading">
-                修改密码
-              </el-button>
-            </el-form-item>
-          </el-form>
-
-          <el-divider />
-
-          <h3 class="section-title">账号安全</h3>
-          <div class="security-items">
-            <div class="security-item">
-              <div class="security-info">
-                <el-icon class="security-icon"><Message /></el-icon>
-                <div>
-                  <div class="security-title">邮箱验证</div>
-                  <div class="security-desc">用于接收安全验证信息和重要通知</div>
-                </div>
-              </div>
-              <div>
-                <el-tag v-if="emailVerified" type="success">已验证</el-tag>
-                <el-button v-else type="primary" size="small" @click="verifyEmail">
-                  验证邮箱
-                </el-button>
-              </div>
-            </div>
-
-            <div class="security-item">
-              <div class="security-info">
-                <el-icon class="security-icon"><Phone /></el-icon>
-                <div>
-                  <div class="security-title">手机验证</div>
-                  <div class="security-desc">用于接收安全验证信息和重要通知</div>
-                </div>
-              </div>
-              <div>
-                <el-tag v-if="phoneVerified" type="success">已验证</el-tag>
-                <el-button v-else type="primary" size="small" @click="verifyPhone">
-                  验证手机
-                </el-button>
-              </div>
-            </div>
-          </div>
-        </el-card>
-      </el-tab-pane>
-
-      <!-- 通知设置 -->
-      <el-tab-pane label="通知设置" name="notifications">
-        <el-card shadow="never">
-          <h3 class="section-title">通知设置</h3>
-          <div class="notification-items">
-            <div class="notification-item">
-              <div class="notification-info">
-                <div class="notification-title">寻物消息通知</div>
-                <div class="notification-desc">当您的寻物启事收到回复或匹配时收到通知</div>
-              </div>
-              <el-switch v-model="notificationSettings.lostItems" @change="saveNotificationSettings" />
-            </div>
-
-            <div class="notification-item">
-              <div class="notification-info">
-                <div class="notification-title">招领消息通知</div>
-                <div class="notification-desc">当您的拾获物品有人认领时收到通知</div>
-              </div>
-              <el-switch v-model="notificationSettings.foundItems" @change="saveNotificationSettings" />
-            </div>
-
-            <div class="notification-item">
-              <div class="notification-info">
-                <div class="notification-title">系统公告通知</div>
-                <div class="notification-desc">接收系统公告和更新信息</div>
-              </div>
-              <el-switch v-model="notificationSettings.announcements" @change="saveNotificationSettings" />
-            </div>
-
-            <div class="notification-item">
-              <div class="notification-info">
-                <div class="notification-title">邮件通知</div>
-                <div class="notification-desc">通过邮件接收通知</div>
-              </div>
-              <el-switch v-model="notificationSettings.email" @change="saveNotificationSettings" />
-            </div>
-
-            <div class="notification-item">
-              <div class="notification-info">
-                <div class="notification-title">短信通知</div>
-                <div class="notification-desc">通过短信接收重要通知</div>
-              </div>
-              <el-switch v-model="notificationSettings.sms" @change="saveNotificationSettings" />
-            </div>
-          </div>
-        </el-card>
-      </el-tab-pane>
-    </el-tabs>
+        <el-form-item>
+          <el-button type="primary" @click="updatePassword" :loading="passwordLoading">
+            修改密码
+          </el-button>
+        </el-form-item>
+      </el-form>
+    </el-card>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, reactive, computed, onMounted } from 'vue'
-import { Plus, Message, Phone } from '@element-plus/icons-vue'
+import { Plus } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 import type { FormInstance, FormRules } from 'element-plus'
-import { useUserStore } from '@/stores/user'
+import { useUserStore, type User } from '@/stores/user'
 import { format } from 'date-fns'
 
+// 扩展User接口，添加表单中需要的额外字段
+interface ExtendedUser extends User {
+  phone?: string
+  realName?: string
+}
+
+// 扩展API响应接口
+interface ApiResponse<T> {
+  success: boolean
+  message: string
+  data: T
+  status: string | null
+}
+
 const userStore = useUserStore()
-const activeTab = ref('profile')
 
 // 表单引用
 const profileFormRef = ref<FormInstance>()
@@ -226,25 +149,24 @@ const passwordForm = reactive({
   confirmPassword: ''
 })
 
-// 通知设置
-const notificationSettings = reactive({
-  lostItems: true,
-  foundItems: true,
-  announcements: true,
-  email: true,
-  sms: false
-})
-
-// 验证状态
-const emailVerified = ref(true)
-const phoneVerified = ref(false)
-
 // 上传相关
 const uploadUrl = 'https://api.example.com/upload/avatar'
 const uploadHeaders = computed(() => ({
   Authorization: `Bearer ${userStore.token}`
 }))
 const avatarUrl = ref('')
+
+// 计算属性
+const userCreatedAt = computed(() => {
+  const user = userStore.user
+  if (!user || !user.createdAt) return '-'
+
+  try {
+    return format(new Date(user.createdAt), 'yyyy-MM-dd HH:mm:ss')
+  } catch (error) {
+    return user.createdAt || '-'
+  }
+})
 
 // 验证规则
 const validateConfirmPassword = (rule: any, value: string, callback: any) => {
@@ -298,27 +220,20 @@ const passwordRules = reactive<FormRules>({
   ]
 })
 
-// 计算属性
-const userInfo = computed(() => userStore.currentUser || {})
-
 // 方法
-const formatDate = (dateString: string) => {
-  try {
-    return format(new Date(dateString), 'yyyy-MM-dd')
-  } catch (error) {
-    return dateString || '-'
-  }
-}
-
 const loadUserData = () => {
-  const user = userStore.currentUser
-  if (user) {
-    profileForm.username = user.username || ''
-    profileForm.email = user.email || ''
-    profileForm.phone = user.phone || ''
-    profileForm.realName = user.realName || ''
-    avatarUrl.value = user.avatar || ''
-  }
+  const user = userStore.user
+  if (!user) return
+
+  profileForm.username = user.username || ''
+  profileForm.email = user.email || ''
+
+  // Handle extended profile fields that might come from the API
+  const extendedUser = user as any
+  profileForm.phone = extendedUser.phone || ''
+  profileForm.realName = extendedUser.realName || ''
+
+  avatarUrl.value = user.avatar || ''
 }
 
 const updateProfile = async () => {
@@ -328,11 +243,14 @@ const updateProfile = async () => {
     if (valid) {
       profileLoading.value = true
       try {
-        const result = await userStore.updateProfile({
+        // Create update data with typed fields for the API
+        const updateData = {
           email: profileForm.email,
           phone: profileForm.phone,
           realName: profileForm.realName
-        })
+        }
+
+        const result = await userStore.updateProfile(updateData as any)
 
         if (result.success) {
           ElMessage.success('个人信息已更新')
@@ -357,7 +275,7 @@ const updatePassword = async () => {
       passwordLoading.value = true
       try {
         const result = await userStore.changePassword({
-          currentPassword: passwordForm.currentPassword,
+          oldPassword: passwordForm.currentPassword,
           newPassword: passwordForm.newPassword
         })
 
@@ -406,19 +324,6 @@ const handleAvatarSuccess = (response: any) => {
   }
 }
 
-const verifyEmail = () => {
-  ElMessage.success('验证邮件已发送，请查收')
-}
-
-const verifyPhone = () => {
-  ElMessage.success('验证短信已发送，请查收')
-}
-
-const saveNotificationSettings = () => {
-  // 在实际应用中，这里会调用API保存通知设置
-  ElMessage.success('通知设置已保存')
-}
-
 // 生命周期钩子
 onMounted(() => {
   loadUserData()
@@ -440,6 +345,11 @@ onMounted(() => {
   margin: 0 0 20px 0;
   font-size: 16px;
   font-weight: 600;
+}
+
+.settings-card {
+  margin-bottom: 20px;
+  padding: 20px;
 }
 
 .avatar-uploader {
@@ -464,61 +374,9 @@ onMounted(() => {
   margin-top: 10px;
 }
 
-.security-items,
-.notification-items {
-  margin-bottom: 20px;
-}
-
-.security-item,
-.notification-item {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 16px 0;
-  border-bottom: 1px solid #ebeef5;
-}
-
-.security-item:last-child,
-.notification-item:last-child {
-  border-bottom: none;
-}
-
-.security-info,
-.notification-info {
-  display: flex;
-  align-items: center;
-}
-
-.security-icon {
-  font-size: 24px;
-  margin-right: 16px;
-  color: #409EFF;
-}
-
-.security-title,
-.notification-title {
-  font-size: 16px;
-  margin-bottom: 4px;
-  color: #303133;
-}
-
-.security-desc,
-.notification-desc {
-  font-size: 12px;
-  color: #909399;
-}
-
 @media (max-width: 768px) {
-  .security-item,
-  .notification-item {
-    flex-direction: column;
-    align-items: flex-start;
-  }
-
-  .security-item > div:last-child,
-  .notification-item > div:last-child {
-    margin-top: 10px;
-    align-self: flex-end;
+  .settings-card {
+    padding: 15px;
   }
 }
 </style>

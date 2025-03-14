@@ -29,18 +29,19 @@ const router = createRouter({
       name: 'profile',
       component: () => import('../views/profile/ProfileView.vue'),
       meta: { title: '个人中心', requiresAuth: true },
+      redirect: '/profile/settings',
       children: [
-        {
-          path: 'my-posts',
-          name: 'my-posts',
-          component: () => import('../views/profile/MyPostsView.vue'),
-          meta: { title: '我的发布', requiresAuth: true }
-        },
         {
           path: 'settings',
           name: 'settings',
           component: () => import('../views/profile/SettingsView.vue'),
           meta: { title: '个人设置', requiresAuth: true }
+        },
+        {
+          path: 'my-posts',
+          name: 'my-posts',
+          component: () => import('../views/profile/MyPostsView.vue'),
+          meta: { title: '我的发布', requiresAuth: true }
         }
       ]
     },

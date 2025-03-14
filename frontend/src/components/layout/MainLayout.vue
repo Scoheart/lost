@@ -10,12 +10,7 @@
           </div>
 
           <div class="header-links">
-            <el-menu
-              mode="horizontal"
-              :router="true"
-              :default-active="activeRoute"
-              class="menu"
-            >
+            <el-menu mode="horizontal" :router="true" :default-active="activeRoute" class="menu">
               <el-menu-item index="/">首页</el-menu-item>
               <el-menu-item index="/announcements">社区公告</el-menu-item>
               <el-menu-item index="/lost-items">寻物启事</el-menu-item>
@@ -80,24 +75,16 @@
             <p><a href="/forum">邻里论坛</a> | <a href="/announcements">社区公告</a></p>
           </div>
         </div>
-        <div class="copyright">
-          © {{ currentYear }} 住宅小区互助寻物系统 - 版权所有
-        </div>
+        <div class="copyright">© {{ currentYear }} 住宅小区互助寻物系统 - 版权所有</div>
       </el-footer>
     </el-container>
   </div>
 </template>
 
 <script lang="ts" setup>
-import { computed, ref, onMounted } from 'vue'
+import { computed, ref, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
-import {
-  HomeFilled,
-  User,
-  Document,
-  Setting,
-  SwitchButton
-} from '@element-plus/icons-vue'
+import { HomeFilled, User, Document, Setting, SwitchButton } from '@element-plus/icons-vue'
 import { useUserStore } from '@/stores/user'
 import { ElMessage, ElMessageBox } from 'element-plus'
 
@@ -105,7 +92,11 @@ const router = useRouter()
 const userStore = useUserStore()
 
 // 计算属性
-const isLoggedIn = computed(() => userStore.isAuthenticated)
+const isLoggedIn = computed(() => {
+  const authenticated = userStore.isAuthenticated
+  console.log('Authentication status:', authenticated, 'Token:', !!userStore.token, 'User:', !!userStore.user)
+  return authenticated
+})
 const isAdmin = computed(() => userStore.isAdmin)
 const user = computed(() => userStore.userProfile)
 const userAvatar = computed(() => user.value?.avatar || '')
@@ -115,8 +106,17 @@ const userInitials = computed(() => {
 const currentYear = computed(() => new Date().getFullYear())
 const activeRoute = computed(() => router.currentRoute.value.path)
 
+// 监听登录状态变化
+watch(() => userStore.token, (newToken) => {
+  console.log('Token changed:', !!newToken)
+  if (newToken && !userStore.user) {
+    userStore.fetchCurrentUser()
+  }
+}, { immediate: true })
+
 // 生命周期钩子
 onMounted(async () => {
+  console.log('MainLayout mounted, token:', !!userStore.token, 'user:', !!userStore.user)
   // 如果有token但没有用户信息，尝试获取用户信息
   if (userStore.token && !userStore.user) {
     await userStore.fetchCurrentUser()
@@ -128,14 +128,16 @@ const handleLogout = () => {
   ElMessageBox.confirm('确定要退出登录吗?', '提示', {
     confirmButtonText: '确定',
     cancelButtonText: '取消',
-    type: 'warning'
-  }).then(() => {
-    userStore.logout()
-    ElMessage.success('已安全退出登录')
-    router.push('/')
-  }).catch(() => {
-    // 取消退出登录
+    type: 'warning',
   })
+    .then(() => {
+      userStore.logout()
+      ElMessage.success('已安全退出登录')
+      router.push('/')
+    })
+    .catch(() => {
+      // 取消退出登录
+    })
 }
 </script>
 
@@ -173,7 +175,7 @@ const handleLogout = () => {
   cursor: pointer;
   font-size: 18px;
   font-weight: bold;
-  color: #409EFF;
+  color: #409eff;
 }
 
 .logo .el-icon {
@@ -245,7 +247,7 @@ const handleLogout = () => {
 }
 
 .footer-section a {
-  color: #409EFF;
+  color: #409eff;
   text-decoration: none;
 }
 

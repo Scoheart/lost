@@ -19,16 +19,12 @@
           <el-input
             v-model="registerForm.username"
             placeholder="请输入用户名"
-            prefix-icon="User"
+            :prefix-icon="User"
           />
         </el-form-item>
 
         <el-form-item prop="email" label="邮箱">
-          <el-input
-            v-model="registerForm.email"
-            placeholder="请输入邮箱"
-            prefix-icon="Message"
-          />
+          <el-input v-model="registerForm.email" placeholder="请输入邮箱" :prefix-icon="Message" />
         </el-form-item>
 
         <el-form-item prop="password" label="密码">
@@ -36,7 +32,7 @@
             v-model="registerForm.password"
             type="password"
             placeholder="请输入密码"
-            prefix-icon="Lock"
+            :prefix-icon="Lock"
             show-password
           />
         </el-form-item>
@@ -46,7 +42,7 @@
             v-model="registerForm.confirmPassword"
             type="password"
             placeholder="请再次输入密码"
-            prefix-icon="Lock"
+            :prefix-icon="Lock"
             show-password
           />
         </el-form-item>
@@ -55,17 +51,12 @@
           <el-input
             v-model="registerForm.phone"
             placeholder="请输入手机号码"
-            prefix-icon="Phone"
+            :prefix-icon="Phone"
           />
         </el-form-item>
 
         <el-form-item>
-          <el-button
-            type="primary"
-            native-type="submit"
-            class="submit-btn"
-            :loading="loading"
-          >
+          <el-button type="primary" native-type="submit" class="submit-btn" :loading="loading">
             注册
           </el-button>
         </el-form-item>
@@ -84,6 +75,7 @@ import { reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import type { FormInstance, FormRules } from 'element-plus'
+import { User, Message, Lock, Phone } from '@element-plus/icons-vue'
 import { useUserStore } from '@/stores/user'
 
 const router = useRouter()
@@ -96,7 +88,7 @@ const registerForm = reactive({
   email: '',
   password: '',
   confirmPassword: '',
-  phone: ''
+  phone: '',
 })
 
 // 自定义验证规则
@@ -133,22 +125,18 @@ const validatePhone = (rule: any, value: string, callback: any) => {
 const rules = reactive<FormRules>({
   username: [
     { required: true, message: '请输入用户名', trigger: 'blur' },
-    { min: 3, max: 20, message: '长度在3到20个字符之间', trigger: 'blur' }
+    { min: 3, max: 20, message: '长度在3到20个字符之间', trigger: 'blur' },
   ],
   email: [
     { required: true, message: '请输入邮箱地址', trigger: 'blur' },
-    { type: 'email', message: '请输入正确的邮箱地址', trigger: 'blur' }
+    { type: 'email', message: '请输入正确的邮箱地址', trigger: 'blur' },
   ],
   password: [
     { required: true, validator: validatePass, trigger: 'blur' },
-    { min: 6, message: '密码长度不能小于6个字符', trigger: 'blur' }
+    { min: 6, message: '密码长度不能小于6个字符', trigger: 'blur' },
   ],
-  confirmPassword: [
-    { required: true, validator: validatePass2, trigger: 'blur' }
-  ],
-  phone: [
-    { validator: validatePhone, trigger: 'blur' }
-  ]
+  confirmPassword: [{ required: true, validator: validatePass2, trigger: 'blur' }],
+  phone: [{ validator: validatePhone, trigger: 'blur' }],
 })
 
 const handleSubmit = async () => {
@@ -162,7 +150,7 @@ const handleSubmit = async () => {
           username: registerForm.username,
           email: registerForm.email,
           password: registerForm.password,
-          phone: registerForm.phone || undefined
+          phone: registerForm.phone || undefined,
         })
 
         if (result.success) {
@@ -214,7 +202,7 @@ const handleSubmit = async () => {
 
 .logo-header h1 {
   font-size: 24px;
-  color: #409EFF;
+  color: #409eff;
   font-weight: 500;
 }
 
@@ -239,7 +227,7 @@ const handleSubmit = async () => {
 }
 
 .login-link a {
-  color: #409EFF;
+  color: #409eff;
   text-decoration: none;
 }
 
