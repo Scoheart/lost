@@ -13,18 +13,28 @@
         status-icon
       >
         <el-form-item label="用户头像">
-          <el-upload
-            class="avatar-uploader"
-            :action="uploadUrl"
-            :headers="uploadHeaders"
-            :show-file-list="false"
-            :on-success="handleAvatarSuccess"
-            :before-upload="beforeAvatarUpload"
-          >
-            <el-avatar v-if="avatarUrl" :size="90" :src="avatarUrl" />
-            <el-icon v-else class="avatar-uploader-icon"><Plus /></el-icon>
-          </el-upload>
-          <div class="upload-hint">点击上传头像，图片格式为 JPG/PNG，不超过 2MB</div>
+          <div class="avatar-container">
+            <el-upload
+              class="avatar-uploader"
+              :action="uploadUrl"
+              :headers="uploadHeaders"
+              :show-file-list="false"
+              :on-success="handleAvatarSuccess"
+              :before-upload="beforeAvatarUpload"
+            >
+              <div class="avatar-wrapper">
+                <el-avatar v-if="avatarUrl" :size="100" :src="avatarUrl" />
+                <div v-else class="avatar-placeholder">
+                  <el-icon class="avatar-icon"><Plus /></el-icon>
+                </div>
+                <div class="avatar-overlay">
+                  <el-icon><Edit /></el-icon>
+                  <span>更换头像</span>
+                </div>
+              </div>
+            </el-upload>
+            <div class="upload-hint">点击上传头像，图片格式为 JPG/PNG，不超过 2MB</div>
+          </div>
         </el-form-item>
 
         <el-form-item label="用户名" prop="username">
@@ -104,7 +114,7 @@
 
 <script setup lang="ts">
 import { ref, reactive, computed, onMounted } from 'vue'
-import { Plus } from '@element-plus/icons-vue'
+import { Plus, Edit } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 import type { FormInstance, FormRules } from 'element-plus'
 import { useUserStore, type User } from '@/stores/user'
@@ -352,31 +362,105 @@ onMounted(() => {
   padding: 20px;
 }
 
-.avatar-uploader {
-  text-align: center;
+.avatar-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin: 10px 0;
 }
 
-.avatar-uploader-icon {
-  font-size: 28px;
-  color: #8c939d;
-  width: 90px;
-  height: 90px;
-  line-height: 90px;
-  text-align: center;
-  border: 1px dashed #d9d9d9;
+.avatar-wrapper {
+  position: relative;
+  width: 100px;
+  height: 100px;
   border-radius: 50%;
+  overflow: hidden;
+  background-color: #f5f7fa;
   cursor: pointer;
+  transition: all 0.3s;
+}
+
+.avatar-placeholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border: 2px dashed #c0c4cc;
+  border-radius: 50%;
+}
+
+.avatar-icon {
+  font-size: 40px;
+  color: #909399;
+}
+
+.avatar-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  opacity: 0;
+  transition: opacity 0.3s;
+  color: white;
+}
+
+.avatar-overlay span {
+  margin-top: 6px;
+  font-size: 12px;
+}
+
+.avatar-wrapper:hover .avatar-overlay {
+  opacity: 1;
+}
+
+.avatar-uploader {
+  display: inline-block;
 }
 
 .upload-hint {
   font-size: 12px;
   color: #909399;
   margin-top: 10px;
+  text-align: center;
+  max-width: 250px;
+}
+
+.avatar-uploader-icon {
+  display: none;
 }
 
 @media (max-width: 768px) {
   .settings-card {
     padding: 15px;
+  }
+
+  .avatar-container {
+    margin: 5px 0;
+  }
+
+  .avatar-wrapper {
+    width: 80px;
+    height: 80px;
+  }
+
+  .avatar-placeholder {
+    width: 80px;
+    height: 80px;
+  }
+
+  .avatar-icon {
+    font-size: 32px;
+  }
+
+  .avatar-overlay span {
+    font-size: 10px;
   }
 }
 </style>

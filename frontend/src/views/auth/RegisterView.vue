@@ -14,6 +14,7 @@
         :rules="rules"
         label-position="top"
         @submit.prevent="handleSubmit"
+        class="compact-form"
       >
         <el-form-item prop="username" label="用户名">
           <el-input
@@ -175,54 +176,58 @@ const handleSubmit = async () => {
   display: flex;
   justify-content: center;
   align-items: center;
-  min-height: 100vh;
+  height: 100vh;
   background-color: #f0f2f5;
-  padding: 20px;
+  padding: 0 20px;
+  box-sizing: border-box;
+  overflow: hidden;
 }
 
 .register-panel {
   width: 100%;
   max-width: 460px;
+  max-height: calc(100vh - 40px);
   background-color: #fff;
   border-radius: 8px;
   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
-  padding: 30px;
+  padding: 20px;
+  overflow-y: auto;
 }
 
 .logo-header {
   text-align: center;
-  margin-bottom: 30px;
+  margin-bottom: 20px;
 }
 
 .logo {
-  width: 80px;
-  height: 80px;
-  margin-bottom: 16px;
+  width: 60px;
+  height: 60px;
+  margin-bottom: 10px;
 }
 
 .logo-header h1 {
-  font-size: 24px;
+  font-size: 20px;
   color: #409eff;
   font-weight: 500;
 }
 
 .register-title {
-  font-size: 22px;
+  font-size: 20px;
   color: #303133;
   text-align: center;
-  margin-bottom: 30px;
+  margin-bottom: 20px;
   font-weight: 500;
 }
 
 .submit-btn {
   width: 100%;
-  margin-top: 10px;
-  padding: 12px 0;
+  margin-top: 5px;
+  padding: 10px 0;
 }
 
 .login-link {
   text-align: center;
-  margin-top: 20px;
+  margin-top: 15px;
   color: #606266;
 }
 
@@ -238,15 +243,33 @@ const handleSubmit = async () => {
 @media (max-width: 576px) {
   .register-panel {
     box-shadow: none;
-    padding: 20px;
+    padding: 15px;
   }
 
   .logo-header h1 {
-    font-size: 20px;
+    font-size: 18px;
   }
 
   .register-title {
-    font-size: 18px;
+    font-size: 16px;
   }
+}
+
+/* Add compact form styles */
+.compact-form :deep(.el-form-item) {
+  margin-bottom: 12px;
+}
+
+.compact-form :deep(.el-form-item__label) {
+  padding-bottom: 4px;
+  line-height: 1.2;
+}
+
+.compact-form :deep(.el-input__wrapper) {
+  padding: 0 11px;
+}
+
+.compact-form :deep(.el-input__inner) {
+  height: 36px;
 }
 </style>

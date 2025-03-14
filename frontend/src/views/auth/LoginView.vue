@@ -14,6 +14,7 @@
         :rules="rules"
         label-position="top"
         @submit.prevent="handleSubmit"
+        class="compact-form"
       >
         <el-form-item prop="username" label="用户名/邮箱">
           <el-input
@@ -58,28 +59,13 @@
         <el-alert :title="error" type="error" show-icon :closable="false" />
       </div>
     </div>
-
-    <div class="sso-links">
-      <p>其他登录方式</p>
-      <div class="sso-buttons">
-        <el-button type="info" circle>
-          <el-icon><Apple /></el-icon>
-        </el-button>
-        <el-button type="success" circle>
-          <el-icon><ChatDotRound /></el-icon>
-        </el-button>
-        <el-button type="danger" circle>
-          <el-icon><GoodsFilled /></el-icon>
-        </el-button>
-      </div>
-    </div>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, reactive } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
-import { User, Lock, Apple, ChatDotRound, GoodsFilled } from '@element-plus/icons-vue'
+import { User, Lock } from '@element-plus/icons-vue'
 import type { FormInstance, FormRules } from 'element-plus'
 import { ElMessage } from 'element-plus'
 import { useUserStore } from '@/stores/user'
@@ -162,43 +148,47 @@ const goToForgotPassword = () => {
   flex-direction: column;
   justify-content: center;
   align-items: center;
-  min-height: 100vh;
+  height: 100vh;
   background-color: #f0f2f5;
-  padding: 20px;
+  padding: 0 20px;
+  box-sizing: border-box;
+  overflow: hidden;
 }
 
 .login-panel {
   width: 100%;
   max-width: 400px;
+  max-height: calc(100vh - 40px);
   background-color: #fff;
   border-radius: 8px;
   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
-  padding: 30px;
-  margin-bottom: 20px;
+  padding: 20px;
+  margin-bottom: 0;
+  overflow-y: auto;
 }
 
 .logo-header {
   text-align: center;
-  margin-bottom: 30px;
+  margin-bottom: 20px;
 }
 
 .logo {
-  width: 80px;
-  height: 80px;
-  margin-bottom: 16px;
+  width: 60px;
+  height: 60px;
+  margin-bottom: 10px;
 }
 
 .logo-header h1 {
-  font-size: 24px;
+  font-size: 20px;
   color: #409eff;
   font-weight: 500;
 }
 
 .login-title {
-  font-size: 22px;
+  font-size: 20px;
   color: #303133;
   text-align: center;
-  margin-bottom: 30px;
+  margin-bottom: 20px;
   font-weight: 500;
 }
 
@@ -233,23 +223,6 @@ const goToForgotPassword = () => {
   margin-top: 20px;
 }
 
-.sso-links {
-  margin-top: 10px;
-  text-align: center;
-}
-
-.sso-links p {
-  color: #909399;
-  font-size: 14px;
-  margin-bottom: 12px;
-}
-
-.sso-buttons {
-  display: flex;
-  justify-content: center;
-  gap: 16px;
-}
-
 @media (max-width: 576px) {
   .login-panel {
     box-shadow: none;
@@ -263,5 +236,22 @@ const goToForgotPassword = () => {
   .login-title {
     font-size: 18px;
   }
+}
+
+.compact-form :deep(.el-form-item) {
+  margin-bottom: 12px;
+}
+
+.compact-form :deep(.el-form-item__label) {
+  padding-bottom: 4px;
+  line-height: 1.2;
+}
+
+.compact-form :deep(.el-input__wrapper) {
+  padding: 0 11px;
+}
+
+.compact-form :deep(.el-input__inner) {
+  height: 36px;
 }
 </style>
