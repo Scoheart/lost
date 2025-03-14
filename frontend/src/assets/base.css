@@ -84,3 +84,35 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
+
+/* Override browser autofill styling globally */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
+input:-webkit-autofill:active {
+  /* Use a very light blue instead of pure white to avoid hiding text */
+  -webkit-box-shadow: 0 0 0 30px rgba(232, 240, 254, 0.4) inset !important;
+  /* Make sure text is visible */
+  -webkit-text-fill-color: #606266 !important;
+  transition: background-color 5000s ease-in-out 0s;
+}
+
+/* Dark mode support for autofill */
+@media (prefers-color-scheme: dark) {
+  input:-webkit-autofill,
+  input:-webkit-autofill:hover,
+  input:-webkit-autofill:focus,
+  input:-webkit-autofill:active {
+    -webkit-box-shadow: 0 0 0 30px rgba(44, 62, 80, 0.3) inset !important;
+    -webkit-text-fill-color: var(--vt-c-text-dark-1) !important;
+  }
+}
+
+/* Additional fixes for Element Plus inputs with autofill */
+.el-input__wrapper {
+  background-color: transparent !important;
+}
+
+.el-input input.el-input__inner {
+  background-color: transparent !important;
+}

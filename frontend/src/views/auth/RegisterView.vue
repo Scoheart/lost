@@ -272,4 +272,25 @@ const handleSubmit = async () => {
 .compact-form :deep(.el-input__inner) {
   height: 36px;
 }
+
+/* Override browser autofill styling */
+:deep(input:-webkit-autofill),
+:deep(input:-webkit-autofill:hover),
+:deep(input:-webkit-autofill:focus),
+:deep(input:-webkit-autofill:active) {
+  /* Use a very light blue instead of pure white */
+  -webkit-box-shadow: 0 0 0 30px transparent inset !important;
+  -webkit-text-fill-color: #606266 !important;
+  transition: background-color 5000s ease-in-out 0s;
+}
+
+/* Make input backgrounds transparent to show autofilled content */
+:deep(.el-input__wrapper) {
+  background-color: transparent !important;
+}
+
+:deep(.el-input__wrapper.is-focus),
+:deep(.el-input__wrapper:hover) {
+  background-color: transparent !important;
+}
 </style>

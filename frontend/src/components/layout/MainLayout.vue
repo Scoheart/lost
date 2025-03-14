@@ -47,6 +47,14 @@
             <template v-else>
               <el-button type="primary" @click="$router.push('/login')">登录</el-button>
               <el-button @click="$router.push('/register')">注册</el-button>
+              <el-link
+                type="info"
+                :underline="false"
+                class="admin-link"
+                @click="$router.push('/admin/login')"
+              >
+                管理员入口
+              </el-link>
             </template>
           </div>
         </div>
@@ -109,7 +117,7 @@ const activeRoute = computed(() => router.currentRoute.value.path)
 // 监听登录状态变化
 watch(() => userStore.token, (newToken) => {
   console.log('Token changed:', !!newToken)
-  if (newToken && !userStore.user) {
+  if (newToken && !userStore.user && !userStore.loading) {
     userStore.fetchCurrentUser()
   }
 }, { immediate: true })
@@ -118,7 +126,7 @@ watch(() => userStore.token, (newToken) => {
 onMounted(async () => {
   console.log('MainLayout mounted, token:', !!userStore.token, 'user:', !!userStore.user)
   // 如果有token但没有用户信息，尝试获取用户信息
-  if (userStore.token && !userStore.user) {
+  if (userStore.token && !userStore.user && !userStore.loading) {
     await userStore.fetchCurrentUser()
   }
 })
@@ -262,6 +270,11 @@ const handleLogout = () => {
   border-top: 1px solid #e0e0e0;
 }
 
+.admin-link {
+  margin-left: 10px;
+  font-size: 14px;
+}
+
 @media (max-width: 768px) {
   .header-content {
     flex-direction: column;
@@ -297,6 +310,11 @@ const handleLogout = () => {
   .footer-section {
     margin-bottom: 20px;
     text-align: center;
+  }
+
+  .admin-link {
+    margin-left: 0;
+    margin-top: 10px;
   }
 }
 </style>

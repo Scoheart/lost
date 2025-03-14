@@ -1,5 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import HomeView from '../views/HomeView.vue'
+import { useUserStore } from '../stores/user'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -114,6 +115,32 @@ const router = createRouter({
       component: () => import('../views/forum/PostDetailView.vue'),
       meta: { title: '帖子详情' }
     },
+    // 登录/注册
+    {
+      path: '/login',
+      name: 'login',
+      component: () => import('../views/auth/LoginView.vue'),
+      meta: { title: '登录' }
+    },
+    {
+      path: '/register',
+      name: 'register',
+      component: () => import('../views/auth/RegisterView.vue'),
+      meta: { title: '注册' }
+    },
+    // 管理员登录
+    {
+      path: '/admin/login',
+      name: 'admin-login',
+      component: () => import('../views/auth/AdminLoginView.vue'),
+      meta: { title: '管理员登录' }
+    },
+    {
+      path: '/admin/forgot-password',
+      name: 'admin-forgot-password',
+      component: () => import('../views/auth/AdminForgotPasswordView.vue'),
+      meta: { title: '管理员密码找回' }
+    },
     // 管理员页面
     {
       path: '/admin',
@@ -140,25 +167,18 @@ const router = createRouter({
           meta: { title: '认领管理', requiresAuth: true, requiresAdmin: true }
         },
         {
+          path: 'residents',
+          name: 'admin-residents',
+          component: () => import('../views/admin/ResidentsManageView.vue'),
+          meta: { title: '居民管理', requiresAuth: true, requiresAdmin: true }
+        },
+        {
           path: 'users',
           name: 'admin-users',
           component: () => import('../views/admin/UsersManageView.vue'),
           meta: { title: '用户管理', requiresAuth: true, requiresAdmin: true, requiresSysAdmin: true }
         }
       ]
-    },
-    // 登录/注册
-    {
-      path: '/login',
-      name: 'login',
-      component: () => import('../views/auth/LoginView.vue'),
-      meta: { title: '登录' }
-    },
-    {
-      path: '/register',
-      name: 'register',
-      component: () => import('../views/auth/RegisterView.vue'),
-      meta: { title: '注册' }
     },
     // 404页面
     {
@@ -171,44 +191,104 @@ const router = createRouter({
 })
 
 // 路由守卫，处理鉴权和页面标题
-router.beforeEach((to, from, next) => {
+router.beforeEach(async (to, from, next) => {
   // 设置页面标题
   document.title = `${to.meta.title || '住宅小区互助寻物系统'}`
 
-  // 鉴权处理 (实际开发时会检查token/用户角色)
-  if (to.meta.requiresAuth) {
-    // 这里未来会添加实际的鉴权逻辑
-    // const isAuthenticated = store.getters.isAuthenticated
-    const isAuthenticated = true // 临时硬编码，实际开发需要与用户状态关联
+  // 导入用户状态管理
+  const userStore = useUserStore()
 
-    if (!isAuthenticated) {
-      next({ name: 'login', query: { redirect: to.fullPath } })
-    } else if (to.meta.requiresAdmin) {
-      // 检查是否是管理员
-      // const isAdmin = store.getters.isAdmin
-      const isAdmin = true // 临时硬编码，实际开发需要与用户状态关联
+  // 记录路由守卫开始
+  console.log(`[Router Guard] Navigating to: ${to.path}`)
 
-      if (!isAdmin) {
-        next({ name: 'home' })
-      } else if (to.meta.requiresSysAdmin) {
-        // 检查是否是系统管理员
-        // const isSysAdmin = store.getters.isSysAdmin
-        const isSysAdmin = true // 临时硬编码，实际开发需要与用户状态关联
+  // 检查是否允许绕过管理员权限验证（开发环境下）
+  const isDev = import.meta.env.DEV
+  const allowAdminAccess = import.meta.env.VITE_ALLOW_ADMIN_ACCESS === 'true'
+  const bypassAdminCheck = isDev && allowAdminAccess
 
-        if (!isSysAdmin) {
-          next({ name: 'admin' })
-        } else {
-          next()
-        }
-      } else {
-        next()
-      }
-    } else {
-      next()
-    }
-  } else {
+  if (bypassAdminCheck && (to.meta.requiresAdmin || to.meta.requiresSysAdmin)) {
+    console.log('[Router Guard] Development mode: bypassing admin permission check')
     next()
+    return
   }
+
+  // 如果当前有用户信息，直接通过
+  if (userStore.isAuthenticated) {
+    console.log('[Router Guard] User is already authenticated')
+
+    // 检查是否需要管理员权限
+    if (to.meta.requiresAdmin && !userStore.isAdmin) {
+      console.log('[Router Guard] Access denied: Admin privileges required')
+      next({ name: 'home' })
+      return
+    }
+
+    // 检查是否需要系统管理员权限
+    if (to.meta.requiresSysAdmin && !userStore.isSysAdmin) {
+      console.log('[Router Guard] Access denied: SysAdmin privileges required')
+      next({ name: 'admin' })
+      return
+    }
+
+    // 权限符合，放行
+    next()
+    return
+  }
+
+  // 无需认证的页面，直接通过
+  if (!to.meta.requiresAuth) {
+    console.log('[Router Guard] No authentication required for this route')
+    next()
+    return
+  }
+
+  // 有 token 但没有用户数据，尝试获取用户信息
+  if (userStore.token && !userStore.user) {
+    console.log('[Router Guard] Has token but no user data, attempting to fetch user data')
+    try {
+      const result = await userStore.fetchCurrentUser()
+
+      if (result?.success) {
+        console.log('[Router Guard] Successfully retrieved user data')
+
+        // 再次检查管理员/系统管理员权限
+        if (to.meta.requiresAdmin && !userStore.isAdmin) {
+          console.log('[Router Guard] Access denied: Admin privileges required')
+          next({ name: 'home' })
+          return
+        }
+
+        if (to.meta.requiresSysAdmin && !userStore.isSysAdmin) {
+          console.log('[Router Guard] Access denied: SysAdmin privileges required')
+          next({ name: 'admin' })
+          return
+        }
+
+        // 权限符合，放行
+        next()
+        return
+      } else if (result?.pending) {
+        console.log('[Router Guard] User data fetch in progress, continuing navigation')
+        next()
+        return
+      }
+
+      // 获取用户数据失败，清除 token 并重定向到登录页
+      console.log('[Router Guard] Failed to fetch user data, redirecting to login')
+      userStore.logout()
+      next({ name: 'login', query: { redirect: to.fullPath } })
+      return
+    } catch (error) {
+      console.error('[Router Guard] Error retrieving user data:', error)
+      userStore.logout()
+      next({ name: 'login', query: { redirect: to.fullPath } })
+      return
+    }
+  }
+
+  // 未认证且需要认证的页面，重定向到登录
+  console.log('[Router Guard] Authentication required, redirecting to login')
+  next({ name: 'login', query: { redirect: to.fullPath } })
 })
 
 export default router

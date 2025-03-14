@@ -1,12 +1,24 @@
 <template>
-  <div class="login-container">
-    <div class="login-panel">
+  <div class="admin-login-container">
+    <div class="admin-login-panel">
       <div class="logo-header">
         <img src="@/assets/logo.svg" alt="Logo" class="logo" />
         <h1>住宅小区互助寻物系统</h1>
       </div>
 
-      <h2 class="login-title">用户登录</h2>
+      <h2 class="login-title">管理员登录</h2>
+      <div class="admin-login-notice">
+        <el-alert
+          title="管理员专用登录入口"
+          type="info"
+          :closable="false"
+          show-icon
+        >
+          <template #default>
+            此登录入口仅供<strong>小区管理员</strong>和<strong>系统管理员</strong>使用。居民用户请使用<router-link to="/login">普通登录</router-link>。
+          </template>
+        </el-alert>
+      </div>
 
       <el-form
         ref="formRef"
@@ -16,10 +28,10 @@
         @submit.prevent="handleSubmit"
         class="compact-form"
       >
-        <el-form-item prop="username" label="用户名/邮箱">
+        <el-form-item prop="username" label="管理员账号">
           <el-input
             v-model="loginForm.username"
-            placeholder="请输入用户名或邮箱"
+            placeholder="请输入管理员账号"
             :prefix-icon="User"
             :disabled="loading"
           />
@@ -45,18 +57,9 @@
 
         <el-form-item>
           <el-button type="primary" native-type="submit" class="submit-btn" :loading="loading">
-            登录
+            管理员登录
           </el-button>
         </el-form-item>
-
-        <div class="register-link">
-          还没有账号？
-          <router-link to="/register">立即注册</router-link>
-        </div>
-
-        <div class="admin-login-link">
-          <router-link to="/admin/login">管理员登录入口 →</router-link>
-        </div>
       </el-form>
 
       <div v-if="error" class="error-message">
@@ -89,12 +92,12 @@ const loginForm = reactive({
 
 const rules = reactive<FormRules>({
   username: [
-    { required: true, message: '请输入用户名或邮箱', trigger: 'blur' },
-    { min: 3, message: '用户名不能少于3个字符', trigger: 'blur' },
+    { required: true, message: '请输入管理员账号', trigger: 'blur' },
+    { min: 3, message: '账号不能少于3个字符', trigger: 'blur' },
   ],
   password: [
     { required: true, message: '请输入密码', trigger: 'blur' },
-    { min: 6, message: '密码不能少于6个字符', trigger: 'blur' },
+    { min: 6, message: '密码长度不能小于6个字符', trigger: 'blur' },
   ],
 })
 
@@ -107,32 +110,42 @@ const handleSubmit = async () => {
       error.value = ''
 
       try {
-        console.log('Submitting login for:', loginForm.username)
-        const result = await userStore.login(
+        console.log('Submitting admin login for:', loginForm.username)
+        // 使用adminLogin方法，专门用于管理员登录
+        const result = await userStore.adminLogin(
           loginForm.username,
           loginForm.password
         )
 
         if (result.success) {
-          console.log('Login successful')
+          console.log('Admin login successful')
 
-          // 检查登录状态
+          // 检查登录状态和角色
           console.log('Auth state after login:',
             'token:', !!userStore.token,
             'user:', !!userStore.user,
+            'role:', userStore.user?.role,
             'isAuthenticated:', userStore.isAuthenticated
           )
 
-          ElMessage.success('登录成功！')
+          ElMessage.success('管理员登录成功！')
 
-          // 如果有重定向参数，则重定向到指定页面
-          const redirectPath = route.query.redirect as string
-          router.push(redirectPath || '/')
+          // 根据管理员类型跳转到不同页面
+          if (userStore.isSysAdmin) {
+            router.push('/admin/users') // 系统管理员直接进入用户管理
+          } else if (userStore.isAdmin) {
+            router.push('/admin/announcements') // 小区管理员进入公告管理
+          } else {
+            // 如果不是管理员角色，显示错误
+            error.value = '您的账号没有管理员权限'
+            userStore.logout() // 登出非管理员用户
+            return
+          }
         } else {
-          error.value = result.message || '登录失败，请检查用户名和密码'
+          error.value = result.message || '登录失败，请检查账号和密码'
         }
       } catch (err) {
-        console.error('Login error:', err)
+        console.error('Admin login error:', err)
         error.value = '登录失败，请稍后再试'
       } finally {
         loading.value = false
@@ -142,12 +155,12 @@ const handleSubmit = async () => {
 }
 
 const goToForgotPassword = () => {
-  router.push('/forgot-password')
+  router.push('/admin/forgot-password')
 }
 </script>
 
 <style scoped>
-.login-container {
+.admin-login-container {
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -159,7 +172,7 @@ const goToForgotPassword = () => {
   overflow: hidden;
 }
 
-.login-panel {
+.admin-login-panel {
   width: 100%;
   max-width: 400px;
   max-height: calc(100vh - 40px);
@@ -189,11 +202,28 @@ const goToForgotPassword = () => {
 }
 
 .login-title {
-  font-size: 20px;
+  font-size: 22px;
   color: #303133;
   text-align: center;
-  margin-bottom: 20px;
+  margin-bottom: 10px;
   font-weight: 500;
+}
+
+.admin-login-notice {
+  margin-bottom: 20px;
+}
+
+.admin-login-notice :deep(.el-alert) {
+  margin-bottom: 0;
+}
+
+.admin-login-notice a {
+  color: #409eff;
+  text-decoration: none;
+}
+
+.admin-login-notice a:hover {
+  text-decoration: underline;
 }
 
 .remember-forgot {
@@ -208,45 +238,12 @@ const goToForgotPassword = () => {
   padding: 12px 0;
 }
 
-.register-link {
-  text-align: center;
-  margin-top: 20px;
-  color: #606266;
-}
-
-.register-link a {
-  color: #409eff;
-  text-decoration: none;
-}
-
-.register-link a:hover {
-  text-decoration: underline;
-}
-
-.admin-login-link {
-  text-align: center;
-  margin-top: 15px;
-  font-size: 14px;
-}
-
-.admin-login-link a {
-  color: #909399;
-  text-decoration: none;
-  display: inline-flex;
-  align-items: center;
-  transition: color 0.3s;
-}
-
-.admin-login-link a:hover {
-  color: #409eff;
-}
-
 .error-message {
   margin-top: 20px;
 }
 
 @media (max-width: 576px) {
-  .login-panel {
+  .admin-login-panel {
     box-shadow: none;
     padding: 20px;
   }

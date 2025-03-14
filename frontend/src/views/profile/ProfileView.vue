@@ -1,13 +1,27 @@
 <template>
   <main-layout>
     <div class="profile-container">
+      <!-- Development mode indicator -->
+      <div v-if="isDev && allowAdminAccess" class="dev-mode-banner">
+        <el-alert
+          title="开发模式: 管理员权限已绕过"
+          type="warning"
+          :closable="false"
+          show-icon
+        >
+          <template #default>
+            系统当前处于开发环境，管理员权限检查已绕过。这仅适用于开发测试。
+          </template>
+        </el-alert>
+      </div>
+
       <el-row :gutter="20">
         <!-- 侧边栏导航 -->
         <el-col :xs="24" :sm="6" :md="5" :lg="4">
           <el-card class="profile-sidebar" shadow="never">
             <div class="user-info">
               <el-avatar :size="80" :src="userAvatar">
-                <el-icon v-if="!userAvatar"><User /></el-icon>
+                <el-icon v-if="!userAvatar"><UserIcon /></el-icon>
               </el-avatar>
               <h3>{{ currentUser.username }}</h3>
               <p>{{ currentUser.email }}</p>
@@ -72,7 +86,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import {
-  User,
+  User as UserIcon,
   Document,
   Search,
   Collection,
@@ -80,59 +94,58 @@ import {
   Setting
 } from '@element-plus/icons-vue'
 import MainLayout from '@/components/layout/MainLayout.vue'
-import { useUserStore } from '@/stores/user'
+import { useUserStore, type User } from '@/stores/user'
 import { useMessageStore } from '@/stores/messages'
+import { ElMessage } from 'element-plus'
 
 const route = useRoute()
 const userStore = useUserStore()
 const messageStore = useMessageStore()
 const isLoaded = ref(false)
+const loading = ref(false)
+
+// 开发环境变量
+const isDev = import.meta.env.DEV
+const allowAdminAccess = import.meta.env.VITE_ALLOW_ADMIN_ACCESS === 'true'
 
 // 计算属性
-const currentUser = computed(() => userStore.currentUser || {})
+const currentUser = computed(() => userStore.user || {} as User)
+const userAvatar = computed(() => (currentUser.value?.avatar as string) || '')
+const unreadMessageCount = computed(() => messageStore.unreadCount || 0)
+const activeMenu = computed(() => route.path)
 
-const userAvatar = computed(() => {
-  return currentUser.value.avatar || ''
-})
+// 加载用户资料并获取未读消息
+const loadUserData = async () => {
+  if (loading.value) return
 
-const unreadMessageCount = computed(() => {
-  return messageStore.unreadCount
-})
-
-const activeMenu = computed(() => {
-  return route.path
-})
-
-// 方法
-const loadUserProfile = async () => {
+  loading.value = true
   try {
-    await userStore.fetchCurrentUser()
+    // 加载未读消息数量
+    await messageStore.fetchUnreadCount()
     isLoaded.value = true
   } catch (error) {
-    console.error('Failed to load user profile:', error)
+    console.error('Failed to load user data:', error)
+    ElMessage.error('加载数据失败')
+  } finally {
+    loading.value = false
   }
 }
 
 // 生命周期钩子
 onMounted(async () => {
-  if (!userStore.isAuthenticated) {
-    return
-  }
-
-  await loadUserProfile()
-
-  // 获取未读消息数量
-  try {
-    await messageStore.fetchUnreadCount()
-  } catch (error) {
-    console.error('Failed to fetch unread messages count:', error)
-  }
+  console.log('[ProfileView] Component mounted')
+  // 路由守卫已确保只有认证用户才能访问此页面
+  await loadUserData()
 })
 </script>
 
 <style scoped>
 .profile-container {
   padding: 20px;
+}
+
+.dev-mode-banner {
+  margin-bottom: 20px;
 }
 
 .profile-sidebar {
@@ -178,3 +191,4 @@ onMounted(async () => {
   }
 }
 </style>
+
