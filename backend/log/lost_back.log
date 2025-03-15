@@ -15231,3 +15231,40 @@ org.springframework.web.HttpRequestMethodNotSupportedException: Request method '
 2025-03-15T19:30:55.124+08:00 DEBUG 90704 --- [http-nio-0.0.0.0-8080-exec-5] c.c.l.repository.UserRepository.findAll  : ==>  Preparing: SELECT * FROM users
 2025-03-15T19:30:55.124+08:00 DEBUG 90704 --- [http-nio-0.0.0.0-8080-exec-5] c.c.l.repository.UserRepository.findAll  : ==> Parameters: 
 2025-03-15T19:30:55.140+08:00 DEBUG 90704 --- [http-nio-0.0.0.0-8080-exec-5] c.c.l.repository.UserRepository.findAll  : <==      Total: 3
+2025-03-15T21:35:26.137+08:00  WARN 90704 --- [HikariPool-1 housekeeper] com.zaxxer.hikari.pool.HikariPool        : HikariPool-1 - Thread starvation or clock leap detected (housekeeper delta=5m42s549ms).
+2025-03-15T21:35:29.055+08:00 DEBUG 90704 --- [http-nio-0.0.0.0-8080-exec-7] c.c.l.security.AuthTokenFilter           : Setting up authentication for user: admin1
+2025-03-15T21:35:29.055+08:00 DEBUG 90704 --- [http-nio-0.0.0.0-8080-exec-6] c.c.l.security.AuthTokenFilter           : Setting up authentication for user: admin1
+2025-03-15T21:35:29.056+08:00 DEBUG 90704 --- [http-nio-0.0.0.0-8080-exec-7] c.c.l.security.UserDetailsServiceImpl    : Loading user by username or email: admin1
+2025-03-15T21:35:29.056+08:00 DEBUG 90704 --- [http-nio-0.0.0.0-8080-exec-6] c.c.l.security.UserDetailsServiceImpl    : Loading user by username or email: admin1
+2025-03-15T21:35:29.072+08:00 DEBUG 90704 --- [http-nio-0.0.0.0-8080-exec-7] c.c.l.r.UserRepository.findByUsername    : ==>  Preparing: SELECT * FROM users WHERE username = ?
+2025-03-15T21:35:29.072+08:00 DEBUG 90704 --- [http-nio-0.0.0.0-8080-exec-6] c.c.l.r.UserRepository.findByUsername    : ==>  Preparing: SELECT * FROM users WHERE username = ?
+2025-03-15T21:35:29.073+08:00 DEBUG 90704 --- [http-nio-0.0.0.0-8080-exec-6] c.c.l.r.UserRepository.findByUsername    : ==> Parameters: admin1(String)
+2025-03-15T21:35:29.073+08:00 DEBUG 90704 --- [http-nio-0.0.0.0-8080-exec-7] c.c.l.r.UserRepository.findByUsername    : ==> Parameters: admin1(String)
+2025-03-15T21:35:29.090+08:00 DEBUG 90704 --- [http-nio-0.0.0.0-8080-exec-6] c.c.l.r.UserRepository.findByUsername    : <==      Total: 1
+2025-03-15T21:35:29.090+08:00 DEBUG 90704 --- [http-nio-0.0.0.0-8080-exec-7] c.c.l.r.UserRepository.findByUsername    : <==      Total: 1
+2025-03-15T21:35:29.090+08:00 DEBUG 90704 --- [http-nio-0.0.0.0-8080-exec-6] c.c.l.security.UserDetailsServiceImpl    : User found: id=3, username=admin1, email=admin1@admin1.com
+2025-03-15T21:35:29.090+08:00 DEBUG 90704 --- [http-nio-0.0.0.0-8080-exec-7] c.c.l.security.UserDetailsServiceImpl    : User found: id=3, username=admin1, email=admin1@admin1.com
+2025-03-15T21:35:29.090+08:00 DEBUG 90704 --- [http-nio-0.0.0.0-8080-exec-7] c.c.l.security.AuthTokenFilter           : Authentication set for user: admin1
+2025-03-15T21:35:29.090+08:00 DEBUG 90704 --- [http-nio-0.0.0.0-8080-exec-6] c.c.l.security.AuthTokenFilter           : Authentication set for user: admin1
+2025-03-15T21:35:29.092+08:00 DEBUG 90704 --- [http-nio-0.0.0.0-8080-exec-6] c.c.l.controller.UserController          : Fetching profile for authenticated user: admin1
+2025-03-15T21:35:29.092+08:00 DEBUG 90704 --- [http-nio-0.0.0.0-8080-exec-6] c.c.l.r.UserRepository.findById          : ==>  Preparing: SELECT * FROM users WHERE id = ?
+2025-03-15T21:35:29.093+08:00 DEBUG 90704 --- [http-nio-0.0.0.0-8080-exec-6] c.c.l.r.UserRepository.findById          : ==> Parameters: 3(Long)
+2025-03-15T21:35:29.093+08:00 DEBUG 90704 --- [http-nio-0.0.0.0-8080-exec-7] c.c.l.controller.ResidentController      : Fetching all resident users: page=1, pageSize=10
+2025-03-15T21:35:29.093+08:00 DEBUG 90704 --- [http-nio-0.0.0.0-8080-exec-7] c.c.l.repository.UserRepository.findAll  : ==>  Preparing: SELECT * FROM users
+2025-03-15T21:35:29.093+08:00 DEBUG 90704 --- [http-nio-0.0.0.0-8080-exec-7] c.c.l.repository.UserRepository.findAll  : ==> Parameters: 
+2025-03-15T21:35:29.108+08:00 DEBUG 90704 --- [http-nio-0.0.0.0-8080-exec-6] c.c.l.r.UserRepository.findById          : <==      Total: 1
+2025-03-15T21:35:29.108+08:00 DEBUG 90704 --- [http-nio-0.0.0.0-8080-exec-7] c.c.l.repository.UserRepository.findAll  : <==      Total: 3
+2025-03-15T21:35:29.108+08:00 DEBUG 90704 --- [http-nio-0.0.0.0-8080-exec-6] c.c.l.controller.UserController          : User found: admin1
+2025-03-15T21:35:34.868+08:00 DEBUG 90704 --- [http-nio-0.0.0.0-8080-exec-8] c.c.l.security.AuthTokenFilter           : Setting up authentication for user: admin1
+2025-03-15T21:35:34.869+08:00 DEBUG 90704 --- [http-nio-0.0.0.0-8080-exec-8] c.c.l.security.UserDetailsServiceImpl    : Loading user by username or email: admin1
+2025-03-15T21:35:34.883+08:00 DEBUG 90704 --- [http-nio-0.0.0.0-8080-exec-8] c.c.l.r.UserRepository.findByUsername    : ==>  Preparing: SELECT * FROM users WHERE username = ?
+2025-03-15T21:35:34.885+08:00 DEBUG 90704 --- [http-nio-0.0.0.0-8080-exec-8] c.c.l.r.UserRepository.findByUsername    : ==> Parameters: admin1(String)
+2025-03-15T21:35:34.899+08:00 DEBUG 90704 --- [http-nio-0.0.0.0-8080-exec-8] c.c.l.r.UserRepository.findByUsername    : <==      Total: 1
+2025-03-15T21:35:34.900+08:00 DEBUG 90704 --- [http-nio-0.0.0.0-8080-exec-8] c.c.l.security.UserDetailsServiceImpl    : User found: id=3, username=admin1, email=admin1@admin1.com
+2025-03-15T21:35:34.900+08:00 DEBUG 90704 --- [http-nio-0.0.0.0-8080-exec-8] c.c.l.security.AuthTokenFilter           : Authentication set for user: admin1
+2025-03-15T21:35:34.901+08:00 DEBUG 90704 --- [http-nio-0.0.0.0-8080-exec-8] c.c.l.controller.UserController          : Fetching profile for authenticated user: admin1
+2025-03-15T21:35:34.901+08:00 DEBUG 90704 --- [http-nio-0.0.0.0-8080-exec-8] c.c.l.r.UserRepository.findById          : ==>  Preparing: SELECT * FROM users WHERE id = ?
+2025-03-15T21:35:34.901+08:00 DEBUG 90704 --- [http-nio-0.0.0.0-8080-exec-8] c.c.l.r.UserRepository.findById          : ==> Parameters: 3(Long)
+2025-03-15T21:35:34.917+08:00 DEBUG 90704 --- [http-nio-0.0.0.0-8080-exec-8] c.c.l.r.UserRepository.findById          : <==      Total: 1
+2025-03-15T21:35:34.917+08:00 DEBUG 90704 --- [http-nio-0.0.0.0-8080-exec-8] c.c.l.controller.UserController          : User found: admin1
+2025-03-15T21:46:20.769+08:00  WARN 90704 --- [HikariPool-1 housekeeper] com.zaxxer.hikari.pool.HikariPool        : HikariPool-1 - Thread starvation or clock leap detected (housekeeper delta=9m24s531ms).

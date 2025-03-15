@@ -1,0 +1,50 @@
+name: Deploy to Aliyun ECS
+
+on:
+  push:
+    branches: [ main, master ]
+    paths:
+      - 'backend/**'
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+    
+    - name: Set up JDK 17
+      uses: actions/setup-java@v3
+      with:
+        distribution: 'temurin'
+        java-version: '17'
+        cache: 'maven'
+    
+    - name: Build with Maven
+      run: |
+        cd backend
+        mvn clean package -DskipTests
+    
+    - name: Setup SSH
+      uses: webfactory/ssh-agent@v0.8.0
+      with:
+        ssh-private-key: ${{ secrets.ALIYUN_SSH_PRIVATE_KEY }}
+    
+    - name: Add Aliyun ECS to known hosts
+      run: |
+        mkdir -p ~/.ssh
+        ssh-keyscan ${{ secrets.ALIYUN_HOST }} >> ~/.ssh/known_hosts
+    
+    - name: Upload JAR to Aliyun ECS
+      run: |
+        cd backend
+        scp target/*.jar ${{ secrets.ALIYUN_USER }}@${{ secrets.ALIYUN_HOST }}:${{ secrets.DEPLOY_PATH }}/app.jar
+    
+    - name: Deploy and Restart Application
+      run: |
+        ssh ${{ secrets.ALIYUN_USER }}@${{ secrets.ALIYUN_HOST }} '
+          cd ${{ secrets.DEPLOY_PATH }} && 
+          chmod +x deploy.sh && 
+          ./deploy.sh
+        ' 
