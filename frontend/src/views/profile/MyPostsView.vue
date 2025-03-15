@@ -224,6 +224,12 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import { format } from 'date-fns'
 import { useLostItemsStore } from '@/stores/lostItems'
 import { useFoundItemsStore } from '@/stores/foundItems'
+import {
+  getLostStatusLabel,
+  getLostStatusType,
+  getFoundStatusLabel,
+  getFoundStatusType
+} from '@/utils/statusHelpers'
 
 const router = useRouter()
 const lostItemsStore = useLostItemsStore()
@@ -323,32 +329,6 @@ const deleteLostItem = (id, title) => {
     })
 }
 
-const getLostStatusLabel = (status) => {
-  switch (status) {
-    case 'pending':
-      return '寻找中'
-    case 'found':
-      return '已找到'
-    case 'closed':
-      return '已关闭'
-    default:
-      return '未知'
-  }
-}
-
-const getLostStatusType = (status) => {
-  switch (status) {
-    case 'pending':
-      return 'warning'
-    case 'found':
-      return 'success'
-    case 'closed':
-      return 'info'
-    default:
-      return 'info'
-  }
-}
-
 // 失物招领相关方法
 const fetchFoundItems = async () => {
   loadingFoundItems.value = true
@@ -408,36 +388,6 @@ const deleteFoundItem = (id, title) => {
     .catch(() => {
       // 用户取消操作，不执行任何操作
     })
-}
-
-const getFoundStatusLabel = (status) => {
-  switch (status) {
-    case 'unclaimed':
-      return '待认领'
-    case 'claimed':
-      return '已认领'
-    case 'processing':
-      return '认领中'
-    case 'closed':
-      return '已关闭'
-    default:
-      return '未知'
-  }
-}
-
-const getFoundStatusType = (status) => {
-  switch (status) {
-    case 'unclaimed':
-      return 'primary'
-    case 'processing':
-      return 'warning'
-    case 'claimed':
-      return 'success'
-    case 'closed':
-      return 'info'
-    default:
-      return 'info'
-  }
 }
 
 // 初始化

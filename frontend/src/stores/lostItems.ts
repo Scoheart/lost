@@ -1,6 +1,7 @@
 // stores/lostItems.ts
 import { defineStore } from 'pinia'
 import apiClient from '@/utils/api'
+import { getUpdateEndpoint, handleApiError, processCommentsResponse } from '@/utils/apiHelpers'
 
 export interface LostItem {
   id: number
@@ -24,9 +25,17 @@ export interface Comment {
   content: string
   userId: number
   username: string
+  userAvatar?: string
   itemId: number
   itemType: 'lost' | 'found'
   createdAt: string
+}
+
+export interface CommentPagination {
+  currentPage: number
+  pageSize: number
+  totalItems: number
+  totalPages: number
 }
 
 export interface LostItemsState {
@@ -35,6 +44,7 @@ export interface LostItemsState {
   comments: Comment[]
   loading: boolean
   error: string | null
+  commentPagination: CommentPagination
   filters: {
     category: string | null
     status: string | null
@@ -54,19 +64,29 @@ export const useLostItemsStore = defineStore('lostItems', {
     comments: [],
     loading: false,
     error: null,
+    commentPagination: {
+      currentPage: 1,
+      pageSize: 10,
+      totalItems: 0,
+      totalPages: 1
+    },
     filters: {
       category: null,
       status: null,
-      keyword: null,
+      keyword: null
     },
     pagination: {
       page: 1,
       pageSize: 10,
-      total: 0,
-    },
+      total: 0
+    }
   }),
 
   getters: {
+    totalComments: (state) => state.commentPagination.totalItems,
+    pendingItems: (state) => state.items.filter(item => item.status === 'pending'),
+    foundItems: (state) => state.items.filter(item => item.status === 'found'),
+    closedItems: (state) => state.items.filter(item => item.status === 'closed'),
     filteredItems: (state) => {
       let result = [...state.items]
 
@@ -163,17 +183,28 @@ export const useLostItemsStore = defineStore('lostItems', {
 
       try {
         const response = await apiClient.get(`/lost-items/${id}`)
-        this.currentItem = response.data.data || response.data
 
-        // 同时获取评论
-        await this.fetchComments(id)
+        // 确保我们有有效的响应数据
+        if (response.data) {
+          // 支持多种响应格式
+          if (response.data.data && (typeof response.data.data === 'object')) {
+            this.currentItem = response.data.data;
+          } else {
+            this.currentItem = response.data;
+          }
 
-        return { success: true, data: this.currentItem }
+          return { success: true, data: this.currentItem };
+        } else {
+          this.error = '获取寻物启事详情失败，数据格式有误';
+          return { success: false, message: this.error };
+        }
       } catch (error: any) {
-        this.error = error.response?.data?.message || '获取寻物启事详情失败'
-        return { success: false, message: this.error }
+        console.error('Failed to fetch lost item:', error);
+        this.error = error.response?.data?.message || '获取寻物启事详情失败';
+        this.currentItem = null; // 确保清除当前物品
+        return { success: false, message: this.error };
       } finally {
-        this.loading = false
+        this.loading = false;
       }
     },
 
@@ -228,14 +259,65 @@ export const useLostItemsStore = defineStore('lostItems', {
       }
     },
 
-    async fetchComments(itemId: number) {
+    async fetchComments(itemId: number, page = 1, size = 10) {
       try {
-        const response = await apiClient.get(`/lost-items/${itemId}/comments`)
-        this.comments = response.data.data || response.data || []
-        return { success: true, data: this.comments }
+        const response = await apiClient.get('/comments', {
+          params: {
+            itemId,
+            itemType: 'lost',
+            page,
+            size
+          }
+        })
+
+        console.log('Comments API response:', response.data);
+
+        // 根据API响应示例更新处理逻辑
+        if (response.data && response.data.success) {
+          // 处理 { success: true, data: { comments: [], ... } } 格式
+          const responseData = response.data.data || {};
+
+          // 确保comments是数组，即使是空数组
+          this.comments = Array.isArray(responseData.comments) ? responseData.comments : [];
+
+          // 更新分页信息
+          this.commentPagination = {
+            currentPage: responseData.currentPage || 1,
+            pageSize: responseData.pageSize || 10,
+            totalItems: responseData.totalItems || 0,
+            totalPages: responseData.totalPages || 0
+          }
+
+          return { success: true, data: this.comments };
+        } else {
+          // 处理失败的响应
+          console.warn('Comments API returned unsuccessful response:', response.data);
+          this.comments = [];
+          this.commentPagination = {
+            currentPage: 1,
+            pageSize: 10,
+            totalItems: 0,
+            totalPages: 0
+          };
+          return {
+            success: false,
+            message: response.data?.message || '获取评论失败'
+          };
+        }
       } catch (error: any) {
-        console.error('获取评论失败', error)
-        return { success: false, message: error.response?.data?.message || '获取评论失败' }
+        console.error('Failed to fetch comments:', error);
+        // 确保在错误情况下仍有有效数据
+        this.comments = [];
+        this.commentPagination = {
+          currentPage: 1,
+          pageSize: 10,
+          totalItems: 0,
+          totalPages: 0
+        };
+        return {
+          success: false,
+          message: error.response?.data?.message || '获取评论失败'
+        };
       }
     },
 
@@ -276,7 +358,16 @@ export const useLostItemsStore = defineStore('lostItems', {
       this.error = null
 
       try {
-        const response = await apiClient.put(`/lost-items/${id}`, itemData)
+        // 使用专门的状态更新端点
+        let endpoint = `/lost-items/${id}`;
+
+        // 如果仅更新状态，使用专门的状态更新端点
+        if (itemData && Object.keys(itemData).length === 1 && 'status' in itemData) {
+          endpoint = `/lost-items/${id}/status`;
+          console.log('使用状态更新API端点:', endpoint);
+        }
+
+        const response = await apiClient.put(endpoint, itemData)
         const updatedItem = response.data.item || response.data.data || response.data
 
         // 更新当前查看的物品（如果是同一个）
@@ -326,22 +417,108 @@ export const useLostItemsStore = defineStore('lostItems', {
       }
     },
 
-    async addComment(comment: { content: string; itemId: number }) {
+    async addComment(itemId: number, content: string) {
       try {
-        const response = await apiClient.post(`/lost-items/${comment.itemId}/comments`, {
-          content: comment.content
+        const response = await apiClient.post('/comments', {
+          itemId,
+          itemType: 'lost',
+          content
         })
 
-        const newComment = response.data.data || response.data
-        this.comments.unshift(newComment)
+        console.log('Add comment API response:', response.data);
 
-        return { success: true, data: newComment }
+        // 评论添加成功后，重新获取评论列表
+        if (response.data && response.data.success) {
+          return {
+            success: true,
+            message: '评论添加成功',
+            data: response.data.data
+          };
+        } else {
+          return {
+            success: false,
+            message: response.data?.message || '评论添加失败'
+          };
+        }
       } catch (error: any) {
+        console.error('Failed to add comment:', error);
         return {
           success: false,
-          message: error.response?.data?.message || '发表评论失败'
-        }
+          message: error.response?.data?.message || '评论添加失败'
+        };
       }
-    }
+    },
+
+    /**
+     * 将寻物启事标记为"已找到"
+     * @param id 寻物启事ID
+     * @returns 操作结果
+     */
+    async markAsFound(id: number) {
+      if (!id) return { success: false, message: '无效的ID' }
+
+      console.log(`将寻物启事 #${id} 标记为已找到`)
+
+      try {
+        // 使用专用的状态更新端点
+        const endpoint = `/lost-items/${id}/status`
+        const response = await apiClient.put(endpoint, { status: 'found' })
+
+        // 更新本地状态
+        if (this.currentItem?.id === id) {
+          this.currentItem.status = 'found'
+        }
+
+        // 更新列表中的状态
+        const itemIndex = this.items.findIndex(item => item.id === id)
+        if (itemIndex !== -1) {
+          this.items[itemIndex].status = 'found'
+        }
+
+        return {
+          success: true,
+          message: '寻物启事已标记为已找到',
+          data: response.data
+        }
+      } catch (error: any) {
+        return handleApiError(error, '更新寻物状态失败')
+      }
+    },
+
+    /**
+     * 关闭寻物启事
+     * @param id 寻物启事ID
+     * @returns 操作结果
+     */
+    async closeItem(id: number) {
+      if (!id) return { success: false, message: '无效的ID' }
+
+      console.log(`关闭寻物启事 #${id}`)
+
+      try {
+        // 使用专用的状态更新端点
+        const endpoint = `/lost-items/${id}/status`
+        const response = await apiClient.put(endpoint, { status: 'closed' })
+
+        // 更新本地状态
+        if (this.currentItem?.id === id) {
+          this.currentItem.status = 'closed'
+        }
+
+        // 更新列表中的状态
+        const itemIndex = this.items.findIndex(item => item.id === id)
+        if (itemIndex !== -1) {
+          this.items[itemIndex].status = 'closed'
+        }
+
+        return {
+          success: true,
+          message: '寻物启事已关闭',
+          data: response.data
+        }
+      } catch (error: any) {
+        return handleApiError(error, '关闭寻物启事失败')
+      }
+    },
   },
 })

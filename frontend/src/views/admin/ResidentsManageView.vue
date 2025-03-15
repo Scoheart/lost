@@ -49,8 +49,8 @@
         </el-table-column>
         <el-table-column label="状态" width="100">
           <template #default="scope">
-            <el-tag :type="scope.row.status === 'active' ? 'success' : 'danger'">
-              {{ scope.row.status === 'active' ? '正常' : '锁定' }}
+            <el-tag :type="scope.row.isEnabled ? 'success' : 'danger'">
+              {{ scope.row.isEnabled ? '正常' : '锁定' }}
             </el-tag>
           </template>
         </el-table-column>
@@ -67,13 +67,13 @@
                 编辑
               </el-button>
               <el-button
-                :type="scope.row.status === 'active' ? 'danger' : 'success'"
+                :type="scope.row.isEnabled ? 'danger' : 'success'"
                 size="small"
                 @click="toggleResidentStatus(scope.row)"
-                :icon="scope.row.status === 'active' ? 'Lock' : 'Unlock'"
+                :icon="scope.row.isEnabled ? 'Lock' : 'Unlock'"
                 text
               >
-                {{ scope.row.status === 'active' ? '锁定' : '解锁' }}
+                {{ scope.row.isEnabled ? '锁定' : '解锁' }}
               </el-button>
               <el-button
                 type="danger"
@@ -134,17 +134,17 @@
             show-password
           />
         </el-form-item>
-        <el-form-item label="状态" prop="status">
-          <el-select v-model="residentForm.status" placeholder="请选择状态" style="width: 100%">
-            <el-option label="正常" value="active" />
-            <el-option label="锁定" value="locked" />
+        <el-form-item label="状态" prop="isEnabled">
+          <el-select v-model="residentForm.isEnabled" placeholder="请选择状态" style="width: 100%">
+            <el-option label="正常" :value="true" />
+            <el-option label="锁定" :value="false" />
           </el-select>
         </el-form-item>
       </el-form>
       <template #footer>
         <span class="dialog-footer">
           <el-button @click="dialogVisible = false">取消</el-button>
-          <el-button type="primary" @click="saveResident" :loading="submitting">
+          <el-button type="primary" @click="handleSaveResident" :loading="submitting">
             {{ editingResident ? '保存' : '添加' }}
           </el-button>
         </span>
@@ -167,9 +167,13 @@ interface Resident {
   username: string
   email: string
   phone?: string
+  role: string
+  avatar?: string | null
+  realName?: string | null
+  isEnabled: boolean
+  isLocked: boolean
   createdAt: string
   updatedAt: string
-  status: 'active' | 'locked'
 }
 
 // 状态管理
@@ -191,7 +195,7 @@ const residentForm = reactive({
   email: '',
   phone: '',
   password: '',
-  status: 'active' as 'active' | 'locked'
+  isEnabled: true
 })
 
 // 表单验证规则
@@ -212,7 +216,7 @@ const formRules = reactive<FormRules>({
     }
   ],
   password: [
-    { required: true, message: '请输入密码', trigger: 'blur', required: !editingResident.value },
+    { required: !editingResident.value, message: '请输入密码', trigger: 'blur' },
     { min: 6, message: '密码长度不能小于6个字符', trigger: 'blur' }
   ]
 })
@@ -232,9 +236,15 @@ const loadResidents = async () => {
       search: searchQuery.value || undefined
     }
 
-    const response = await apiClient.get('/admin/residents', { params })
-    residents.value = response.data.data.content
-    total.value = response.data.data.totalElements
+    const response = await apiClient.get('/residents', { params })
+    console.log('Residents API Response:', response.data)
+
+    if (response.data.success) {
+      residents.value = response.data.data.items || []
+      total.value = response.data.data.totalItems || 0
+    } else {
+      ElMessage.error(response.data.message || '获取居民数据失败')
+    }
   } catch (error) {
     console.error('Failed to load residents:', error)
     ElMessage.error('加载居民数据失败')
@@ -274,7 +284,7 @@ const openEditDialog = (resident: Resident) => {
   residentForm.username = resident.username
   residentForm.email = resident.email
   residentForm.phone = resident.phone || ''
-  residentForm.status = resident.status
+  residentForm.isEnabled = resident.isEnabled
   dialogVisible.value = true
 }
 
@@ -284,13 +294,13 @@ const resetForm = () => {
   residentForm.email = ''
   residentForm.phone = ''
   residentForm.password = ''
-  residentForm.status = 'active'
+  residentForm.isEnabled = true
   if (residentFormRef.value) {
     residentFormRef.value.resetFields()
   }
 }
 
-const saveResident = async () => {
+const handleSaveResident = async () => {
   if (!residentFormRef.value) return
 
   await residentFormRef.value.validate(async (valid) => {
@@ -300,18 +310,29 @@ const saveResident = async () => {
         if (editingResident.value) {
           // 编辑现有居民
           const { password, ...updateData } = residentForm
-          await apiClient.put(`/admin/residents/${residentForm.id}`, updateData)
-          ElMessage.success('居民信息更新成功')
+          const result = await apiClient.put(`/residents/${residentForm.id}`, updateData)
+          if (result.data.success) {
+            ElMessage.success('居民信息已更新')
+            dialogVisible.value = false
+            loadResidents()
+          } else {
+            ElMessage.error(result.data.message || '更新居民失败')
+          }
         } else {
           // 添加新居民
-          await apiClient.post('/admin/residents', residentForm)
-          ElMessage.success('居民添加成功')
+          const result = await apiClient.post('/residents', residentForm)
+          if (result.data.success) {
+            ElMessage.success('居民已添加')
+            dialogVisible.value = false
+            loadResidents()
+          } else {
+            ElMessage.error(result.data.message || '添加居民失败')
+          }
         }
-        dialogVisible.value = false
-        loadResidents()
       } catch (error: any) {
-        const errorMsg = error.response?.data?.message || '操作失败，请稍后再试'
-        ElMessage.error(errorMsg)
+        const message = error.response?.data?.message || (editingResident.value ? '更新居民失败' : '添加居民失败')
+        ElMessage.error(message)
+        console.error('Failed to save resident:', error)
       } finally {
         submitting.value = false
       }
@@ -320,8 +341,8 @@ const saveResident = async () => {
 }
 
 const toggleResidentStatus = async (resident: Resident) => {
-  const action = resident.status === 'active' ? '锁定' : '解锁'
-  const newStatus = resident.status === 'active' ? 'locked' : 'active'
+  const action = resident.isEnabled ? '锁定' : '解锁'
+  const newStatus = resident.isEnabled ? false : true
 
   try {
     await ElMessageBox.confirm(
@@ -334,13 +355,16 @@ const toggleResidentStatus = async (resident: Resident) => {
       }
     )
 
-    await apiClient.put(`/admin/residents/${resident.id}/status`, {
-      status: newStatus
+    const result = await apiClient.put(`/residents/${resident.id}/status`, {
+      isEnabled: newStatus
     })
 
-    ElMessage.success(`用户${action}成功`)
-    // 更新本地数据
-    resident.status = newStatus
+    if (result.data.success) {
+      resident.isEnabled = newStatus
+      ElMessage.success(`用户${action}成功`)
+    } else {
+      ElMessage.error(result.data.message || `${action}失败，请稍后再试`)
+    }
   } catch (error: any) {
     if (error !== 'cancel') {
       const errorMsg = error.response?.data?.message || `${action}失败，请稍后再试`
@@ -357,13 +381,17 @@ const deleteResident = async (resident: Resident) => {
       {
         confirmButtonText: '确定删除',
         cancelButtonText: '取消',
-        type: 'danger'
+        type: 'warning'
       }
     )
 
-    await apiClient.delete(`/admin/residents/${resident.id}`)
-    ElMessage.success('用户删除成功')
-    loadResidents()
+    const result = await apiClient.delete(`/residents/${resident.id}`)
+    if (result.data.success) {
+      ElMessage.success('用户删除成功')
+      loadResidents()
+    } else {
+      ElMessage.error(result.data.message || '删除失败')
+    }
   } catch (error: any) {
     if (error !== 'cancel') {
       const errorMsg = error.response?.data?.message || '删除失败，请稍后再试'

@@ -179,7 +179,7 @@
 
         <!-- 评论区 -->
         <div class="comments-section">
-          <h2 class="section-title">留言板 ({{ comments.length }}条)</h2>
+          <h2 class="section-title">留言板 ({{ totalComments }}条)</h2>
 
           <!-- 评论列表 -->
           <div class="comments-list" v-if="comments.length > 0">
@@ -187,12 +187,12 @@
               <el-timeline-item
                 v-for="comment in comments"
                 :key="comment.id"
-                :timestamp="formatDate(comment.createdAt)"
+                :timestamp="formatDate(comment.createdAt, true)"
                 :type="getTimelineItemType(comment.id)"
               >
                 <el-card class="comment-card">
                   <div class="comment-author">
-                    <el-avatar :size="32" :src="''">{{ getInitials(comment.username) }}</el-avatar>
+                    <el-avatar :size="32" :src="comment.userAvatar || ''">{{ getInitials(comment.username) }}</el-avatar>
                     <span class="author-name">{{ comment.username }}</span>
                   </div>
                   <div class="comment-content">
@@ -201,6 +201,19 @@
                 </el-card>
               </el-timeline-item>
             </el-timeline>
+
+            <!-- 分页 -->
+            <div class="pagination-container" v-if="totalComments > pageSize">
+              <el-pagination
+                v-model:current-page="currentPage"
+                v-model:page-size="pageSize"
+                :page-sizes="[5, 10, 20, 50]"
+                :total="totalComments"
+                layout="total, sizes, prev, pager, next, jumper"
+                @size-change="handleSizeChange"
+                @current-change="handlePageChange"
+              />
+            </div>
           </div>
 
           <!-- 无评论提示 -->
@@ -373,6 +386,8 @@ const commentForm = ref({
 const commentSubmitting = ref(false)
 const claimDialogVisible = ref(false)
 const actionLoading = ref(false)
+const currentPage = ref(1)
+const pageSize = ref(10)
 
 // 计算属性
 const itemId = computed(() => {
@@ -402,6 +417,8 @@ const relatedItems = computed(() => {
     .slice(0, 4) // 最多显示4个相关物品
 })
 
+const totalComments = computed(() => foundItemsStore.totalComments)
+
 // 方法
 // 获取用户名首字母，用于头像
 const getInitials = (username: string) => {
@@ -413,7 +430,7 @@ const formatDate = (dateString: string, full = false) => {
   try {
     const date = new Date(dateString)
     return full
-      ? format(date, 'yyyy年MM月dd日 HH:mm', { locale: zhCN })
+      ? format(date, 'yyyy年MM月dd日 HH:mm:ss', { locale: zhCN })
       : format(date, 'yyyy年MM月dd日', { locale: zhCN })
   } catch (error) {
     return dateString
@@ -477,49 +494,100 @@ const goToCommentForm = () => {
   })
 }
 
+// 加载物品详情
+const loadItemDetail = async () => {
+  try {
+    loading.value = true;
+    error.value = null;
+
+    // 获取物品ID
+    const itemId = Number(route.params.id);
+    if (isNaN(itemId)) {
+      error.value = '无效的物品ID';
+      return;
+    }
+
+    // 分别获取物品详情和评论
+    const itemResult = await foundItemsStore.fetchFoundItemById(itemId);
+
+    if (!itemResult.success) {
+      error.value = itemResult.message || '获取失物招领失败';
+      return;
+    }
+
+    // 物品详情获取成功后，获取评论
+    const commentsResult = await foundItemsStore.fetchComments(
+      itemId,
+      currentPage.value,
+      pageSize.value
+    );
+
+    // 如果评论获取失败，只记录警告但继续显示物品详情
+    if (!commentsResult.success) {
+      console.warn('Failed to fetch comments:', commentsResult.message);
+      // 不阻止页面显示，只显示物品信息
+    }
+
+    // 获取相关物品
+    if (foundItem.value && foundItem.value.category) {
+      await foundItemsStore.fetchFoundItems({
+        category: foundItem.value.category,
+        page: 1,
+        pageSize: 4
+      });
+    }
+
+    // 滚动到顶部
+    window.scrollTo(0, 0);
+  } catch (error) {
+    console.error('Error loading found item details:', error);
+    error.value = error.message || '获取失物招领详情时发生错误';
+  } finally {
+    loading.value = false;
+  }
+};
+
 // 提交评论
 const submitComment = async () => {
   if (!commentForm.value.content.trim()) {
-    ElMessage.warning('留言内容不能为空')
-    return
+    ElMessage.warning('评论不能为空');
+    return;
   }
 
-  if (!isLoggedIn.value) {
-    goToLogin()
-    return
+  if (!userStore.isAuthenticated) {
+    ElMessage.warning('请先登录');
+    return;
   }
 
-  if (!itemId.value) return
-
-  commentSubmitting.value = true
+  commentSubmitting.value = true;
   try {
-    const result = await foundItemsStore.addComment({
-      content: commentForm.value.content,
-      itemId: itemId.value
-    })
+    const result = await foundItemsStore.addComment(itemId.value, commentForm.value.content);
 
     if (result.success) {
-      ElMessage.success('留言发表成功')
-      commentForm.value.content = ''
-      // 重新获取评论
-      await foundItemsStore.fetchComments(itemId.value)
+      commentForm.value.content = ''; // 清空评论内容
+      currentPage.value = 1; // 重置到第一页以便查看新评论
+
+      // 重新加载评论
+      await foundItemsStore.fetchComments(itemId.value, currentPage.value, pageSize.value);
+
+      ElMessage.success('评论成功');
     } else {
-      ElMessage.error(result.message || '留言发表失败')
+      ElMessage.error(result.message || '评论失败');
     }
   } catch (error) {
-    console.error('Failed to submit comment:', error)
-    ElMessage.error('留言发表失败，请稍后再试')
+    console.error('Error submitting comment:', error);
+    ElMessage.error('评论提交时发生错误');
   } finally {
-    commentSubmitting.value = false
+    commentSubmitting.value = false;
   }
 }
 
-// 标记为已认领
+// 将失物招领标记为"已认领"
 const markAsClaimed = async () => {
   if (!foundItem.value || !itemId.value) return
 
   ElMessageBox.confirm(
-    '确认此物品已被失主认领吗？',
+    '确认此物品已被认领吗？更新后状态将变为"已认领"。',
     '更新状态',
     {
       confirmButtonText: '确认',
@@ -529,14 +597,12 @@ const markAsClaimed = async () => {
   ).then(async () => {
     actionLoading.value = true
     try {
-      const result = await foundItemsStore.updateFoundItem(itemId.value!, {
-        status: 'claimed'
-      })
+      // 使用专用的状态更新函数
+      const result = await foundItemsStore.markAsClaimed(itemId.value)
 
       if (result.success) {
         ElMessage.success('状态已更新为"已认领"')
-        // 重新获取物品详情
-        await foundItemsStore.fetchFoundItemById(itemId.value!)
+        // 不需要重新获取物品详情，因为markAsClaimed已经更新了本地状态
       } else {
         ElMessage.error(result.message || '更新失败')
       }
@@ -551,12 +617,12 @@ const markAsClaimed = async () => {
   })
 }
 
-// 关闭失物招领信息
+// 关闭失物招领
 const closeItem = async () => {
   if (!foundItem.value || !itemId.value) return
 
   ElMessageBox.confirm(
-    '确认关闭此失物招领信息吗？关闭后将不再公开展示。',
+    '确认关闭此失物招领吗？关闭后将不再公开展示。',
     '关闭失物招领',
     {
       confirmButtonText: '确认关闭',
@@ -566,19 +632,17 @@ const closeItem = async () => {
   ).then(async () => {
     actionLoading.value = true
     try {
-      const result = await foundItemsStore.updateFoundItem(itemId.value!, {
-        status: 'closed'
-      })
+      // 使用专用的关闭函数
+      const result = await foundItemsStore.closeItem(itemId.value)
 
       if (result.success) {
-        ElMessage.success('失物招领信息已关闭')
-        // 重新获取物品详情
-        await foundItemsStore.fetchFoundItemById(itemId.value!)
+        ElMessage.success('失物招领已关闭')
+        router.push('/found-items')
       } else {
         ElMessage.error(result.message || '关闭失败')
       }
     } catch (error) {
-      console.error('Failed to close item:', error)
+      console.error('Failed to close found item:', error)
       ElMessage.error('关闭失败，请稍后再试')
     } finally {
       actionLoading.value = false
@@ -625,24 +689,6 @@ const confirmDeleteItem = () => {
   })
 }
 
-// 加载物品详情和评论
-const loadItemDetail = async () => {
-  if (!itemId.value) return
-
-  loading.value = true
-  error.value = false
-
-  try {
-    await foundItemsStore.fetchFoundItemById(itemId.value)
-    await foundItemsStore.fetchComments(itemId.value)
-  } catch (err) {
-    console.error('Failed to load item detail:', err)
-    error.value = true
-  } finally {
-    loading.value = false
-  }
-}
-
 // 路由参数变化时重新加载数据
 watch(
   () => route.params.id,
@@ -656,6 +702,16 @@ watch(
 onMounted(() => {
   loadItemDetail()
 })
+
+const handleSizeChange = (newSize: number) => {
+  pageSize.value = newSize
+  loadItemDetail()
+}
+
+const handlePageChange = (newPage: number) => {
+  currentPage.value = newPage
+  loadItemDetail()
+}
 </script>
 
 <style scoped>
@@ -875,6 +931,15 @@ onMounted(() => {
 .claim-note {
   margin-top: 20px;
   color: #909399;
+}
+
+.color-note {
+  color: #909399;
+}
+
+.pagination-container {
+  margin-top: 20px;
+  text-align: center;
 }
 
 @media (max-width: 768px) {
