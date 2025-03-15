@@ -77,6 +77,16 @@ public class FoundItemServiceImpl implements FoundItemService {
         foundItem.setUserId(item.getUserId());
         foundItem.setCreatedAt(item.getCreatedAt());
         
+        // 如果状态为空，保留原有状态值
+        if (foundItem.getStatus() == null) {
+            log.debug("前端未提供状态值，保留原有状态: {}", item.getStatus());
+            foundItem.setStatus(item.getStatus());
+        } else if (!VALID_STATUSES.contains(foundItem.getStatus())) {
+            // 如果提供了状态但不是有效值，使用原有状态
+            log.warn("提供的状态值无效: {}, 使用原有状态: {}", foundItem.getStatus(), item.getStatus());
+            foundItem.setStatus(item.getStatus());
+        }
+        
         // 更新失物招领
         foundItemRepository.update(foundItem);
         

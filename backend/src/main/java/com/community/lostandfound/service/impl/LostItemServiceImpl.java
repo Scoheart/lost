@@ -77,6 +77,16 @@ public class LostItemServiceImpl implements LostItemService {
         lostItem.setUserId(item.getUserId());
         lostItem.setCreatedAt(item.getCreatedAt());
         
+        // 如果状态为空，保留原有状态值
+        if (lostItem.getStatus() == null) {
+            log.debug("前端未提供状态值，保留原有状态: {}", item.getStatus());
+            lostItem.setStatus(item.getStatus());
+        } else if (!VALID_STATUSES.contains(lostItem.getStatus())) {
+            // 如果提供了状态但不是有效值，使用原有状态
+            log.warn("提供的状态值无效: {}, 使用原有状态: {}", lostItem.getStatus(), item.getStatus());
+            lostItem.setStatus(item.getStatus());
+        }
+        
         // 更新寻物启事
         lostItemRepository.update(lostItem);
         

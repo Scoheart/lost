@@ -2,6 +2,7 @@ package com.community.lostandfound.controller;
 
 import com.community.lostandfound.dto.admin.AdminUserDto;
 import com.community.lostandfound.dto.admin.AdminUserPageDto;
+import com.community.lostandfound.dto.admin.RegisterAdminRequest;
 import com.community.lostandfound.dto.admin.UpdateAdminStatusRequest;
 import com.community.lostandfound.dto.common.ApiResponse;
 import com.community.lostandfound.dto.user.UserProfileDto;
@@ -12,6 +13,7 @@ import com.community.lostandfound.service.UserService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -31,6 +33,81 @@ import java.util.stream.Collectors;
 public class ResidentController {
 
     private final UserService userService;
+
+    /**
+     * Create a new resident user
+     * @param residentData the resident data for creation
+     * @return the created resident user details
+     */
+    @PostMapping
+    @PreAuthorize("hasAnyRole('ADMIN', 'SYSADMIN')")
+    public ResponseEntity<ApiResponse<AdminUserDto>> createResident(
+            @Valid @RequestBody Map<String, Object> residentData) {
+        
+        log.debug("Creating new resident user: {}", residentData);
+        
+        // Extract required fields
+        String username = (String) residentData.get("username");
+        String email = (String) residentData.get("email");
+        String password = (String) residentData.get("password");
+        String phone = (String) residentData.get("phone");
+        Boolean isEnabled = residentData.containsKey("isEnabled") ? 
+                (Boolean) residentData.get("isEnabled") : true;
+        
+        // Validate required fields
+        if (username == null || username.isEmpty()) {
+            throw new BadRequestException("用户名不能为空");
+        }
+        
+        if (email == null || email.isEmpty()) {
+            throw new BadRequestException("邮箱不能为空");
+        }
+        
+        if (password == null || password.isEmpty()) {
+            throw new BadRequestException("密码不能为空");
+        }
+        
+        // Check if username is already taken
+        if (userService.existsByUsername(username)) {
+            throw new BadRequestException("用户名已被使用");
+        }
+        
+        // Check if email is already in use
+        if (userService.existsByEmail(email)) {
+            throw new BadRequestException("邮箱已被使用");
+        }
+        
+        // Create new resident user
+        User resident = new User();
+        resident.setUsername(username);
+        resident.setEmail(email);
+        resident.setPassword(password); // Will be encoded in service layer
+        resident.setRole("resident"); // Always set role to resident
+        resident.setPhone(phone);
+        
+        // Optional fields
+        if (residentData.containsKey("realName")) {
+            resident.setRealName((String) residentData.get("realName"));
+        }
+        
+        if (residentData.containsKey("avatar")) {
+            resident.setAvatar((String) residentData.get("avatar"));
+        }
+        
+        resident.setIsEnabled(isEnabled);
+        resident.setCreatedAt(LocalDateTime.now());
+        resident.setUpdatedAt(LocalDateTime.now());
+        
+        // Register user
+        User createdResident = userService.registerUser(resident);
+        log.debug("New resident user created: id={}, username={}", createdResident.getId(), createdResident.getUsername());
+        
+        // Convert to DTO
+        AdminUserDto residentDto = convertToUserDto(createdResident);
+        
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(ApiResponse.success("居民用户创建成功", residentDto));
+    }
 
     /**
      * Get all resident users with pagination

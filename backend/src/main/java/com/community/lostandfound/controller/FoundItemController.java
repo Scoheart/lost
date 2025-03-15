@@ -17,10 +17,12 @@ import org.springframework.web.bind.annotation.*;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeParseException;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 /**
  * 失物招领控制器
@@ -197,11 +199,16 @@ public class FoundItemController {
             log.debug("未接收到图片或图片列表为空");
         }
         
+        // 记录状态信息，帮助诊断问题
+        log.debug("更新请求中的状态值: {}", foundItem.getStatus());
+        
         try {
             foundItem.setId(id);
             foundItem.setUpdatedAt(LocalDateTime.now());
             
             FoundItem updatedItem = foundItemService.updateFoundItem(foundItem, currentUser.getId());
+            log.debug("更新成功，最终状态值: {}", updatedItem.getStatus());
+            
             return ResponseEntity.ok(ApiResponse.success("失物招领更新成功", updatedItem));
         } catch (ResourceNotFoundException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
@@ -247,12 +254,22 @@ public class FoundItemController {
     /**
      * 查询当前用户的失物招领
      *
+     * @param status 物品状态筛选（可选）：pending, claimed, closed
+     * @param page 页码
+     * @param size 每页条数
+     * @param sort 排序字段：createdAt, updatedAt（默认为createdAt）
+     * @param direction 排序方向：desc, asc（默认为desc）
      * @param currentUser 当前用户
      * @return 当前用户的失物招领列表
      */
     @GetMapping("/my-posts")
     @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<ApiResponse<List<FoundItem>>> getMyFoundItems(
+    public ResponseEntity<ApiResponse<Object>> getMyFoundItems(
+            @RequestParam(required = false) String status,
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "createdAt") String sort,
+            @RequestParam(defaultValue = "desc") String direction,
             @CurrentUser UserDetailsImpl currentUser) {
         
         if (currentUser == null) {
@@ -260,10 +277,63 @@ public class FoundItemController {
                     .body(ApiResponse.fail("未授权操作，请先登录"));
         }
         
-        log.info("查询当前用户的失物招领, 用户ID: {}", currentUser.getId());
+        log.info("查询当前用户的失物招领, 用户ID: {}, 状态: {}, 页码: {}, 每页条数: {}, 排序: {} {}", 
+                currentUser.getId(), status, page, size, sort, direction);
         
+        // 验证排序字段和方向
+        if (!("createdAt".equals(sort) || "updatedAt".equals(sort))) {
+            sort = "createdAt";
+        }
+        if (!("asc".equals(direction) || "desc".equals(direction))) {
+            direction = "desc";
+        }
+        
+        // 页码转为偏移量，数据库中从0开始计算，前端从1开始
+        int offset = (page - 1) * size;
+        
+        // 获取筛选后的数据
         List<FoundItem> items = foundItemService.getFoundItemsByUserId(currentUser.getId());
-        return ResponseEntity.ok(ApiResponse.success("查询当前用户失物招领成功", items));
+        
+        // 根据状态筛选
+        if (status != null && !status.isEmpty()) {
+            items = items.stream()
+                    .filter(item -> status.equals(item.getStatus()))
+                    .collect(Collectors.toList());
+        }
+        
+        // 排序
+        Comparator<FoundItem> comparator;
+        if ("createdAt".equals(sort)) {
+            comparator = Comparator.comparing(FoundItem::getCreatedAt);
+        } else {
+            comparator = Comparator.comparing(FoundItem::getUpdatedAt);
+        }
+        // 如果是降序，反转比较器
+        if ("desc".equals(direction)) {
+            comparator = comparator.reversed();
+        }
+        items.sort(comparator);
+        
+        // 总记录数
+        int totalItems = items.size();
+        
+        // 分页
+        int totalPages = (totalItems + size - 1) / size;
+        int fromIndex = Math.min(offset, totalItems);
+        int toIndex = Math.min(fromIndex + size, totalItems);
+        List<FoundItem> pagedItems = items.subList(fromIndex, toIndex);
+        
+        // 构造带分页信息的响应
+        var result = new HashMap<String, Object>();
+        result.put("items", pagedItems);
+        result.put("currentPage", page);
+        result.put("pageSize", size);
+        result.put("totalItems", totalItems);
+        result.put("totalPages", totalPages);
+        result.put("sort", sort);
+        result.put("direction", direction);
+        
+        return ResponseEntity.ok(ApiResponse.success("查询当前用户失物招领成功", result));
     }
 
     /**
