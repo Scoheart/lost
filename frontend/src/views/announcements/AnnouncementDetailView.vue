@@ -101,11 +101,13 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { User, Calendar } from '@element-plus/icons-vue'
+import type { Announcement } from '@/stores/announcements'
+import { useAnnouncementsStore } from '@/stores/announcements'
 import { format } from 'date-fns'
 import { ElMessage } from 'element-plus'
 import MainLayout from '@/components/layout/MainLayout.vue'
-import { useAnnouncementsStore } from '@/stores/announcements'
+// Import icons
+import { User, Calendar } from '@element-plus/icons-vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -114,7 +116,7 @@ const announcementsStore = useAnnouncementsStore()
 // 状态变量
 const loading = ref(true)
 const error = ref(false)
-const announcement = ref({
+const announcement = ref<Partial<Announcement>>({
   id: 0,
   title: '',
   content: '',
@@ -122,15 +124,12 @@ const announcement = ref({
   publishDate: '',
   isSticky: false
 })
-const relatedAnnouncements = ref([])
+const relatedAnnouncements = ref<Partial<Announcement>[]>([])
 
 // 计算属性
 const contentParagraphs = computed(() => {
-  if (!announcement.value.content) return []
-
-  return announcement.value.content
-    .split('\n')
-    .filter(paragraph => paragraph.trim() !== '')
+  const content = announcement.value.content || ''
+  return content.split('\n').filter(paragraph => paragraph.trim() !== '')
 })
 
 // 方法
@@ -141,9 +140,9 @@ const fetchAnnouncementDetail = async (id: number) => {
   try {
     const response = await announcementsStore.fetchAnnouncementById(id)
 
-    if (response.success) {
+    if (response.success && response.data) {
       announcement.value = response.data
-      document.title = `${announcement.value.title} - 社区公告`
+      document.title = `${announcement.value.title || ''} - 社区公告`
       fetchRelatedAnnouncements()
     } else {
       error.value = true
@@ -162,17 +161,25 @@ const fetchRelatedAnnouncements = async () => {
   try {
     // 在实际应用中，这里会根据当前公告的标签或者分类来获取相关公告
     // 这里简化为获取最新的3条公告，排除当前公告
-    await announcementsStore.fetchAnnouncements()
+    await announcementsStore.fetchAnnouncements({
+      page: 1,
+      pageSize: 10
+    })
+
+    console.log('All announcements for related selection:', announcementsStore.announcements);
 
     relatedAnnouncements.value = announcementsStore.announcements
       .filter(item => item.id !== announcement.value.id)
       .slice(0, 3)
+
+    console.log('Related announcements selected:', relatedAnnouncements.value);
   } catch (error) {
     console.error('Failed to fetch related announcements:', error)
   }
 }
 
-const formatDateTime = (dateString: string) => {
+const formatDateTime = (dateString: string | undefined) => {
+  if (!dateString) return '未知日期'
   try {
     return format(new Date(dateString), 'yyyy-MM-dd HH:mm:ss')
   } catch (error) {
@@ -180,7 +187,8 @@ const formatDateTime = (dateString: string) => {
   }
 }
 
-const formatDate = (dateString: string) => {
+const formatDate = (dateString: string | undefined) => {
+  if (!dateString) return '未知日期'
   try {
     return format(new Date(dateString), 'yyyy-MM-dd')
   } catch (error) {
@@ -188,8 +196,10 @@ const formatDate = (dateString: string) => {
   }
 }
 
-const viewAnnouncementDetail = (id: number) => {
-  router.push(`/announcements/${id}`)
+const viewAnnouncementDetail = (id: number | undefined) => {
+  if (id) {
+    router.push(`/announcements/${id}`)
+  }
 }
 
 // 生命周期钩子

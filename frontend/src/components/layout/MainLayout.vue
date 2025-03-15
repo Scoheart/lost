@@ -10,7 +10,13 @@
           </div>
 
           <div class="header-links">
-            <el-menu mode="horizontal" :router="true" :default-active="activeRoute" class="menu" :ellipsis="false">
+            <el-menu
+              mode="horizontal"
+              :router="true"
+              :default-active="activeRoute"
+              class="menu"
+              :ellipsis="false"
+            >
               <el-menu-item index="/">首页</el-menu-item>
               <el-menu-item index="/announcements">社区公告</el-menu-item>
               <el-menu-item index="/lost-items">寻物启事</el-menu-item>
@@ -70,24 +76,30 @@
         </div>
       </el-main>
 
-      <el-footer height="80px">
+      <el-footer>
         <div class="footer-content">
-          <div class="footer-section">
-            <h4>关于我们</h4>
-            <p>住宅小区互助寻物系统，让邻里互助更便捷</p>
+          <div class="footer-section about">
+            <h3>关于我们</h3>
+            <p>
+              校园失物招领系统旨在帮助校园内丢失物品的同学快速找回物品，也为拾到物品的同学提供一个归还途径。
+            </p>
           </div>
-          <div class="footer-section">
-            <h4>联系我们</h4>
-            <p>邮箱: contact@example.com</p>
-            <p>电话: 010-12345678</p>
+          <div class="footer-section contact">
+            <h3>联系我们</h3>
+            <p><i class="el-icon-message"></i> 邮箱: support@campus-lost.com</p>
+            <p><i class="el-icon-phone"></i> 电话: 123-456-7890</p>
           </div>
-          <div class="footer-section">
-            <h4>快速链接</h4>
-            <p><a href="/lost-items">寻物启事</a> | <a href="/found-items">失物招领</a></p>
-            <p><a href="/announcements">社区公告</a></p>
+          <div class="footer-section links">
+            <h3>快速链接</h3>
+            <p><router-link to="/lost-items">寻物启事</router-link></p>
+            <p><router-link to="/found-items">失物招领</router-link></p>
+            <p><router-link to="/announcements">社区公告</router-link></p>
           </div>
         </div>
-        <div class="copyright">© {{ currentYear }} 住宅小区互助寻物系统 - 版权所有</div>
+        <div class="copyright">
+          <p>© {{ new Date().getFullYear() }} 校园失物招领系统 - 保留所有权利</p>
+          <router-link to="/admin/login" class="admin-link">管理员入口</router-link>
+        </div>
       </el-footer>
     </el-container>
   </div>
@@ -116,13 +128,16 @@ const currentYear = computed(() => new Date().getFullYear())
 const activeRoute = computed(() => router.currentRoute.value.path)
 
 // 监听登录状态变化
-watch(() => userStore.token, (newToken, oldToken) => {
-  console.log('Token changed:', !!newToken)
-  // 只在token发生实际变化且没有用户信息时获取用户数据
-  if (newToken && !userStore.user && !userStore.loading && newToken !== oldToken) {
-    userStore.fetchCurrentUser()
-  }
-})
+watch(
+  () => userStore.token,
+  (newToken, oldToken) => {
+    console.log('Token changed:', !!newToken)
+    // 只在token发生实际变化且没有用户信息时获取用户数据
+    if (newToken && !userStore.user && !userStore.loading && newToken !== oldToken) {
+      userStore.fetchCurrentUser()
+    }
+  },
+)
 
 // 方法
 const handleLogout = () => {
@@ -220,54 +235,86 @@ const handleLogout = () => {
 }
 
 .el-footer {
-  background-color: #f7f7f7;
-  padding: 20px;
-  color: #606266;
+  border-top: 1px solid #e9ecef;
 }
 
 .footer-content {
   display: flex;
-  justify-content: space-around;
-  flex-wrap: wrap;
-  margin-bottom: 12px;
+  justify-content: space-between;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 20px;
 }
 
 .footer-section {
   flex: 1;
-  min-width: 200px;
-  padding: 0 20px;
+  margin-right: 30px;
+  max-width: 350px;
 }
 
-.footer-section h4 {
-  margin-top: 0;
-  margin-bottom: 12px;
+.footer-section:last-child {
+  margin-right: 0;
+}
+
+.footer-section h3 {
+  font-size: 18px;
+  margin-bottom: 15px;
   color: #303133;
+  position: relative;
+  padding-bottom: 10px;
+}
+
+.footer-section h3::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 50px;
+  height: 2px;
+  background-color: #409eff;
 }
 
 .footer-section p {
-  margin: 4px 0;
-  font-size: 14px;
+  margin: 10px 0;
+  color: #606266;
+  line-height: 1.6;
 }
 
 .footer-section a {
   color: #409eff;
   text-decoration: none;
+  transition: color 0.3s ease;
 }
 
 .footer-section a:hover {
-  text-decoration: underline;
+  color: #66b1ff;
+  text-decoration: none;
 }
 
 .copyright {
   text-align: center;
-  font-size: 12px;
-  padding-top: 12px;
+  font-size: 14px;
+  padding: 20px 0 0;
+  margin-top: 30px;
   border-top: 1px solid #e0e0e0;
+  color: #909399;
+  max-width: 1200px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.copyright p {
+  margin-bottom: 10px;
 }
 
 .admin-link {
-  margin-left: 10px;
+  color: #909399;
   font-size: 14px;
+  transition: color 0.3s ease;
+}
+
+.admin-link:hover {
+  color: #409eff;
 }
 
 @media (max-width: 768px) {
@@ -307,17 +354,34 @@ const handleLogout = () => {
 
   .footer-content {
     flex-direction: column;
-    align-items: center;
+    padding: 0 20px;
   }
 
   .footer-section {
-    margin-bottom: 20px;
+    margin-right: 0;
+    margin-bottom: 30px;
+    max-width: 100%;
+    text-align: left;
+  }
+
+  .footer-section h3 {
+    text-align: left;
+  }
+
+  .footer-section h3::after {
+    left: 0;
+    transform: none;
+  }
+
+  .copyright {
+    padding: 20px;
     text-align: center;
+    margin-top: 0;
   }
 
   .admin-link {
-    margin-left: 0;
-    margin-top: 10px;
+    display: block;
+    margin: 10px auto 0;
   }
 }
 </style>

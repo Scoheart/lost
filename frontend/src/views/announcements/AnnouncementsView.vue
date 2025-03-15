@@ -108,10 +108,11 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { Top, Search, Calendar, User } from '@element-plus/icons-vue'
+import type { Announcement } from '@/stores/announcements'
+import { useAnnouncementsStore } from '@/stores/announcements'
 import { format } from 'date-fns'
 import MainLayout from '@/components/layout/MainLayout.vue'
-import { useAnnouncementsStore } from '@/stores/announcements'
+import { Top, Search, Calendar, User } from '@element-plus/icons-vue'
 
 const router = useRouter()
 const announcementsStore = useAnnouncementsStore()
@@ -124,7 +125,11 @@ const pageSize = ref(10)
 
 // 计算属性
 const stickyAnnouncements = computed(() => {
+  // 获取所有置顶公告并按发布日期倒序排列，只取最近的6条
   return announcementsStore.stickyAnnouncements
+    .slice()
+    .sort((a, b) => new Date(b.publishDate).getTime() - new Date(a.publishDate).getTime())
+    .slice(0, 6);
 })
 
 const regularAnnouncements = computed(() => {
@@ -136,11 +141,11 @@ const totalCount = computed(() => {
 })
 
 // 方法
-const viewAnnouncementDetail = (id) => {
+const viewAnnouncementDetail = (id: number) => {
   router.push(`/announcements/${id}`)
 }
 
-const formatDate = (dateString) => {
+const formatDate = (dateString: string) => {
   try {
     return format(new Date(dateString), 'yyyy-MM-dd')
   } catch (error) {
@@ -148,7 +153,7 @@ const formatDate = (dateString) => {
   }
 }
 
-const truncateContent = (content, maxLength = 100) => {
+const truncateContent = (content: string, maxLength = 100) => {
   if (!content) return ''
   if (content.length <= maxLength) return content
   return content.substring(0, maxLength) + '...'
@@ -159,7 +164,7 @@ const handleSearch = () => {
   fetchAnnouncements()
 }
 
-const handlePageChange = (page) => {
+const handlePageChange = (page: number) => {
   currentPage.value = page
   fetchAnnouncements()
 }
@@ -167,7 +172,18 @@ const handlePageChange = (page) => {
 const fetchAnnouncements = async () => {
   loading.value = true
   try {
-    await announcementsStore.fetchAnnouncements()
+    await announcementsStore.fetchAnnouncements({
+      page: currentPage.value,
+      pageSize: pageSize.value,
+      keyword: searchQuery.value || undefined
+    })
+
+    console.log('Announcements fetch complete. Data received:', {
+      all: announcementsStore.announcements,
+      sticky: announcementsStore.stickyAnnouncements,
+      regular: announcementsStore.regularAnnouncements,
+      total: announcementsStore.pagination.total
+    })
   } catch (error) {
     console.error('Failed to fetch announcements:', error)
   } finally {
@@ -218,13 +234,38 @@ onMounted(() => {
   margin-bottom: 40px;
 }
 
+/* Add padding to the column to ensure proper spacing */
+.sticky-announcements .el-col {
+  padding-bottom: 20px;
+}
+
 .announcement-card {
   height: 100%;
-  margin-bottom: 20px;
   position: relative;
   overflow: hidden;
   cursor: pointer;
   transition: all 0.3s ease;
+  /* Add some space between cards */
+  margin: 0 0 10px;
+  /* Remove default padding from the Element Plus card */
+  padding: 0;
+}
+
+/* Style for the inside content of the card */
+.announcement-card :deep(.el-card__body) {
+  padding: 20px;
+}
+
+/* Add hover style to handle the scale effect without overlap */
+.card-hover {
+  transform-origin: center center;
+  transition: all 0.3s ease;
+}
+
+.card-hover:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+  z-index: 1;
 }
 
 .sticky-badge {

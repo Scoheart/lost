@@ -7,7 +7,6 @@ export interface Announcement {
   title: string
   content: string
   isSticky: boolean
-  isActive: boolean
   publishDate: string
   adminId: number
   adminName: string
@@ -42,63 +41,190 @@ export const useAnnouncementsStore = defineStore('announcements', {
 
   getters: {
     stickyAnnouncements: (state) => {
-      return state.announcements.filter(item => item.isSticky && item.isActive)
+      // Get announcements that are sticky
+      return state.announcements.filter(item => item.isSticky);
     },
 
     regularAnnouncements: (state) => {
-      return state.announcements.filter(item => !item.isSticky && item.isActive)
+      // Get announcements that are not sticky
+      return state.announcements.filter(item => !item.isSticky);
+    },
+
+    total: (state) => {
+      return state.pagination.total;
     },
 
     paginatedAnnouncements: (state) => {
-      const start = (state.pagination.page - 1) * state.pagination.pageSize
-      const end = start + state.pagination.pageSize
-      return state.announcements.slice(start, end)
+      const start = (state.pagination.page - 1) * state.pagination.pageSize;
+      const end = start + state.pagination.pageSize;
+      return state.announcements.slice(start, end);
     }
   },
 
   actions: {
-    async fetchAnnouncements() {
+    // 公开接口：获取已发布公告列表
+    async fetchAnnouncements(params?: {
+      page?: number;
+      pageSize?: number;
+      keyword?: string;
+      isSticky?: boolean | null;
+    }) {
       this.loading = true
       this.error = null
 
       try {
+        // 如果提供了参数，使用参数，否则使用默认值
+        const queryParams = params || {
+          page: this.pagination.page,
+          pageSize: this.pagination.pageSize
+        }
+
         const response = await apiClient.get('/announcements', {
-          params: {
-            page: this.pagination.page,
-            pageSize: this.pagination.pageSize
-          }
+          params: queryParams
         })
 
-        this.announcements = response.data.items
-        this.pagination.total = response.data.total
+        // 处理后端返回的数据结构
+        const responseData = response.data.data;
+
+        // 更新公告列表和分页信息
+        this.announcements = responseData.announcements || [];
+        this.pagination.page = responseData.currentPage || 1;
+        this.pagination.pageSize = responseData.pageSize || 10;
+        this.pagination.total = responseData.totalItems || 0;
+
+        return { success: true }
       } catch (error: any) {
         this.error = error.response?.data?.message || '获取公告列表失败'
+        return { success: false, message: this.error }
       } finally {
         this.loading = false
       }
     },
 
+    // 公开接口：获取单个公告详情
     async fetchAnnouncementById(id: number) {
       this.loading = true
       this.error = null
 
       try {
         const response = await apiClient.get(`/announcements/${id}`)
-        this.currentAnnouncement = response.data
+
+        // Handle backend response structure
+        const responseData = response.data.data || response.data;
+        this.currentAnnouncement = responseData.announcement || responseData;
+
+        console.log('Fetched announcement detail:', this.currentAnnouncement);
+
+        return { success: true, data: this.currentAnnouncement }
       } catch (error: any) {
         this.error = error.response?.data?.message || '获取公告详情失败'
+        return { success: false, message: this.error }
       } finally {
         this.loading = false
       }
     },
 
-    // 以下方法仅管理员可用
+    // 公开接口：获取置顶公告（用于首页显示）
+    async fetchStickyAnnouncements() {
+      this.loading = true
+      this.error = null
+
+      try {
+        const response = await apiClient.get('/announcements/sticky')
+        return { success: true, data: response.data }
+      } catch (error: any) {
+        this.error = error.response?.data?.message || '获取置顶公告失败'
+        return { success: false, message: this.error }
+      } finally {
+        this.loading = false
+      }
+    },
+
+    // 管理员接口：获取所有公告
+    async fetchAdminAnnouncements(params?: {
+      page?: number;
+      pageSize?: number;
+      keyword?: string;
+      isSticky?: boolean | null;
+    }) {
+      this.loading = true
+      this.error = null
+
+      try {
+        // 如果提供了参数，使用参数，否则使用默认值
+        const queryParams = params || {
+          page: this.pagination.page,
+          pageSize: this.pagination.pageSize
+        }
+
+        const response = await apiClient.get('/announcements/admin', {
+          params: queryParams
+        })
+
+        // 处理后端返回的数据结构
+        const responseData = response.data.data;
+
+        // 更新公告列表和分页信息
+        this.announcements = responseData.announcements || [];
+        this.pagination.page = responseData.currentPage || 1;
+        this.pagination.pageSize = responseData.pageSize || 10;
+        this.pagination.total = responseData.totalItems || 0;
+
+        return { success: true }
+      } catch (error: any) {
+        this.error = error.response?.data?.message || '获取管理员公告列表失败'
+        return { success: false, message: this.error }
+      } finally {
+        this.loading = false
+      }
+    },
+
+    // 管理员接口：获取当前管理员创建的公告
+    async fetchMyAnnouncements(params?: {
+      page?: number;
+      pageSize?: number;
+      keyword?: string;
+      isSticky?: boolean | null;
+    }) {
+      this.loading = true
+      this.error = null
+
+      try {
+        // 如果提供了参数，使用参数，否则使用默认值
+        const queryParams = params || {
+          page: this.pagination.page,
+          pageSize: this.pagination.pageSize
+        }
+
+        const response = await apiClient.get('/announcements/admin/mine', {
+          params: queryParams
+        })
+
+        // 处理后端返回的数据结构
+        const responseData = response.data.data;
+
+        // 更新公告列表和分页信息
+        this.announcements = responseData.announcements || [];
+        this.pagination.page = responseData.currentPage || 1;
+        this.pagination.pageSize = responseData.pageSize || 10;
+        this.pagination.total = responseData.totalItems || 0;
+
+        return { success: true }
+      } catch (error: any) {
+        this.error = error.response?.data?.message || '获取我的公告列表失败'
+        return { success: false, message: this.error }
+      } finally {
+        this.loading = false
+      }
+    },
+
+    // 管理员接口：创建公告
     async createAnnouncement(announcementData: Partial<Announcement>) {
       this.loading = true
       this.error = null
 
       try {
-        const response = await apiClient.post('/announcements', announcementData)
+        const response = await apiClient.post('/announcements/admin', announcementData)
 
         // 更新列表（可选，取决于后端返回格式）
         if (response.data.announcement) {
@@ -114,20 +240,23 @@ export const useAnnouncementsStore = defineStore('announcements', {
       }
     },
 
-    async updateAnnouncement(id: number, announcementData: Partial<Announcement>) {
-      if (!id) return { success: false, message: '无效的ID' }
+    // 管理员接口：修改公告
+    async updateAnnouncement(announcementData: { id: number } & Partial<Announcement>) {
+      if (!announcementData.id) return { success: false, message: '无效的ID' }
 
       this.loading = true
       this.error = null
 
       try {
-        const response = await apiClient.put(`/announcements/${id}`, announcementData)
+        // 提取id，其余作为数据发送
+        const { id, ...data } = announcementData
+        const response = await apiClient.put(`/announcements/admin/${id}`, data)
 
         // 更新当前查看的公告（如果是同一个）
         if (this.currentAnnouncement?.id === id) {
           this.currentAnnouncement = response.data.announcement || {
             ...this.currentAnnouncement,
-            ...announcementData
+            ...data
           }
         }
 
@@ -136,7 +265,7 @@ export const useAnnouncementsStore = defineStore('announcements', {
         if (announcementIndex !== -1) {
           this.announcements[announcementIndex] = response.data.announcement || {
             ...this.announcements[announcementIndex],
-            ...announcementData
+            ...data
           }
         }
 
@@ -149,6 +278,7 @@ export const useAnnouncementsStore = defineStore('announcements', {
       }
     },
 
+    // 管理员接口：删除公告
     async deleteAnnouncement(id: number) {
       if (!id) return { success: false, message: '无效的ID' }
 
@@ -156,7 +286,7 @@ export const useAnnouncementsStore = defineStore('announcements', {
       this.error = null
 
       try {
-        await apiClient.delete(`/announcements/${id}`)
+        await apiClient.delete(`/announcements/admin/${id}`)
 
         // 从列表中移除
         this.announcements = this.announcements.filter(a => a.id !== id)

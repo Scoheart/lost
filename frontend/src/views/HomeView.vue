@@ -156,8 +156,8 @@
       <!-- 统计数据 -->
       <div class="stats-section">
         <h2 class="section-title text-center">系统总览</h2>
-        <el-row :gutter="20">
-          <el-col :span="6" v-for="stat in stats" :key="stat.id">
+        <el-row :gutter="30">
+          <el-col :xs="12" :sm="12" :md="6" :lg="6" v-for="stat in stats" :key="stat.id">
             <el-card shadow="hover" class="stat-card">
               <el-icon :size="32" :class="stat.color"><component :is="stat.icon" /></el-icon>
               <div class="stat-info">
@@ -515,7 +515,29 @@ onMounted(async () => {
   font-size: 24px;
   font-weight: 600;
   margin: 0;
-  padding-bottom: 10px;
+  padding-bottom: 15px;
+  position: relative;
+  margin-bottom: 25px;
+}
+
+.section-title::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 60px;
+  height: 3px;
+  border-radius: 3px;
+}
+
+.section-title.text-center::after {
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.text-center {
+  text-align: center;
 }
 
 .item-card {
@@ -615,22 +637,34 @@ onMounted(async () => {
 /* 统计卡片 */
 .stats-section {
   margin-top: 60px;
+  margin-bottom: 40px;
 }
 
 .stat-card {
   display: flex;
   align-items: center;
   padding: 20px;
+  margin-bottom: 20px;
+  overflow: hidden;
+  transition: transform 0.3s ease;
+}
+
+.stat-card:hover {
+  transform: translateY(-5px);
 }
 
 .stat-info {
   margin-left: 15px;
+  overflow: hidden;
 }
 
 .stat-title {
   font-size: 16px;
   margin: 0 0 5px;
   color: #606266;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .stat-value {
@@ -660,10 +694,6 @@ onMounted(async () => {
   padding: 20px 0;
 }
 
-.text-center {
-  text-align: center;
-}
-
 @media (max-width: 768px) {
   .banner-text {
     padding: 0 20px;
@@ -683,6 +713,15 @@ onMounted(async () => {
 
   .stat-card {
     margin-bottom: 15px;
+    padding: 15px;
+  }
+
+  .stat-info {
+    margin-left: 10px;
+  }
+
+  .stat-value {
+    font-size: 20px;
   }
 }
 </style>

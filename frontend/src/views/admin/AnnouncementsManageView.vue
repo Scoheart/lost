@@ -18,18 +18,13 @@
             @keyup.enter="handleSearch"
           />
         </el-form-item>
-        <el-form-item label="状态">
-          <el-select v-model="filterForm.status" placeholder="选择状态" clearable>
-            <el-option label="已发布" value="published" />
-            <el-option label="草稿" value="draft" />
-            <el-option label="已下架" value="unpublished" />
-          </el-select>
-        </el-form-item>
-        <el-form-item label="置顶">
-          <el-select v-model="filterForm.isSticky" placeholder="是否置顶" clearable>
-            <el-option label="是" :value="true" />
-            <el-option label="否" :value="false" />
-          </el-select>
+        <el-form-item label="发布人">
+          <el-input
+            v-model="filterForm.adminName"
+            placeholder="输入发布人名称"
+            clearable
+            @keyup.enter="handleSearch"
+          />
         </el-form-item>
         <el-form-item>
           <el-button type="primary" @click="handleSearch">搜索</el-button>
@@ -40,12 +35,19 @@
 
     <!-- 数据表格 -->
     <el-card class="table-card">
+      <!-- Debug state display - remove in production -->
+      <div class="debug-info" style="margin-bottom: 10px; font-size: 12px; color: #909399;">
+        状态: {{ loading ? '加载中' : '已加载' }} |
+        公告数量: {{ announcements.length }} |
+        总计: {{ total }}
+      </div>
+
       <div v-if="loading" class="loading-container">
         <el-skeleton :rows="5" animated />
       </div>
 
       <el-empty
-        v-else-if="announcements.length === 0"
+        v-else-if="!loading && announcements.length === 0"
         description="暂无公告数据"
       >
         <el-button type="primary" @click="openCreateDialog">发布新公告</el-button>
@@ -60,88 +62,65 @@
         highlight-current-row
       >
         <el-table-column type="index" width="50" />
-        <el-table-column prop="title" label="公告标题" min-width="180" show-overflow-tooltip />
-        <el-table-column prop="adminName" label="发布人" width="120" />
-        <el-table-column label="发布时间" width="180">
+        <el-table-column prop="title" label="公告标题" min-width="150" show-overflow-tooltip />
+        <el-table-column prop="adminName" label="发布人" width="100" />
+        <el-table-column label="创建时间" width="170">
           <template #default="scope">
-            {{ formatDate(scope.row.publishDate) }}
+            {{ formatDate(scope.row.createdAt) }}
           </template>
         </el-table-column>
-        <el-table-column label="置顶" width="80" align="center">
+        <el-table-column label="更新时间" width="170">
           <template #default="scope">
-            <el-tag v-if="scope.row.isSticky" type="warning">置顶</el-tag>
-            <el-tag v-else type="info">普通</el-tag>
+            {{ formatDate(scope.row.updatedAt) }}
           </template>
         </el-table-column>
-        <el-table-column label="状态" width="100" align="center">
+        <el-table-column label="操作" width="240" fixed="right">
           <template #default="scope">
-            <el-tag
-              :type="getStatusType(scope.row.status)"
-            >
-              {{ getStatusLabel(scope.row.status) }}
-            </el-tag>
-          </template>
-        </el-table-column>
-        <el-table-column label="操作" width="200" fixed="right">
-          <template #default="scope">
-            <el-button
-              size="small"
-              type="primary"
-              @click="handleEdit(scope.row)"
-              link
-            >
-              编辑
-            </el-button>
-            <el-button
-              v-if="scope.row.status === 'published' && !scope.row.isSticky"
-              size="small"
-              type="warning"
-              @click="handleSetSticky(scope.row)"
-              link
-            >
-              置顶
-            </el-button>
-            <el-button
-              v-if="scope.row.status === 'published' && scope.row.isSticky"
-              size="small"
-              type="info"
-              @click="handleCancelSticky(scope.row)"
-              link
-            >
-              取消置顶
-            </el-button>
-            <el-button
-              v-if="scope.row.status === 'published'"
-              size="small"
-              type="danger"
-              @click="handleUnpublish(scope.row)"
-              link
-            >
-              下架
-            </el-button>
-            <el-button
-              v-if="scope.row.status === 'unpublished'"
-              size="small"
-              type="success"
-              @click="handlePublish(scope.row)"
-              link
-            >
-              发布
-            </el-button>
-            <el-popconfirm
-              title="确定要删除这条公告吗？"
-              @confirm="handleDelete(scope.row)"
-            >
-              <template #reference>
-                <el-button
-                  size="small"
-                  type="danger"
-                  link
-                >
-                  删除
-                </el-button>
-              </template>
-            </el-popconfirm>
+            <div class="operation-buttons">
+              <el-button
+                size="small"
+                type="primary"
+                @click="handleEdit(scope.row)"
+                link
+              >
+                编辑
+              </el-button>
+              <el-button
+                v-if="!scope.row.isSticky"
+                size="small"
+                type="warning"
+                @click="handleSetSticky(scope.row)"
+                link
+              >
+                置顶
+              </el-button>
+              <el-button
+                v-if="scope.row.isSticky"
+                size="small"
+                type="info"
+                @click="handleCancelSticky(scope.row)"
+                link
+              >
+                取消置顶
+              </el-button>
+              <el-popconfirm
+                title="确定要删除这条公告吗?"
+                width="220"
+                placement="top"
+                :hide-after="0"
+                @confirm="handleDelete(scope.row)"
+              >
+                <template #reference>
+                  <el-button
+                    size="small"
+                    type="danger"
+                    link
+                  >
+                    删除
+                  </el-button>
+                </template>
+              </el-popconfirm>
+            </div>
           </template>
         </el-table-column>
       </el-table>
@@ -208,13 +187,6 @@
           >
             {{ isEdit ? '保存' : '发布' }}
           </el-button>
-          <el-button
-            v-if="!isEdit"
-            @click="handleSaveDraft"
-            :loading="submitting"
-          >
-            保存为草稿
-          </el-button>
         </span>
       </template>
     </el-dialog>
@@ -222,7 +194,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, computed, onMounted } from 'vue'
+import { ref, reactive, computed, onMounted, watch } from 'vue'
 import { Plus } from '@element-plus/icons-vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import type { FormInstance, FormRules } from 'element-plus'
@@ -246,8 +218,7 @@ const formRef = ref<FormInstance>()
 // 过滤表单
 const filterForm = reactive({
   keyword: '',
-  status: '',
-  isSticky: null as boolean | null
+  adminName: ''
 })
 
 // 公告表单
@@ -255,8 +226,7 @@ const announcementForm = reactive({
   id: null as number | null,
   title: '',
   content: '',
-  isSticky: false,
-  status: 'published'
+  isSticky: false
 })
 
 // 表单验证规则
@@ -274,49 +244,37 @@ const formRules = reactive<FormRules>({
 // 计算属性
 const announcements = computed(() => announcementsStore.announcements)
 
+// 用于调试的状态计算属性
+const debugState = computed(() => {
+  return {
+    isLoading: loading.value,
+    storeIsLoading: announcementsStore.loading,
+    announcementsLength: announcements.value.length,
+    total: total.value
+  }
+})
+
+// Watch the debug state to track changes
+watch(debugState, (newState) => {
+  console.log('组件状态变化:', newState)
+}, { deep: true })
+
 // 格式化日期
 const formatDate = (dateString: string) => {
   try {
+    if (!dateString) return '未知时间'
     const date = new Date(dateString)
     return format(date, 'yyyy-MM-dd HH:mm:ss')
   } catch (error) {
-    return dateString
-  }
-}
-
-// 获取状态标签
-const getStatusLabel = (status: string) => {
-  switch (status) {
-    case 'published':
-      return '已发布'
-    case 'draft':
-      return '草稿'
-    case 'unpublished':
-      return '已下架'
-    default:
-      return '未知'
-  }
-}
-
-// 获取状态标签类型
-const getStatusType = (status: string) => {
-  switch (status) {
-    case 'published':
-      return 'success'
-    case 'draft':
-      return 'info'
-    case 'unpublished':
-      return 'danger'
-    default:
-      return 'info'
+    console.error('日期格式化错误:', error)
+    return dateString || '未知时间'
   }
 }
 
 // 重置过滤条件
 const resetFilter = () => {
   filterForm.keyword = ''
-  filterForm.status = ''
-  filterForm.isSticky = null
+  filterForm.adminName = ''
   handleSearch()
 }
 
@@ -328,21 +286,45 @@ const handleSearch = async () => {
 
 // 获取公告列表
 const fetchAnnouncements = async () => {
-  loading.value = true
+  console.log('开始加载公告列表，loading:', true);
+  loading.value = true;
+
   try {
-    await announcementsStore.fetchAnnouncements({
+    // 准备搜索参数
+    const searchParams: any = {
       page: currentPage.value,
       pageSize: pageSize.value,
-      keyword: filterForm.keyword || undefined,
-      status: filterForm.status || undefined,
-      isSticky: filterForm.isSticky
-    })
-    total.value = announcementsStore.total
+    }
+
+    // 只添加有值的参数
+    if (filterForm.keyword && filterForm.keyword.trim() !== '') {
+      searchParams.keyword = filterForm.keyword.trim()
+    }
+
+    if (filterForm.adminName && filterForm.adminName.trim() !== '') {
+      searchParams.adminName = filterForm.adminName.trim()
+    }
+
+    console.log('搜索参数:', searchParams);
+
+    const result = await announcementsStore.fetchAdminAnnouncements(searchParams);
+
+    total.value = announcementsStore.total;
+
+    // 打印结果，帮助调试
+    console.log('获取公告列表结果:', {
+      success: result.success,
+      storeAnnouncements: announcementsStore.announcements,
+      announcementsLength: announcementsStore.announcements.length,
+      total: announcementsStore.total,
+      isLoading: announcementsStore.loading
+    });
   } catch (error) {
-    console.error('Failed to fetch announcements:', error)
-    ElMessage.error('获取公告列表失败')
+    console.error('获取公告列表失败:', error);
+    ElMessage.error('获取公告列表失败');
   } finally {
-    loading.value = false
+    console.log('加载完成，loading:', false);
+    loading.value = false;
   }
 }
 
@@ -372,7 +354,6 @@ const handleEdit = (row: any) => {
   announcementForm.title = row.title
   announcementForm.content = row.content
   announcementForm.isSticky = row.isSticky
-  announcementForm.status = row.status
   dialogVisible.value = true
 }
 
@@ -382,7 +363,6 @@ const resetForm = () => {
   announcementForm.title = ''
   announcementForm.content = ''
   announcementForm.isSticky = false
-  announcementForm.status = 'published'
   if (formRef.value) {
     formRef.value.resetFields()
   }
@@ -424,14 +404,12 @@ const handleSaveAnnouncement = async () => {
                 id: announcementForm.id as number,
                 title: announcementForm.title,
                 content: announcementForm.content,
-                isSticky: announcementForm.isSticky,
-                status: 'published'
+                isSticky: announcementForm.isSticky
               })
             : await announcementsStore.createAnnouncement({
                 title: announcementForm.title,
                 content: announcementForm.content,
-                isSticky: announcementForm.isSticky,
-                status: 'published'
+                isSticky: announcementForm.isSticky
               })
 
           if (result.success) {
@@ -444,38 +422,6 @@ const handleSaveAnnouncement = async () => {
         } catch (error) {
           console.error('Save announcement error:', error)
           ElMessage.error('操作失败，请稍后再试')
-        } finally {
-          submitting.value = false
-        }
-      }
-    })
-  }
-}
-
-// 保存为草稿
-const handleSaveDraft = async () => {
-  if (formRef.value) {
-    await formRef.value.validate(async (valid) => {
-      if (valid) {
-        submitting.value = true
-        try {
-          const result = await announcementsStore.createAnnouncement({
-            title: announcementForm.title,
-            content: announcementForm.content,
-            isSticky: false,
-            status: 'draft'
-          })
-
-          if (result.success) {
-            ElMessage.success('草稿保存成功')
-            dialogVisible.value = false
-            fetchAnnouncements()
-          } else {
-            ElMessage.error(result.message || '保存失败')
-          }
-        } catch (error) {
-          console.error('Save draft error:', error)
-          ElMessage.error('保存失败，请稍后再试')
         } finally {
           submitting.value = false
         }
@@ -520,47 +466,6 @@ const handleCancelSticky = async (row: any) => {
     }
   } catch (error) {
     console.error('Cancel sticky error:', error)
-    ElMessage.error('操作失败，请稍后再试')
-  }
-}
-
-// 处理下架公告
-const handleUnpublish = async (row: any) => {
-  try {
-    const result = await announcementsStore.updateAnnouncement({
-      id: row.id,
-      status: 'unpublished',
-      isSticky: false
-    })
-
-    if (result.success) {
-      ElMessage.success('公告已下架')
-      fetchAnnouncements()
-    } else {
-      ElMessage.error(result.message || '操作失败')
-    }
-  } catch (error) {
-    console.error('Unpublish error:', error)
-    ElMessage.error('操作失败，请稍后再试')
-  }
-}
-
-// 处理发布公告
-const handlePublish = async (row: any) => {
-  try {
-    const result = await announcementsStore.updateAnnouncement({
-      id: row.id,
-      status: 'published'
-    })
-
-    if (result.success) {
-      ElMessage.success('公告已发布')
-      fetchAnnouncements()
-    } else {
-      ElMessage.error(result.message || '操作失败')
-    }
-  } catch (error) {
-    console.error('Publish error:', error)
     ElMessage.error('操作失败，请稍后再试')
   }
 }
@@ -633,6 +538,28 @@ onMounted(() => {
   display: flex;
   justify-content: flex-end;
   gap: 10px;
+}
+
+.operation-buttons {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 4px;
+  justify-content: center;
+  position: relative;
+  overflow-x: visible;
+}
+
+.operation-buttons .el-button {
+  margin-left: 0;
+  margin-right: 0;
+  padding-left: 6px;
+  padding-right: 6px;
+  white-space: nowrap;
+  min-width: fit-content;
+}
+
+.operation-buttons .el-popconfirm {
+  margin-left: 0;
 }
 
 @media (max-width: 768px) {
