@@ -30,7 +30,6 @@ CREATE TABLE IF NOT EXISTS announcements (
     content TEXT NOT NULL COMMENT '公告内容',
     admin_id BIGINT NOT NULL COMMENT '发布公告的管理员ID',
     is_sticky BOOLEAN NOT NULL DEFAULT FALSE COMMENT '是否置顶',
-    is_pinned BOOLEAN NOT NULL DEFAULT FALSE COMMENT '是否置顶(兼容字段)',
     status VARCHAR(20) NOT NULL DEFAULT 'published' COMMENT '状态: published(已发布), draft(草稿)',
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -111,6 +110,7 @@ CREATE TABLE IF NOT EXISTS comments (
     item_id BIGINT NOT NULL COMMENT '物品ID',
     item_type VARCHAR(10) NOT NULL COMMENT '物品类型: lost(寻物), found(招领)',
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     INDEX idx_user_id (user_id),
     INDEX idx_item_id_type (item_id, item_type),
     INDEX idx_created_at (created_at)

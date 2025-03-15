@@ -30,14 +30,9 @@ public class UserDetailsServiceImpl implements UserDetailsService {
             throw new UsernameNotFoundException("User Not Found with username or email: " + usernameOrEmail);
         }
         
-        // Check if user account is locked before returning
         User foundUser = user.get();
         log.debug("User found: id={}, username={}, email={}", 
                 foundUser.getId(), foundUser.getUsername(), foundUser.getEmail());
-        
-        if (foundUser.getIsLocked()) {
-            log.warn("Attempted login to locked account: {}", usernameOrEmail);
-        }
 
         return UserDetailsImpl.build(foundUser);
     }

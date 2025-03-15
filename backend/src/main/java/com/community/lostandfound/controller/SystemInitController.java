@@ -89,11 +89,10 @@ public class SystemInitController {
         admin.setUsername(request.getUsername());
         admin.setEmail(request.getEmail());
         admin.setPassword(request.getPassword()); // 将在service中加密
-        admin.setRole(request.getRole());
+        admin.setRole("sysadmin");
         admin.setRealName(request.getRealName());
         admin.setPhone(request.getPhone());
         admin.setIsEnabled(true);
-        admin.setIsLocked(false);
         admin.setCreatedAt(LocalDateTime.now());
         admin.setUpdatedAt(LocalDateTime.now());
         

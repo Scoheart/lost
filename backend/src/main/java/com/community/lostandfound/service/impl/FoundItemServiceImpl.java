@@ -12,6 +12,9 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Set;
 
 /**
  * 失物招领服务实现类
@@ -22,6 +25,9 @@ import java.util.Optional;
 public class FoundItemServiceImpl implements FoundItemService {
 
     private final FoundItemRepository foundItemRepository;
+    
+    // 有效的状态值
+    private static final Set<String> VALID_STATUSES = new HashSet<>(Arrays.asList("pending", "claimed", "closed"));
 
     @Override
     @Transactional
@@ -75,6 +81,39 @@ public class FoundItemServiceImpl implements FoundItemService {
         foundItemRepository.update(foundItem);
         
         return foundItem;
+    }
+    
+    @Override
+    @Transactional
+    public FoundItem updateFoundItemStatus(Long id, String status, Long userId) {
+        log.debug("更新失物招领状态: ID={}, 新状态={}", id, status);
+        
+        // 验证状态值是否有效
+        if (!VALID_STATUSES.contains(status)) {
+            throw new IllegalArgumentException("无效的状态值: " + status);
+        }
+        
+        // 检查失物招领是否存在
+        Optional<FoundItem> existingItem = foundItemRepository.findById(id);
+        if (!existingItem.isPresent()) {
+            throw new ResourceNotFoundException("失物招领不存在: ID = " + id);
+        }
+        
+        // 检查是否是发布者
+        FoundItem item = existingItem.get();
+        if (!item.getUserId().equals(userId)) {
+            throw new IllegalArgumentException("无权修改此失物招领");
+        }
+        
+        // 更新状态
+        String updatedAt = LocalDateTime.now().toString();
+        foundItemRepository.updateStatus(id, status, updatedAt);
+        
+        // 返回更新后的物品
+        item.setStatus(status);
+        item.setUpdatedAt(LocalDateTime.now());
+        
+        return item;
     }
 
     @Override

@@ -84,10 +84,9 @@ public class AdminInitializer implements ApplicationRunner {
             admin.setRole("sysadmin");
             admin.setRealName("系统管理员");
             admin.setPhone("");
+            admin.setIsEnabled(true);
             admin.setCreatedAt(LocalDateTime.now());
             admin.setUpdatedAt(LocalDateTime.now());
-            admin.setIsEnabled(true);
-            admin.setIsLocked(false);
             
             User createdAdmin = userService.registerUser(admin);
             

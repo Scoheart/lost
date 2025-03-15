@@ -207,7 +207,7 @@ public class AdminController {
     }
     
     /**
-     * Update administrator status (enable/disable, lock/unlock)
+     * Update administrator status (enable/disable)
      * @param id the administrator ID
      * @param request the status update request
      * @return the updated administrator details
@@ -218,8 +218,8 @@ public class AdminController {
             @PathVariable Long id,
             @Valid @RequestBody UpdateAdminStatusRequest request) {
         
-        log.debug("Updating administrator status for ID {}: enabled={}, locked={}", 
-                id, request.getIsEnabled(), request.getIsLocked());
+        log.debug("Updating administrator status for ID {}: enabled={}", 
+                id, request.getIsEnabled());
         
         User user = userService.getUserById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Administrator", "id", id));
@@ -231,7 +231,6 @@ public class AdminController {
         
         // Update user status
         user.setIsEnabled(request.getIsEnabled());
-        user.setIsLocked(request.getIsLocked());
         user.setUpdatedAt(LocalDateTime.now());
         
         User updatedUser = userService.updateUser(user);
@@ -431,7 +430,7 @@ public class AdminController {
     }
     
     /**
-     * 更新用户状态（启用/禁用，锁定/解锁）
+     * 更新用户状态（启用/禁用）
      * 
      * @param id 用户ID
      * @param request 状态更新请求
@@ -443,15 +442,14 @@ public class AdminController {
             @PathVariable Long id,
             @Valid @RequestBody UpdateAdminStatusRequest request) {
         
-        log.debug("系统管理员更新用户状态: id={}, 启用={}, 锁定={}", 
-                id, request.getIsEnabled(), request.getIsLocked());
+        log.debug("系统管理员更新用户状态: id={}, 启用={}", 
+                id, request.getIsEnabled());
         
         User user = userService.getUserById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("User", "id", id));
         
         // 更新用户状态
         user.setIsEnabled(request.getIsEnabled());
-        user.setIsLocked(request.getIsLocked());
         user.setUpdatedAt(LocalDateTime.now());
         
         User updatedUser = userService.updateUser(user);
@@ -530,7 +528,6 @@ public class AdminController {
                 user.getPhone(),
                 user.getRealName(),
                 user.getIsEnabled(),
-                user.getIsLocked(),
                 user.getCreatedAt(),
                 user.getUpdatedAt()
         );

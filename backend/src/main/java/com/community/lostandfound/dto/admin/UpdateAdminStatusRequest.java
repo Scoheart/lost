@@ -6,7 +6,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 /**
- * DTO for updating the status of an admin user (enable/disable, lock/unlock)
+ * DTO for updating the status of an admin user (enable/disable)
  */
 @Data
 @NoArgsConstructor
@@ -14,7 +14,4 @@ import lombok.NoArgsConstructor;
 public class UpdateAdminStatusRequest {
     @NotNull(message = "启用状态不能为空")
     private Boolean isEnabled;
-    
-    @NotNull(message = "锁定状态不能为空")
-    private Boolean isLocked;
 } 

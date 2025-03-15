@@ -111,7 +111,6 @@ public class UserController {
             updatedUser.setPassword(user.getPassword()); // Important: Preserve password
             updatedUser.setRole(user.getRole()); // Preserve role
             updatedUser.setIsEnabled(user.getIsEnabled()); // Preserve enabled status
-            updatedUser.setIsLocked(user.getIsLocked()); // Preserve locked status
             updatedUser.setCreatedAt(user.getCreatedAt()); // Preserve creation timestamp
             
             // Update the fields that were part of the request
@@ -192,7 +191,6 @@ public class UserController {
             passwordUpdateUser.setRealName(user.getRealName());
             passwordUpdateUser.setCreatedAt(user.getCreatedAt());
             passwordUpdateUser.setIsEnabled(user.getIsEnabled());
-            passwordUpdateUser.setIsLocked(user.getIsLocked());
             
             // Set new password - this will be encoded in the service layer
             passwordUpdateUser.setPassword(passwordRequest.getNewPassword());

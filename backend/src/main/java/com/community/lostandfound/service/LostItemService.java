@@ -59,6 +59,18 @@ public interface LostItemService {
     LostItem updateLostItem(LostItem lostItem, Long userId);
     
     /**
+     * 更新寻物启事状态
+     *
+     * @param id 寻物启事ID
+     * @param status 新状态 (例如: "found", "closed")
+     * @param userId 当前用户ID
+     * @return 更新后的寻物启事
+     * @throws ResourceNotFoundException 如果寻物启事不存在
+     * @throws IllegalArgumentException 如果用户无权更新或状态无效
+     */
+    LostItem updateLostItemStatus(Long id, String status, Long userId);
+    
+    /**
      * 删除寻物启事
      *
      * @param id 寻物启事ID

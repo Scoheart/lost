@@ -10,7 +10,7 @@ spring:
     username: root
     password: shuhao201028
     driver-class-name: com.mysql.cj.jdbc.Driver
-  
+
   redis:
     host: localhost
     port: 6379
@@ -28,7 +28,7 @@ mybatis:
 
 jwt:
   secret: LostAndFoundSecretKey123!@#$%^&*()_+AABBCCDDEEFFGGHHIIJJKKLLaabbccddeeffgghhiijjkk
-  expiration: 86400000  # 24 hours in milliseconds
+  expiration: 86400000 # 24 hours in milliseconds
   header: Authorization
   token-prefix: Bearer
 

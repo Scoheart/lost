@@ -32,8 +32,4 @@ public interface UserService {
     User enableUser(Long id);
     
     User disableUser(Long id);
-    
-    User lockUser(Long id);
-    
-    User unlockUser(Long id);
 } 

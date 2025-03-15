@@ -29,8 +29,7 @@ public interface UserRepository {
         @Result(property = "realName", column = "real_name"),
         @Result(property = "createdAt", column = "created_at"),
         @Result(property = "updatedAt", column = "updated_at"),
-        @Result(property = "isEnabled", column = "is_enabled"),
-        @Result(property = "isLocked", column = "is_locked")
+        @Result(property = "isEnabled", column = "is_enabled")
     })
     Optional<User> findByUsername(@Param("username") String username);
     
@@ -46,8 +45,7 @@ public interface UserRepository {
         @Result(property = "realName", column = "real_name"),
         @Result(property = "createdAt", column = "created_at"),
         @Result(property = "updatedAt", column = "updated_at"),
-        @Result(property = "isEnabled", column = "is_enabled"),
-        @Result(property = "isLocked", column = "is_locked")
+        @Result(property = "isEnabled", column = "is_enabled")
     })
     Optional<User> findByEmail(@Param("email") String email);
     
@@ -63,19 +61,18 @@ public interface UserRepository {
         @Result(property = "realName", column = "real_name"),
         @Result(property = "createdAt", column = "created_at"),
         @Result(property = "updatedAt", column = "updated_at"),
-        @Result(property = "isEnabled", column = "is_enabled"),
-        @Result(property = "isLocked", column = "is_locked")
+        @Result(property = "isEnabled", column = "is_enabled")
     })
     Optional<User> findById(@Param("id") Long id);
     
-    @Insert("INSERT INTO users(username, email, password, role, avatar, phone, real_name, created_at, updated_at, is_enabled, is_locked) " +
-            "VALUES(#{username}, #{email}, #{password}, #{role}, #{avatar}, #{phone}, #{realName}, #{createdAt}, #{updatedAt}, #{isEnabled}, #{isLocked})")
+    @Insert("INSERT INTO users(username, email, password, role, avatar, phone, real_name, created_at, updated_at, is_enabled) " +
+            "VALUES(#{username}, #{email}, #{password}, #{role}, #{avatar}, #{phone}, #{realName}, #{createdAt}, #{updatedAt}, #{isEnabled})")
     @Options(useGeneratedKeys = true, keyProperty = "id")
     void save(User user);
     
     @Update("UPDATE users SET username = #{username}, email = #{email}, password = #{password}, " +
             "role = #{role}, avatar = #{avatar}, phone = #{phone}, real_name = #{realName}, " +
-            "updated_at = #{updatedAt}, is_enabled = #{isEnabled}, is_locked = #{isLocked} " +
+            "updated_at = #{updatedAt}, is_enabled = #{isEnabled} " +
             "WHERE id = #{id}")
     void update(User user);
     
@@ -91,8 +88,7 @@ public interface UserRepository {
         @Result(property = "realName", column = "real_name"),
         @Result(property = "createdAt", column = "created_at"),
         @Result(property = "updatedAt", column = "updated_at"),
-        @Result(property = "isEnabled", column = "is_enabled"),
-        @Result(property = "isLocked", column = "is_locked")
+        @Result(property = "isEnabled", column = "is_enabled")
     })
     List<User> findAll();
     

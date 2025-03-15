@@ -18,6 +18,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
@@ -25,9 +26,9 @@ import java.util.stream.Collectors;
  */
 @Slf4j
 @RestController
-@RequestMapping("/user-management")
+@RequestMapping("/residents")
 @RequiredArgsConstructor
-public class UserManagementController {
+public class ResidentController {
 
     private final UserService userService;
 
@@ -37,7 +38,7 @@ public class UserManagementController {
      * @param pageSize the number of items per page
      * @return the paginated list of resident users
      */
-    @GetMapping("/residents")
+    @GetMapping
     @PreAuthorize("hasAnyRole('ADMIN', 'SYSADMIN')")
     public ResponseEntity<ApiResponse<AdminUserPageDto>> getAllResidents(
             @RequestParam(value = "page", defaultValue = "1") int page,
@@ -90,7 +91,7 @@ public class UserManagementController {
      * @param id the resident user ID
      * @return the resident user details
      */
-    @GetMapping("/residents/{id}")
+    @GetMapping("/{id}")
     @PreAuthorize("hasAnyRole('ADMIN', 'SYSADMIN')")
     public ResponseEntity<ApiResponse<AdminUserDto>> getResidentById(@PathVariable Long id) {
         log.debug("Fetching resident user with ID: {}", id);
@@ -109,19 +110,19 @@ public class UserManagementController {
     }
     
     /**
-     * Update resident user status (enable/disable, lock/unlock)
+     * Update resident user status (enable/disable)
      * @param id the resident user ID
      * @param request the status update request
      * @return the updated resident user details
      */
-    @PutMapping("/residents/{id}/status")
+    @PutMapping("/{id}/status")
     @PreAuthorize("hasAnyRole('ADMIN', 'SYSADMIN')")
     public ResponseEntity<ApiResponse<AdminUserDto>> updateResidentStatus(
             @PathVariable Long id,
             @Valid @RequestBody UpdateAdminStatusRequest request) {
         
-        log.debug("Updating resident user status for ID {}: enabled={}, locked={}", 
-                id, request.getIsEnabled(), request.getIsLocked());
+        log.debug("Updating resident user status for ID {}: enabled={}", 
+                id, request.getIsEnabled());
         
         User user = userService.getUserById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Resident", "id", id));
@@ -133,7 +134,6 @@ public class UserManagementController {
         
         // Update user status
         user.setIsEnabled(request.getIsEnabled());
-        user.setIsLocked(request.getIsLocked());
         user.setUpdatedAt(LocalDateTime.now());
         
         User updatedUser = userService.updateUser(user);
@@ -148,7 +148,7 @@ public class UserManagementController {
      * @param id the resident user ID
      * @return success message
      */
-    @DeleteMapping("/residents/{id}")
+    @DeleteMapping("/{id}")
     @PreAuthorize("hasAnyRole('ADMIN', 'SYSADMIN')")
     public ResponseEntity<ApiResponse<String>> deleteResident(@PathVariable Long id) {
         log.debug("Deleting resident user with ID: {}", id);
@@ -167,6 +167,61 @@ public class UserManagementController {
     }
     
     /**
+     * Update a resident user's information
+     * @param id the resident user ID
+     * @param updateData the user data to update
+     * @return the updated resident user details
+     */
+    @PutMapping("/{id}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'SYSADMIN')")
+    public ResponseEntity<ApiResponse<AdminUserDto>> updateResident(
+            @PathVariable Long id,
+            @Valid @RequestBody Map<String, Object> updateData) {
+        
+        log.debug("Updating resident user information for ID {}: {}", id, updateData);
+        
+        User user = userService.getUserById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Resident", "id", id));
+        
+        // Verify that the user is a resident
+        if (!"resident".equals(user.getRole())) {
+            throw new BadRequestException("指定用户不是居民");
+        }
+        
+        // Update user fields if provided in the request
+        if (updateData.containsKey("username")) {
+            user.setUsername((String) updateData.get("username"));
+        }
+        
+        if (updateData.containsKey("email")) {
+            user.setEmail((String) updateData.get("email"));
+        }
+        
+        if (updateData.containsKey("phone")) {
+            user.setPhone((String) updateData.get("phone"));
+        }
+        
+        if (updateData.containsKey("realName")) {
+            user.setRealName((String) updateData.get("realName"));
+        }
+        
+        if (updateData.containsKey("avatar")) {
+            user.setAvatar((String) updateData.get("avatar"));
+        }
+        
+        if (updateData.containsKey("isEnabled")) {
+            user.setIsEnabled((Boolean) updateData.get("isEnabled"));
+        }
+        
+        user.setUpdatedAt(LocalDateTime.now());
+        
+        User updatedUser = userService.updateUser(user);
+        AdminUserDto userDto = convertToUserDto(updatedUser);
+        
+        return ResponseEntity.ok(ApiResponse.success("居民用户信息更新成功", userDto));
+    }
+    
+    /**
      * Helper method to convert User to AdminUserDto
      * @param user the user entity
      * @return the admin user DTO
@@ -181,7 +236,7 @@ public class UserManagementController {
                 user.getPhone(),
                 user.getRealName(),
                 user.getIsEnabled(),
-                user.getIsLocked(),
+                null, // Remove isLocked
                 user.getCreatedAt(),
                 user.getUpdatedAt()
         );

@@ -20,6 +20,7 @@ import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 /**
@@ -264,5 +265,56 @@ public class LostItemController {
         
         List<LostItem> items = lostItemService.getLostItemsByUserId(currentUser.getId());
         return ResponseEntity.ok(ApiResponse.success("查询当前用户寻物启事成功", items));
+    }
+
+    /**
+     * 更新寻物启事状态
+     *
+     * @param id           寻物启事ID
+     * @param statusUpdate 包含状态字段的请求体
+     * @param currentUser  当前用户
+     * @return 更新后的寻物启事
+     */
+    @PutMapping("/{id}/status")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<ApiResponse<LostItem>> updateLostItemStatus(
+            @PathVariable Long id,
+            @Valid @RequestBody Map<String, String> statusUpdate,
+            @CurrentUser UserDetailsImpl currentUser) {
+        
+        log.info("更新寻物启事状态, ID: {}, 新状态: {}", id, statusUpdate.get("status"));
+        
+        if (currentUser == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(ApiResponse.fail("未授权操作，请先登录"));
+        }
+        
+        String status = statusUpdate.get("status");
+        if (status == null || status.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(ApiResponse.fail("状态字段不能为空"));
+        }
+        
+        try {
+            LostItem updatedItem = lostItemService.updateLostItemStatus(id, status, currentUser.getId());
+            
+            // 根据不同状态返回不同的成功消息
+            String message;
+            if ("found".equals(status)) {
+                message = "物品已标记为已找到";
+            } else if ("closed".equals(status)) {
+                message = "寻物启事已关闭";
+            } else {
+                message = "寻物启事状态已更新";
+            }
+            
+            return ResponseEntity.ok(ApiResponse.success(message, updatedItem));
+        } catch (ResourceNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(ApiResponse.fail(e.getMessage()));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(ApiResponse.fail(e.getMessage()));
+        }
     }
 } 

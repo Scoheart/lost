@@ -59,6 +59,18 @@ public interface FoundItemService {
     FoundItem updateFoundItem(FoundItem foundItem, Long userId);
     
     /**
+     * 更新失物招领状态
+     *
+     * @param id 失物招领ID
+     * @param status 新状态 (例如: "claimed", "closed")
+     * @param userId 当前用户ID
+     * @return 更新后的失物招领
+     * @throws ResourceNotFoundException 如果失物招领不存在
+     * @throws IllegalArgumentException 如果用户无权更新或状态无效
+     */
+    FoundItem updateFoundItemStatus(Long id, String status, Long userId);
+    
+    /**
      * 删除失物招领
      *
      * @param id 失物招领ID

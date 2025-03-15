@@ -66,7 +66,8 @@ public class WebSecurityConfig {
                 .requestMatchers("/auth/**", "/announcements/**", "/lost-items/**", "/found-items/**").permitAll()
                 .requestMatchers("/forum/**").permitAll()
                 .requestMatchers("/actuator/**").permitAll()
-                .requestMatchers("/api/system/**").permitAll()
+                .requestMatchers("/system/**").permitAll()
+                .requestMatchers("/comments/**").permitAll()
                 // Protected endpoints
                 .requestMatchers("/users/**").authenticated()
                 .requestMatchers("/admin/**").hasAnyRole("ADMIN", "SYSADMIN")

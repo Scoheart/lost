@@ -170,31 +170,33 @@ public class UserServiceImpl implements UserService {
         return user;
     }
 
+    /**
+     * 锁定用户
+     * @param userId 用户ID
+     * @return 更新后的用户对象
+     */
     @Override
-    @Transactional
-    public User lockUser(Long id) {
-        User user = userRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("User", "id", id));
+    public User lockUser(Long userId) {
+        User user = getUserById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User", "id", userId));
         
-        user.setIsLocked(true);
+        user.setIsEnabled(false);
         user.setUpdatedAt(LocalDateTime.now());
-        
-        userRepository.update(user);
-        
-        return user;
+        return updateUser(user);
     }
-
+    
+    /**
+     * 解锁用户
+     * @param userId 用户ID
+     * @return 更新后的用户对象
+     */
     @Override
-    @Transactional
-    public User unlockUser(Long id) {
-        User user = userRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("User", "id", id));
+    public User unlockUser(Long userId) {
+        User user = getUserById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User", "id", userId));
         
-        user.setIsLocked(false);
+        user.setIsEnabled(true);
         user.setUpdatedAt(LocalDateTime.now());
-        
-        userRepository.update(user);
-        
-        return user;
+        return updateUser(user);
     }
 } 

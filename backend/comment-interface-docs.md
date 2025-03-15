@@ -9,7 +9,7 @@
 `POST`
 
 ### 请求路径
-`/comments`
+`/api/comments`
 
 ### 请求头
 需要包含用户认证token：
@@ -75,7 +75,7 @@ Authorization: Bearer {token}
 `GET`
 
 ### 请求路径
-`/comments`
+`/api/comments`
 
 ### 请求参数
 | 参数名 | 类型 | 是否必须 | 描述 |
@@ -150,7 +150,7 @@ Authorization: Bearer {token}
 `GET`
 
 ### 请求路径
-`/comments/all`
+`/api/comments/all`
 
 ### 请求参数
 | 参数名 | 类型 | 是否必须 | 描述 |
@@ -182,7 +182,7 @@ Authorization: Bearer {token}
 `GET`
 
 ### 请求路径
-`/comments/{id}`
+`/api/comments/{id}`
 
 ### 路径参数
 | 参数名 | 类型 | 是否必须 | 描述 |
@@ -213,7 +213,7 @@ Authorization: Bearer {token}
 `DELETE`
 
 ### 请求路径
-`/comments/{id}`
+`/api/comments/{id}`
 
 ### 请求头
 需要包含用户认证token：
@@ -251,7 +251,7 @@ Authorization: Bearer {token}
 `GET`
 
 ### 请求路径
-`/comments/my-comments`
+`/api/comments/my-comments`
 
 ### 请求头
 需要包含用户认证token：

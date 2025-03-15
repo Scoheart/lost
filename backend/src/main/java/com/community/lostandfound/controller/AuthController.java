@@ -24,6 +24,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import java.time.LocalDateTime;
 
 @Slf4j
 @RestController
@@ -113,7 +114,8 @@ public class AuthController {
         user.setPassword(registerRequest.getPassword()); // Will be encoded in service
         user.setRole("resident");
         user.setIsEnabled(true);
-        user.setIsLocked(false);
+        user.setCreatedAt(LocalDateTime.now());
+        user.setUpdatedAt(LocalDateTime.now());
 
         userService.registerUser(user);
 
