@@ -211,7 +211,6 @@
                       size="large"
                       :loading="submitting"
                       @click="submitForm"
-                      style="width: 100%"
                     >
                       {{ isEditing ? '保存修改' : '发布寻物启事' }}
                     </el-button>
@@ -219,7 +218,6 @@
                       plain
                       size="large"
                       @click="goBack"
-                      style="width: 100%; margin-top: 10px"
                     >
                       取消
                     </el-button>
@@ -587,6 +585,19 @@ onMounted(() => {
 .form-actions {
   display: flex;
   flex-direction: column;
+  align-items: center;
+  width: 100%;
+}
+
+.form-actions .el-button {
+  width: 100%;
+  margin-left: 0;
+  margin-right: 0;
+}
+
+.form-actions .el-button + .el-button {
+  margin-top: 12px;
+  margin-left: 0;
 }
 
 @media (max-width: 768px) {

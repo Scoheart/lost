@@ -193,6 +193,9 @@ import MainLayout from '@/components/layout/MainLayout.vue'
 import { useLostItemsStore } from '@/stores/lostItems'
 import { useFoundItemsStore } from '@/stores/foundItems'
 import { useAnnouncementsStore } from '@/stores/announcements'
+import type { LostItem } from '@/stores/lostItems'
+import type { FoundItem } from '@/stores/foundItems'
+import type { Announcement } from '@/stores/announcements'
 
 const router = useRouter()
 const lostItemsStore = useLostItemsStore()
@@ -205,9 +208,9 @@ const loadingFoundItems = ref(false)
 const loadingAnnouncements = ref(false)
 
 // 数据
-const latestLostItems = ref([])
-const latestFoundItems = ref([])
-const announcements = ref([])
+const latestLostItems = ref<LostItem[]>([])
+const latestFoundItems = ref<FoundItem[]>([])
+const announcements = ref<Announcement[]>([])
 
 // Banner数据
 const banners = [
@@ -386,10 +389,16 @@ onMounted(async () => {
   // 获取最新寻物启事
   loadingLostItems.value = true
   try {
-    await lostItemsStore.fetchLostItems()
-    latestLostItems.value = lostItemsStore.items.slice(0, 4)
+    const result = await lostItemsStore.fetchLostItems({ pageSize: 4 })
+    if (result.success && Array.isArray(lostItemsStore.items)) {
+      latestLostItems.value = lostItemsStore.items.slice(0, 4)
+    } else {
+      latestLostItems.value = []
+      console.warn('寻物启事数据不是数组或获取失败', lostItemsStore.items)
+    }
   } catch (error) {
     console.error('Failed to fetch lost items:', error)
+    latestLostItems.value = []
   } finally {
     loadingLostItems.value = false
   }
@@ -397,10 +406,16 @@ onMounted(async () => {
   // 获取最新失物招领
   loadingFoundItems.value = true
   try {
-    await foundItemsStore.fetchFoundItems()
-    latestFoundItems.value = foundItemsStore.items.slice(0, 4)
+    const result = await foundItemsStore.fetchFoundItems({ pageSize: 4 })
+    if (result.success && Array.isArray(foundItemsStore.items)) {
+      latestFoundItems.value = foundItemsStore.items.slice(0, 4)
+    } else {
+      latestFoundItems.value = []
+      console.warn('失物招领数据不是数组或获取失败', foundItemsStore.items)
+    }
   } catch (error) {
     console.error('Failed to fetch found items:', error)
+    latestFoundItems.value = []
   } finally {
     loadingFoundItems.value = false
   }
@@ -409,9 +424,15 @@ onMounted(async () => {
   loadingAnnouncements.value = true
   try {
     await announcementsStore.fetchAnnouncements()
-    announcements.value = announcementsStore.announcements.slice(0, 3)
+    if (Array.isArray(announcementsStore.announcements)) {
+      announcements.value = announcementsStore.announcements.slice(0, 3)
+    } else {
+      announcements.value = []
+      console.warn('公告数据不是数组', announcementsStore.announcements)
+    }
   } catch (error) {
     console.error('Failed to fetch announcements:', error)
+    announcements.value = []
   } finally {
     loadingAnnouncements.value = false
   }
