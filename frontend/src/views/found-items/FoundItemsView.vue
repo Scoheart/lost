@@ -1,407 +1,291 @@
 <template>
   <main-layout>
     <div class="found-items-container">
-      <div class="header-section">
-        <h1 class="page-title">失物招领</h1>
-        <el-button type="primary" @click="handleCreateItem">
-          <el-icon><Plus /></el-icon>
-          发布失物招领
-        </el-button>
+      <div class="page-header">
+        <h1>失物招领</h1>
+        <p>查看社区内的拾取物品信息，或发布您捡到的物品</p>
       </div>
 
-      <div class="filter-section">
-        <el-form :inline="true" :model="filterForm" class="filter-form">
-          <el-form-item label="物品类型">
-            <el-select v-model="filterForm.category" placeholder="全部类型" clearable>
-              <el-option label="全部类型" value="" />
-              <el-option
-                v-for="category in categories"
-                :key="category.value"
-                :label="category.label"
-                :value="category.value"
+      <div class="actions-container">
+        <el-row :gutter="20">
+          <el-col :xs="24" :sm="16">
+            <div class="search-container">
+              <el-input
+                v-model="filters.keyword"
+                placeholder="搜索物品名称、描述或地点"
+                clearable
+                :prefix-icon="Search"
+                @clear="handleSearch"
+                @keyup.enter="handleSearch"
               />
-            </el-select>
-          </el-form-item>
-
-          <el-form-item label="拾获时间">
-            <el-date-picker
-              v-model="filterForm.dateRange"
-              type="daterange"
-              range-separator="至"
-              start-placeholder="开始日期"
-              end-placeholder="结束日期"
-              value-format="YYYY-MM-DD"
-              :shortcuts="dateShortcuts"
-            />
-          </el-form-item>
-
-          <el-form-item label="状态">
-            <el-select v-model="filterForm.status" placeholder="全部状态" clearable>
-              <el-option label="全部状态" value="" />
-              <el-option label="待认领" value="unclaimed" />
-              <el-option label="认领中" value="processing" />
-              <el-option label="已认领" value="claimed" />
-              <el-option label="已关闭" value="closed" />
-            </el-select>
-          </el-form-item>
-
-          <el-form-item label="关键词">
-            <el-input
-              v-model="filterForm.keyword"
-              placeholder="搜索物品名称、描述等"
-              clearable
-              @keyup.enter="handleSearch"
-            >
-              <template #prefix>
-                <el-icon><Search /></el-icon>
-              </template>
-            </el-input>
-          </el-form-item>
-
-          <el-form-item>
-            <el-button type="primary" @click="handleSearch">查询</el-button>
-            <el-button @click="resetFilter">重置</el-button>
-          </el-form-item>
-        </el-form>
-      </div>
-
-      <div class="view-options">
-        <span class="view-label">展示方式：</span>
-        <el-radio-group v-model="viewMode" size="small">
-          <el-radio-button label="grid">
-            <el-icon><Grid /></el-icon>
-          </el-radio-button>
-          <el-radio-button label="list">
-            <el-icon><List /></el-icon>
-          </el-radio-button>
-        </el-radio-group>
-
-        <div class="sort-options">
-          <span class="sort-label">排序方式：</span>
-          <el-select v-model="sortBy" size="small" @change="handleSearch">
-            <el-option label="最新发布" value="createdAt" />
-            <el-option label="拾获时间" value="foundDate" />
-          </el-select>
-        </div>
-      </div>
-
-      <div v-if="loading" class="loading-section">
-        <el-skeleton :rows="6" animated />
-      </div>
-
-      <el-empty
-        v-else-if="foundItems.length === 0"
-        description="暂无符合条件的失物招领"
-        :image-size="200"
-      >
-        <el-button type="primary" @click="handleCreateItem">发布失物招领</el-button>
-      </el-empty>
-
-      <!-- 网格视图 -->
-      <div v-else-if="viewMode === 'grid'" class="items-grid">
-        <el-card
-          v-for="item in foundItems"
-          :key="item.id"
-          class="item-card"
-          @click="viewItemDetail(item.id)"
-          shadow="hover"
-        >
-          <div class="item-image">
-            <el-image
-              v-if="item.images && item.images.length > 0"
-              :src="item.images[0]"
-              fit="cover"
-              :preview-src-list="item.images"
-              preview-teleported
-            >
-              <template #error>
-                <div class="image-placeholder">
-                  <el-icon><Picture /></el-icon>
-                </div>
-              </template>
-            </el-image>
-            <div v-else class="image-placeholder">
-              <el-icon><Picture /></el-icon>
-            </div>
-
-            <el-tag
-              v-if="item.status"
-              :type="getStatusType(item.status)"
-              class="item-status-tag"
-            >
-              {{ getStatusLabel(item.status) }}
-            </el-tag>
-          </div>
-
-          <div class="item-info">
-            <h3 class="item-title">{{ item.title }}</h3>
-
-            <div class="item-meta">
-              <div class="meta-item">
-                <el-icon><Location /></el-icon>
-                <span>{{ item.foundLocation || '未知地点' }}</span>
-              </div>
-              <div class="meta-item">
-                <el-icon><Calendar /></el-icon>
-                <span>{{ formatDate(item.foundDate) }}</span>
-              </div>
-              <div class="meta-item">
-                <el-icon><Box /></el-icon>
-                <span>{{ getCategoryLabel(item.category) }}</span>
-              </div>
-            </div>
-
-            <div class="item-footer">
-              <div class="user-info">
-                <el-avatar :size="24" :src="item.user?.avatar">
-                  {{ item.user?.username?.charAt(0).toUpperCase() }}
-                </el-avatar>
-                <span class="username">{{ item.user?.username }}</span>
-              </div>
-              <span class="post-time">{{ formatDate(item.createdAt, 'MM-dd') }}</span>
-            </div>
-          </div>
-        </el-card>
-      </div>
-
-      <!-- 列表视图 -->
-      <div v-else class="items-list">
-        <el-table
-          :data="foundItems"
-          style="width: 100%"
-          @row-click="(row) => viewItemDetail(row.id)"
-        >
-          <el-table-column label="物品图片" width="120">
-            <template #default="scope">
-              <el-image
-                v-if="scope.row.images && scope.row.images.length > 0"
-                :src="scope.row.images[0]"
-                fit="cover"
-                style="width: 80px; height: 80px; border-radius: 4px"
-                :preview-src-list="scope.row.images"
+              <el-select
+                v-model="filters.category"
+                placeholder="物品类别"
+                clearable
+                @change="handleSearch"
               >
-                <template #error>
-                  <div class="image-placeholder">
+                <el-option
+                  v-for="category in categories"
+                  :key="category.value"
+                  :label="category.label"
+                  :value="category.value"
+                />
+              </el-select>
+              <el-select
+                v-model="filters.status"
+                placeholder="状态"
+                clearable
+                @change="handleSearch"
+              >
+                <el-option
+                  v-for="status in statusOptions"
+                  :key="status.value"
+                  :label="status.label"
+                  :value="status.value"
+                />
+              </el-select>
+            </div>
+          </el-col>
+          <el-col :xs="24" :sm="8">
+            <div class="action-buttons">
+              <el-button
+                type="primary"
+                :icon="Plus"
+                @click="$router.push('/found-items/create')"
+              >
+                发布失物招领
+              </el-button>
+            </div>
+          </el-col>
+        </el-row>
+      </div>
+
+      <!-- 加载状态 -->
+      <div v-if="loading" class="loading-container">
+        <el-skeleton :rows="10" animated />
+      </div>
+
+      <!-- 错误状态 -->
+      <el-alert
+        v-if="error"
+        :title="error"
+        type="error"
+        show-icon
+        class="error-alert"
+      />
+
+      <!-- 内容展示 -->
+      <template v-if="!loading && !error">
+        <!-- 无数据状态 -->
+        <el-empty
+          v-if="filteredItems.length === 0"
+          description="暂无失物招领信息"
+        >
+          <el-button type="primary" @click="$router.push('/found-items/create')">
+            发布失物招领
+          </el-button>
+        </el-empty>
+
+        <!-- 数据列表 -->
+        <div v-else class="items-grid">
+          <el-row :gutter="20">
+            <el-col
+              v-for="item in filteredItems"
+              :key="item.id"
+              :xs="24"
+              :sm="12"
+              :md="8"
+              :lg="6"
+            >
+              <el-card
+                class="item-card card-hover"
+                shadow="hover"
+                @click="viewItemDetail(item.id)"
+              >
+                <div class="item-image">
+                  <el-image
+                    v-if="item.images && item.images.length > 0"
+                    :src="item.images[0]"
+                    fit="cover"
+                    class="card-image"
+                  >
+                    <template #error>
+                      <div class="image-placeholder">
+                        <el-icon><Picture /></el-icon>
+                      </div>
+                    </template>
+                  </el-image>
+                  <div v-else class="image-placeholder">
                     <el-icon><Picture /></el-icon>
                   </div>
-                </template>
-              </el-image>
-              <div v-else class="image-placeholder" style="width: 80px; height: 80px">
-                <el-icon><Picture /></el-icon>
-              </div>
-            </template>
-          </el-table-column>
+                  <el-tag
+                    class="item-status-tag"
+                    :type="getStatusType(item.status)"
+                  >
+                    {{ getStatusLabel(item.status) }}
+                  </el-tag>
+                </div>
+                <div class="item-content">
+                  <h3 class="item-title">{{ item.title }}</h3>
+                  <p class="item-category">
+                    <el-tag size="small" effect="plain">{{ getCategoryLabel(item.category) }}</el-tag>
+                  </p>
+                  <p class="item-location">
+                    <el-icon><Location /></el-icon>
+                    <span>{{ item.foundLocation || '未知地点' }}</span>
+                  </p>
+                  <p class="item-time">
+                    <el-icon><Calendar /></el-icon>
+                    <span>{{ formatDate(item.foundDate) }}</span>
+                  </p>
+                  <p class="item-poster">
+                    <el-icon><User /></el-icon>
+                    <span>{{ item.username || item.user?.username }}</span>
+                  </p>
+                </div>
+              </el-card>
+            </el-col>
+          </el-row>
+        </div>
 
-          <el-table-column prop="title" label="物品名称" min-width="180" show-overflow-tooltip />
-
-          <el-table-column prop="category" label="物品类型" width="120">
-            <template #default="scope">
-              {{ getCategoryLabel(scope.row.category) }}
-            </template>
-          </el-table-column>
-
-          <el-table-column prop="foundLocation" label="拾获地点" min-width="120" show-overflow-tooltip />
-
-          <el-table-column label="拾获时间" width="120">
-            <template #default="scope">
-              {{ formatDate(scope.row.foundDate) }}
-            </template>
-          </el-table-column>
-
-          <el-table-column label="状态" width="100" align="center">
-            <template #default="scope">
-              <el-tag :type="getStatusType(scope.row.status)">
-                {{ getStatusLabel(scope.row.status) }}
-              </el-tag>
-            </template>
-          </el-table-column>
-
-          <el-table-column label="保管地点" width="150" show-overflow-tooltip>
-            <template #default="scope">
-              {{ scope.row.storageLocation || '未提供' }}
-            </template>
-          </el-table-column>
-
-          <el-table-column label="发布者" width="120">
-            <template #default="scope">
-              <div class="user-info">
-                <el-avatar :size="24" :src="scope.row.user?.avatar">
-                  {{ scope.row.user?.username?.charAt(0).toUpperCase() }}
-                </el-avatar>
-                <span class="username">{{ scope.row.user?.username }}</span>
-              </div>
-            </template>
-          </el-table-column>
-        </el-table>
-      </div>
-
-      <div class="pagination-container" v-if="totalItems > 0">
+        <!-- 分页器 -->
         <el-pagination
-          v-model:current-page="currentPage"
-          :page-size="pageSize"
-          :total="totalItems"
-          layout="total, prev, pager, next, jumper"
-          background
+          v-if="filteredItems.length > 0"
+          class="pagination"
+          layout="prev, pager, next, jumper"
+          :total="pagination.total"
+          :page-size="pagination.pageSize"
+          :current-page="pagination.page"
           @current-change="handlePageChange"
         />
-      </div>
+      </template>
     </div>
   </main-layout>
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { format } from 'date-fns'
 import { useFoundItemsStore } from '@/stores/foundItems'
 import { useUserStore } from '@/stores/user'
 import { ElMessage } from 'element-plus'
+import MainLayout from '@/components/layout/MainLayout.vue'
 import {
   Plus,
   Search,
-  Grid,
-  List,
   Picture,
   Location,
   Calendar,
-  Box
+  User
 } from '@element-plus/icons-vue'
 
 const router = useRouter()
 const foundItemsStore = useFoundItemsStore()
 const userStore = useUserStore()
-
-// 状态
 const loading = ref(false)
-const foundItems = ref([])
-const viewMode = ref('grid')
-const sortBy = ref('createdAt')
-const currentPage = ref(1)
-const pageSize = ref(12)
-const totalItems = ref(0)
+const error = ref<string | null>(null)
 
-// 过滤条件
-const filterForm = reactive({
+// 筛选条件
+const filters = reactive({
   keyword: '',
-  category: '',
-  status: '',
-  dateRange: [],
+  category: null as string | null,
+  status: null as string | null
 })
 
-// 日期快捷选项
-const dateShortcuts = [
-  {
-    text: '最近一周',
-    value: () => {
-      const end = new Date()
-      const start = new Date()
-      start.setTime(start.getTime() - 3600 * 1000 * 24 * 7)
-      return [start, end]
-    },
-  },
-  {
-    text: '最近一个月',
-    value: () => {
-      const end = new Date()
-      const start = new Date()
-      start.setTime(start.getTime() - 3600 * 1000 * 24 * 30)
-      return [start, end]
-    },
-  },
-  {
-    text: '最近三个月',
-    value: () => {
-      const end = new Date()
-      const start = new Date()
-      start.setTime(start.getTime() - 3600 * 1000 * 24 * 90)
-      return [start, end]
-    },
-  },
+// 分页
+const pagination = reactive({
+  page: 1,
+  pageSize: 12,
+  total: 0
+})
+
+// 计算属性
+const isAuthenticated = computed(() => userStore.isAuthenticated)
+const filteredItems = computed(() => {
+  return foundItemsStore.filteredItems || []
+})
+const totalItems = computed(() => filteredItems.value.length)
+
+// 物品类别
+const categories = [
+  { label: '电子产品', value: 'electronics' },
+  { label: '证件卡片', value: 'documents' },
+  { label: '日常用品', value: 'daily' },
+  { label: '钱包钥匙', value: 'money' },
+  { label: '首饰配件', value: 'jewelry' },
+  { label: '书籍文件', value: 'books' },
+  { label: '箱包服装', value: 'clothing' },
+  { label: '其他物品', value: 'other' }
 ]
 
-// 物品类型
-const categories = [
-  { label: '证件', value: 'documents' },
-  { label: '电子设备', value: 'electronics' },
-  { label: '现金/钱包', value: 'money' },
-  { label: '生活用品', value: 'daily' },
-  { label: '交通工具', value: 'vehicle' },
-  { label: '首饰/配饰', value: 'jewelry' },
-  { label: '书籍/文具', value: 'books' },
-  { label: '钥匙', value: 'keys' },
-  { label: '其他', value: 'other' }
+// 状态选项
+const statusOptions = [
+  { value: 'unclaimed', label: '待认领' },
+  { value: 'processing', label: '认领中' },
+  { value: 'claimed', label: '已认领' },
+  { value: 'closed', label: '已关闭' }
 ]
+
+// 生命周期钩子
+onMounted(async () => {
+  await fetchFoundItems()
+})
 
 // 方法
 const fetchFoundItems = async () => {
   loading.value = true
+  error.value = null
+
   try {
-    const filters = {
-      page: currentPage.value,
-      pageSize: pageSize.value,
-      sort: sortBy.value,
-      keyword: filterForm.keyword,
-      category: filterForm.category,
-      status: filterForm.status,
-      startDate: filterForm.dateRange?.[0] || null,
-      endDate: filterForm.dateRange?.[1] || null
-    }
+    // 设置过滤条件
+    foundItemsStore.setFilters({
+      keyword: filters.keyword || null,
+      category: filters.category || null,
+      status: filters.status || null
+    })
 
-    const response = await foundItemsStore.fetchFoundItems(filters)
+    await foundItemsStore.fetchFoundItems()
 
-    foundItems.value = response.items || []
-    totalItems.value = response.total || 0
-  } catch (error) {
-    console.error('Failed to fetch found items:', error)
-    ElMessage.error('获取失物招领列表失败')
+    // 更新分页信息
+    pagination.total = foundItemsStore.pagination.total
+    pagination.page = foundItemsStore.pagination.page
+    pagination.pageSize = foundItemsStore.pagination.pageSize
+  } catch (err) {
+    console.error('Failed to fetch found items:', err)
+    error.value = '获取失物招领列表失败，请稍后再试'
   } finally {
     loading.value = false
   }
 }
 
-const handleSearch = () => {
-  currentPage.value = 1
-  fetchFoundItems()
+const handleSearch = async () => {
+  pagination.page = 1
+  await fetchFoundItems()
 }
 
-const resetFilter = () => {
-  filterForm.keyword = ''
-  filterForm.category = ''
-  filterForm.status = ''
-  filterForm.dateRange = []
-  handleSearch()
+const handlePageChange = async (page: number) => {
+  pagination.page = page
+  foundItemsStore.pagination.page = page
+  await fetchFoundItems()
 }
 
-const handlePageChange = (page) => {
-  currentPage.value = page
-  fetchFoundItems()
-}
-
-const viewItemDetail = (id) => {
+const viewItemDetail = (id: number) => {
   router.push(`/found-items/${id}`)
 }
 
-const handleCreateItem = () => {
-  if (!userStore.isAuthenticated) {
-    ElMessage.warning('请先登录后再发布失物招领')
-    router.push(`/login?redirect=/found-items/create`)
-    return
-  }
-
-  router.push('/found-items/create')
-}
-
-const formatDate = (dateString, formatStr = 'yyyy-MM-dd') => {
+const formatDate = (dateString: string) => {
   if (!dateString) return '未知日期'
 
   try {
-    return format(new Date(dateString), formatStr)
+    const date = new Date(dateString)
+    return format(date, 'yyyy-MM-dd')
   } catch (error) {
     return dateString
   }
 }
 
-const getStatusLabel = (status) => {
+const getStatusLabel = (status: string) => {
   switch (status) {
     case 'unclaimed':
       return '待认领'
@@ -416,7 +300,7 @@ const getStatusLabel = (status) => {
   }
 }
 
-const getStatusType = (status) => {
+const getStatusType = (status: string) => {
   switch (status) {
     case 'unclaimed':
       return 'primary'
@@ -431,113 +315,99 @@ const getStatusType = (status) => {
   }
 }
 
-const getCategoryLabel = (categoryValue) => {
+const getCategoryLabel = (categoryValue: string) => {
   const category = categories.find(c => c.value === categoryValue)
   return category ? category.label : categoryValue || '其他'
 }
-
-// 生命周期
-onMounted(() => {
-  fetchFoundItems()
-})
 </script>
 
 <style scoped>
 .found-items-container {
-  max-width: 1200px;
-  margin: 0 auto;
   padding: 20px;
 }
 
-.header-section {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 20px;
+.page-header {
+  margin-bottom: 30px;
+  text-align: center;
 }
 
-.page-title {
-  margin: 0;
-  font-size: 24px;
-  font-weight: 600;
+.page-header h1 {
+  font-size: 28px;
+  margin-bottom: 10px;
 }
 
-.filter-section {
-  background-color: #f9f9f9;
-  border-radius: 8px;
-  padding: 20px;
-  margin-bottom: 20px;
-}
-
-.filter-form {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-}
-
-.view-options {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 20px;
-}
-
-.view-label,
-.sort-label {
-  margin-right: 10px;
+.page-header p {
   color: #606266;
+  font-size: 16px;
 }
 
-.sort-options {
+.actions-container {
+  margin-bottom: 30px;
+}
+
+.search-container {
   display: flex;
-  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
 }
 
-.loading-section {
-  padding: 20px 0;
+.search-container .el-input {
+  flex: 2;
+  min-width: 200px;
+}
+
+.search-container .el-select {
+  flex: 1;
+  min-width: 120px;
+}
+
+.action-buttons {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 10px;
+}
+
+.loading-container {
+  margin: 40px 0;
+}
+
+.error-alert {
+  margin: 20px 0;
 }
 
 .items-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  gap: 20px;
   margin-bottom: 30px;
 }
 
 .item-card {
+  margin-bottom: 20px;
   cursor: pointer;
   transition: all 0.3s ease;
-  overflow: hidden;
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-}
-
-.item-card:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
 .item-image {
-  height: 200px;
   position: relative;
+  height: 200px;
   overflow: hidden;
 }
 
-.item-image .el-image {
-  height: 100%;
+.card-image {
   width: 100%;
+  height: 100%;
 }
 
 .image-placeholder {
   width: 100%;
   height: 100%;
+  background-color: #f5f7fa;
   display: flex;
   align-items: center;
   justify-content: center;
-  background-color: #f5f7fa;
-  color: #909399;
-  font-size: 24px;
+}
+
+.image-placeholder .el-icon {
+  font-size: 40px;
+  color: #c0c4cc;
 }
 
 .item-status-tag {
@@ -546,83 +416,65 @@ onMounted(() => {
   right: 10px;
 }
 
-.item-info {
-  padding: 15px;
-  flex: 1;
-  display: flex;
-  flex-direction: column;
+.item-content {
+  padding: 15px 0 5px;
 }
 
 .item-title {
-  margin: 0 0 10px 0;
+  margin: 0 0 10px;
   font-size: 16px;
   font-weight: 600;
+  line-height: 1.4;
+  height: 44px;
   overflow: hidden;
   text-overflow: ellipsis;
-  white-space: nowrap;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
 }
 
-.item-meta {
-  margin-bottom: 15px;
-  flex: 1;
+.item-category {
+  margin: 5px 0;
 }
 
-.meta-item {
+.item-location,
+.item-time,
+.item-poster {
   display: flex;
   align-items: center;
-  margin-bottom: 8px;
-  color: #606266;
-  font-size: 14px;
-}
-
-.meta-item .el-icon {
-  margin-right: 8px;
-  font-size: 16px;
-}
-
-.item-footer {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-top: auto;
-  font-size: 12px;
-}
-
-.user-info {
-  display: flex;
-  align-items: center;
-}
-
-.username {
-  margin-left: 8px;
+  margin: 8px 0;
+  font-size: 13px;
   color: #606266;
 }
 
-.post-time {
-  color: #909399;
+.item-location .el-icon,
+.item-time .el-icon,
+.item-poster .el-icon {
+  margin-right: 5px;
 }
 
-.pagination-container {
-  margin-top: 30px;
-  display: flex;
-  justify-content: center;
+.pagination {
+  margin-top: 20px;
+  text-align: center;
 }
 
 @media (max-width: 768px) {
-  .found-items-container {
-    padding: 10px;
+  .action-buttons {
+    justify-content: center;
+    margin-top: 20px;
   }
 
-  .filter-form {
+  .search-container {
     flex-direction: column;
   }
 
-  .items-grid {
-    grid-template-columns: 1fr;
+  .search-container .el-input,
+  .search-container .el-select {
+    width: 100%;
   }
 
   .item-image {
-    height: 160px;
+    height: 180px;
   }
 }
 </style>

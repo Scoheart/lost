@@ -232,7 +232,7 @@ const banners = [
     title: '社区互助，让每一次丢失都有回家的可能',
     description: '共建互助社区，提高物品归还率',
     buttonText: '了解更多',
-    link: '/forum',
+    link: '/announcements',
     image: 'https://images.unsplash.com/photo-1528605248644-14dd04022da1'
   }
 ]
@@ -259,13 +259,6 @@ const services = [
     description: '查看社区最新公告和通知',
     icon: 'Bell',
     link: '/announcements'
-  },
-  {
-    id: 4,
-    title: '邻里论坛',
-    description: '与邻居交流互动，分享社区信息',
-    icon: 'ChatDotRound',
-    link: '/forum'
   }
 ]
 

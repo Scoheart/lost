@@ -5,7 +5,6 @@ import { useUserStore } from './user'
 import { useLostItemsStore } from './lostItems'
 import { useFoundItemsStore } from './foundItems'
 import { useAnnouncementsStore } from './announcements'
-import { useForumStore } from './forum'
 import { useMessageStore } from './messages'
 
 export {
@@ -13,6 +12,5 @@ export {
   useLostItemsStore,
   useFoundItemsStore,
   useAnnouncementsStore,
-  useForumStore,
   useMessageStore
 }

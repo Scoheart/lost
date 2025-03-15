@@ -212,86 +212,6 @@
           </div>
         </div>
       </el-tab-pane>
-
-      <!-- 论坛帖子 -->
-      <el-tab-pane label="论坛帖子" name="forum-posts">
-        <div v-if="loadingForumPosts" class="loading-container">
-          <el-skeleton :rows="5" animated />
-        </div>
-
-        <el-empty
-          v-else-if="forumPosts.length === 0"
-          description="您还没有发布过论坛帖子"
-        >
-          <el-button type="primary" @click="$router.push('/forum/create')">
-            发布帖子
-          </el-button>
-        </el-empty>
-
-        <div v-else class="items-list">
-          <el-table
-            :data="forumPosts"
-            style="width: 100%"
-            @row-click="(row) => viewForumPost(row.id)"
-          >
-            <el-table-column prop="title" label="标题" min-width="200" show-overflow-tooltip />
-
-            <el-table-column label="发布时间" width="120">
-              <template #default="scope">
-                {{ formatDate(scope.row.createdAt) }}
-              </template>
-            </el-table-column>
-
-            <el-table-column prop="viewCount" label="查看" width="80" align="center" />
-
-            <el-table-column prop="commentCount" label="回复" width="80" align="center" />
-
-            <el-table-column label="状态" width="100" align="center">
-              <template #default="scope">
-                <el-tag :type="getPostStatusType(scope.row.status)">
-                  {{ getPostStatusLabel(scope.row.status) }}
-                </el-tag>
-              </template>
-            </el-table-column>
-
-            <el-table-column label="操作" width="180" fixed="right">
-              <template #default="scope">
-                <el-button
-                  link
-                  type="primary"
-                  @click.stop="viewForumPost(scope.row.id)"
-                >
-                  查看
-                </el-button>
-                <el-button
-                  link
-                  type="warning"
-                  @click.stop="editForumPost(scope.row.id)"
-                >
-                  编辑
-                </el-button>
-                <el-button
-                  link
-                  type="danger"
-                  @click.stop="deleteForumPost(scope.row.id, scope.row.title)"
-                >
-                  删除
-                </el-button>
-              </template>
-            </el-table-column>
-          </el-table>
-
-          <div class="pagination-container">
-            <el-pagination
-              v-model:current-page="forumPostsPage"
-              :page-size="pageSize"
-              :total="totalForumPosts"
-              layout="total, prev, pager, next, jumper"
-              @current-change="handleForumPostsPageChange"
-            />
-          </div>
-        </div>
-      </el-tab-pane>
     </el-tabs>
   </div>
 </template>
@@ -304,12 +224,10 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import { format } from 'date-fns'
 import { useLostItemsStore } from '@/stores/lostItems'
 import { useFoundItemsStore } from '@/stores/foundItems'
-import { useForumStore } from '@/stores/forum'
 
 const router = useRouter()
 const lostItemsStore = useLostItemsStore()
 const foundItemsStore = useFoundItemsStore()
-const forumStore = useForumStore()
 
 // 活动标签页
 const activeTab = ref('lost-items')
@@ -318,18 +236,14 @@ const activeTab = ref('lost-items')
 const pageSize = ref(10)
 const lostItemsPage = ref(1)
 const foundItemsPage = ref(1)
-const forumPostsPage = ref(1)
 const loadingLostItems = ref(false)
 const loadingFoundItems = ref(false)
-const loadingForumPosts = ref(false)
 
 // 数据
 const lostItems = ref([])
 const foundItems = ref([])
-const forumPosts = ref([])
 const totalLostItems = ref(0)
 const totalFoundItems = ref(0)
-const totalForumPosts = ref(0)
 
 // 方法
 const handleTabChange = (tab) => {
@@ -337,8 +251,6 @@ const handleTabChange = (tab) => {
     fetchLostItems()
   } else if (tab === 'found-items' && foundItems.value.length === 0) {
     fetchFoundItems()
-  } else if (tab === 'forum-posts' && forumPosts.value.length === 0) {
-    fetchForumPosts()
   }
 }
 
@@ -523,93 +435,6 @@ const getFoundStatusType = (status) => {
       return 'success'
     case 'closed':
       return 'info'
-    default:
-      return 'info'
-  }
-}
-
-// 论坛帖子相关方法
-const fetchForumPosts = async () => {
-  loadingForumPosts.value = true
-  try {
-    const response = await forumStore.fetchUserPosts({
-      page: forumPostsPage.value,
-      pageSize: pageSize.value
-    })
-
-    forumPosts.value = response.items || []
-    totalForumPosts.value = response.total || 0
-  } catch (error) {
-    console.error('Failed to fetch forum posts:', error)
-    ElMessage.error('获取论坛帖子列表失败')
-  } finally {
-    loadingForumPosts.value = false
-  }
-}
-
-const handleForumPostsPageChange = (page) => {
-  forumPostsPage.value = page
-  fetchForumPosts()
-}
-
-const viewForumPost = (id) => {
-  router.push(`/forum/${id}`)
-}
-
-const editForumPost = (id) => {
-  router.push(`/forum/edit/${id}`)
-}
-
-const deleteForumPost = (id, title) => {
-  ElMessageBox.confirm(
-    `确定要删除帖子 "${title}" 吗？`,
-    '删除确认',
-    {
-      confirmButtonText: '确定',
-      cancelButtonText: '取消',
-      type: 'warning'
-    }
-  )
-    .then(async () => {
-      try {
-        const result = await forumStore.deletePost(id)
-        if (result.success) {
-          ElMessage.success('删除成功')
-          fetchForumPosts()
-        } else {
-          ElMessage.error(result.message || '删除失败')
-        }
-      } catch (error) {
-        console.error('Failed to delete forum post:', error)
-        ElMessage.error('删除失败')
-      }
-    })
-    .catch(() => {
-      // 用户取消操作，不执行任何操作
-    })
-}
-
-const getPostStatusLabel = (status) => {
-  switch (status) {
-    case 'published':
-      return '已发布'
-    case 'draft':
-      return '草稿'
-    case 'hidden':
-      return '已隐藏'
-    default:
-      return '未知'
-  }
-}
-
-const getPostStatusType = (status) => {
-  switch (status) {
-    case 'published':
-      return 'success'
-    case 'draft':
-      return 'info'
-    case 'hidden':
-      return 'danger'
     default:
       return 'info'
   }

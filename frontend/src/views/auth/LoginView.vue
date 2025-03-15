@@ -6,7 +6,20 @@
         <h1>住宅小区互助寻物系统</h1>
       </div>
 
-      <h2 class="login-title">用户登录</h2>
+      <h2 class="login-title">居民用户登录</h2>
+
+      <div class="user-login-notice">
+        <el-alert
+          title="居民用户登录入口"
+          type="info"
+          :closable="false"
+          show-icon
+        >
+          <template #default>
+            此登录入口仅供<strong>居民用户</strong>使用。管理员请使用<router-link to="/admin/login">管理员登录</router-link>。
+          </template>
+        </el-alert>
+      </div>
 
       <el-form
         ref="formRef"
@@ -52,10 +65,6 @@
         <div class="register-link">
           还没有账号？
           <router-link to="/register">立即注册</router-link>
-        </div>
-
-        <div class="admin-login-link">
-          <router-link to="/admin/login">管理员登录入口 →</router-link>
         </div>
       </el-form>
 
@@ -129,7 +138,16 @@ const handleSubmit = async () => {
           const redirectPath = route.query.redirect as string
           router.push(redirectPath || '/')
         } else {
-          error.value = result.message || '登录失败，请检查用户名和密码'
+          if (result.message && result.message.includes('管理员账号')) {
+            // 显示更友好的错误提示，引导管理员使用正确的登录入口
+            error.value = '您正在使用管理员账号登录居民入口，请前往管理员登录页面'
+            ElMessage.warning({
+              message: '请使用管理员登录入口',
+              duration: 5000
+            })
+          } else {
+            error.value = result.message || '登录失败，请检查用户名和密码'
+          }
         }
       } catch (err) {
         console.error('Login error:', err)
@@ -223,24 +241,6 @@ const goToForgotPassword = () => {
   text-decoration: underline;
 }
 
-.admin-login-link {
-  text-align: center;
-  margin-top: 15px;
-  font-size: 14px;
-}
-
-.admin-login-link a {
-  color: #909399;
-  text-decoration: none;
-  display: inline-flex;
-  align-items: center;
-  transition: color 0.3s;
-}
-
-.admin-login-link a:hover {
-  color: #409eff;
-}
-
 .error-message {
   margin-top: 20px;
 }
@@ -296,5 +296,22 @@ const goToForgotPassword = () => {
 :deep(.el-input__wrapper.is-focus),
 :deep(.el-input__wrapper:hover) {
   background-color: transparent !important;
+}
+
+.user-login-notice {
+  margin-bottom: 20px;
+}
+
+.user-login-notice :deep(.el-alert) {
+  margin-bottom: 0;
+}
+
+.user-login-notice a {
+  color: #409eff;
+  text-decoration: none;
+}
+
+.user-login-notice a:hover {
+  text-decoration: underline;
 }
 </style>

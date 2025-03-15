@@ -10,51 +10,55 @@
           </div>
 
           <div class="header-links">
-            <el-menu mode="horizontal" :router="true" :default-active="activeRoute" class="menu">
+            <el-menu mode="horizontal" :router="true" :default-active="activeRoute" class="menu" :ellipsis="false">
               <el-menu-item index="/">首页</el-menu-item>
               <el-menu-item index="/announcements">社区公告</el-menu-item>
               <el-menu-item index="/lost-items">寻物启事</el-menu-item>
               <el-menu-item index="/found-items">失物招领</el-menu-item>
-              <el-menu-item index="/forum">邻里论坛</el-menu-item>
             </el-menu>
           </div>
 
           <div class="user-actions">
-            <template v-if="isLoggedIn">
-              <el-dropdown trigger="click">
-                <div class="user-avatar">
-                  <el-avatar :size="32" :src="userAvatar">{{ userInitials }}</el-avatar>
-                  <span>{{ user?.username }}</span>
-                </div>
-                <template #dropdown>
-                  <el-dropdown-menu>
-                    <el-dropdown-item @click="$router.push('/profile')">
-                      <el-icon><User /></el-icon> 个人中心
-                    </el-dropdown-item>
-                    <el-dropdown-item @click="$router.push('/profile/my-posts')">
-                      <el-icon><Document /></el-icon> 我的发布
-                    </el-dropdown-item>
-                    <el-dropdown-item v-if="isAdmin" @click="$router.push('/admin')">
-                      <el-icon><Setting /></el-icon> 管理中心
-                    </el-dropdown-item>
-                    <el-dropdown-item @click="handleLogout" divided>
-                      <el-icon><SwitchButton /></el-icon> 退出登录
-                    </el-dropdown-item>
-                  </el-dropdown-menu>
-                </template>
-              </el-dropdown>
+            <template v-if="authReady">
+              <template v-if="isLoggedIn">
+                <el-dropdown trigger="click">
+                  <div class="user-avatar">
+                    <el-avatar :size="32" :src="userAvatar">{{ userInitials }}</el-avatar>
+                    <span>{{ user?.username }}</span>
+                  </div>
+                  <template #dropdown>
+                    <el-dropdown-menu>
+                      <el-dropdown-item @click="$router.push('/profile')">
+                        <el-icon><User /></el-icon> 个人中心
+                      </el-dropdown-item>
+                      <el-dropdown-item @click="$router.push('/profile/my-posts')">
+                        <el-icon><Document /></el-icon> 我的发布
+                      </el-dropdown-item>
+                      <el-dropdown-item v-if="isAdmin" @click="$router.push('/admin')">
+                        <el-icon><Setting /></el-icon> 管理中心
+                      </el-dropdown-item>
+                      <el-dropdown-item @click="handleLogout" divided>
+                        <el-icon><SwitchButton /></el-icon> 退出登录
+                      </el-dropdown-item>
+                    </el-dropdown-menu>
+                  </template>
+                </el-dropdown>
+              </template>
+              <template v-else>
+                <el-button type="primary" @click="$router.push('/login')">登录</el-button>
+                <el-button @click="$router.push('/register')">注册</el-button>
+                <el-link
+                  type="info"
+                  :underline="false"
+                  class="admin-link"
+                  @click="$router.push('/admin/login')"
+                >
+                  管理员入口
+                </el-link>
+              </template>
             </template>
             <template v-else>
-              <el-button type="primary" @click="$router.push('/login')">登录</el-button>
-              <el-button @click="$router.push('/register')">注册</el-button>
-              <el-link
-                type="info"
-                :underline="false"
-                class="admin-link"
-                @click="$router.push('/admin/login')"
-              >
-                管理员入口
-              </el-link>
+              <el-skeleton style="width: 150px; height: 32px" animated />
             </template>
           </div>
         </div>
@@ -80,7 +84,7 @@
           <div class="footer-section">
             <h4>快速链接</h4>
             <p><a href="/lost-items">寻物启事</a> | <a href="/found-items">失物招领</a></p>
-            <p><a href="/forum">邻里论坛</a> | <a href="/announcements">社区公告</a></p>
+            <p><a href="/announcements">社区公告</a></p>
           </div>
         </div>
         <div class="copyright">© {{ currentYear }} 住宅小区互助寻物系统 - 版权所有</div>
@@ -98,13 +102,10 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 
 const router = useRouter()
 const userStore = useUserStore()
+const authReady = computed(() => userStore.initialized)
 
 // 计算属性
-const isLoggedIn = computed(() => {
-  const authenticated = userStore.isAuthenticated
-  console.log('Authentication status:', authenticated, 'Token:', !!userStore.token, 'User:', !!userStore.user)
-  return authenticated
-})
+const isLoggedIn = computed(() => userStore.isAuthenticated)
 const isAdmin = computed(() => userStore.isAdmin)
 const user = computed(() => userStore.userProfile)
 const userAvatar = computed(() => user.value?.avatar || '')
@@ -115,19 +116,11 @@ const currentYear = computed(() => new Date().getFullYear())
 const activeRoute = computed(() => router.currentRoute.value.path)
 
 // 监听登录状态变化
-watch(() => userStore.token, (newToken) => {
+watch(() => userStore.token, (newToken, oldToken) => {
   console.log('Token changed:', !!newToken)
-  if (newToken && !userStore.user && !userStore.loading) {
+  // 只在token发生实际变化且没有用户信息时获取用户数据
+  if (newToken && !userStore.user && !userStore.loading && newToken !== oldToken) {
     userStore.fetchCurrentUser()
-  }
-}, { immediate: true })
-
-// 生命周期钩子
-onMounted(async () => {
-  console.log('MainLayout mounted, token:', !!userStore.token, 'user:', !!userStore.user)
-  // 如果有token但没有用户信息，尝试获取用户信息
-  if (userStore.token && !userStore.user && !userStore.loading) {
-    await userStore.fetchCurrentUser()
   }
 })
 
@@ -195,10 +188,12 @@ const handleLogout = () => {
   flex: 1;
   display: flex;
   justify-content: center;
+  overflow-x: auto;
 }
 
 .menu {
   border-bottom: none;
+  white-space: nowrap;
 }
 
 .user-actions {
@@ -293,7 +288,15 @@ const handleLogout = () => {
 
   .header-links {
     width: 100%;
-    overflow-x: auto;
+    justify-content: flex-start;
+  }
+
+  .el-menu.el-menu--horizontal {
+    border-bottom: none;
+  }
+
+  .menu :deep(.el-menu-item) {
+    padding: 0 15px;
   }
 
   .user-actions {

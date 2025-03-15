@@ -13,30 +13,24 @@
           :default-active="activeMenu"
           class="admin-menu"
         >
-          <!-- 所有管理员可见的菜单项 -->
-          <el-menu-item index="/admin/announcements">
+          <!-- 只有小区管理员可见的菜单项 -->
+          <el-menu-item v-if="userStore.isCommunityAdmin && !userStore.isSysAdmin" index="/admin/announcements">
             <el-icon><Notification /></el-icon>
             <span>公告管理</span>
           </el-menu-item>
 
-          <el-menu-item index="/admin/claims">
+          <el-menu-item v-if="userStore.isCommunityAdmin && !userStore.isSysAdmin" index="/admin/claims">
             <el-icon><Connection /></el-icon>
             <span>认领记录</span>
           </el-menu-item>
 
-          <el-menu-item index="/admin/reports">
-            <el-icon><Warning /></el-icon>
-            <span>举报管理</span>
-          </el-menu-item>
-
-          <!-- 小区管理员和系统管理员可见 -->
-          <el-menu-item index="/admin/residents">
+          <el-menu-item v-if="userStore.isCommunityAdmin && !userStore.isSysAdmin" index="/admin/residents">
             <el-icon><User /></el-icon>
             <span>居民管理</span>
           </el-menu-item>
 
           <!-- 只有系统管理员可见 -->
-          <el-menu-item index="/admin/users" v-if="userStore.isSysAdmin">
+          <el-menu-item v-if="userStore.isSysAdmin" index="/admin/users">
             <el-icon><Setting /></el-icon>
             <span>系统用户管理</span>
           </el-menu-item>
@@ -73,20 +67,6 @@
 
       <!-- 主内容区 -->
       <el-main class="admin-main">
-        <!-- 开发环境警告 -->
-        <div v-if="isDev && allowAdminAccess" class="dev-mode-banner">
-          <el-alert
-            title="开发环境: 管理员权限已绕过"
-            type="warning"
-            :closable="false"
-            show-icon
-          >
-            <template #default>
-              当前处于开发环境，管理员权限检查已绕过。这仅适用于开发测试。
-            </template>
-          </el-alert>
-        </div>
-
         <!-- 管理员角色提示 -->
         <div v-if="isRoleSpecificPage" class="role-warning">
           <el-alert
@@ -114,7 +94,6 @@ import { useRouter, useRoute } from 'vue-router'
 import {
   Notification,
   Connection,
-  Warning,
   User,
   Setting,
   SwitchButton,
@@ -126,10 +105,6 @@ import { useUserStore } from '@/stores/user'
 const router = useRouter()
 const route = useRoute()
 const userStore = useUserStore()
-
-// 开发环境变量
-const isDev = import.meta.env.DEV
-const allowAdminAccess = import.meta.env.VITE_ALLOW_ADMIN_ACCESS === 'true'
 
 // 计算属性
 const activeMenu = computed(() => route.path)
@@ -150,27 +125,46 @@ const adminRoleText = computed(() => {
 
 // 判断当前页面是否为角色特定页面
 const isRoleSpecificPage = computed(() => {
-  // 检查是否在系统管理员专有页面但不是系统管理员
-  return (
-    route.path === '/admin/users' &&
-    !userStore.isSysAdmin &&
-    !(isDev && allowAdminAccess)
-  )
+  // 系统管理员尝试访问非用户管理页面
+  if (userStore.isSysAdmin &&
+      (route.path === '/admin/announcements' ||
+       route.path === '/admin/claims' ||
+       route.path === '/admin/residents')) {
+    return true;
+  }
+
+  // 小区管理员尝试访问用户管理页面
+  if (userStore.isCommunityAdmin && !userStore.isSysAdmin && route.path === '/admin/users') {
+    return true;
+  }
+
+  return false;
 })
 
 // 角色警告信息
 const roleWarningTitle = computed(() => {
-  if (route.path === '/admin/users') {
-    return '系统用户管理仅限系统管理员访问'
+  if (userStore.isSysAdmin) {
+    return '系统管理员仅可访问系统用户管理';
   }
-  return '权限提示'
+  if (route.path === '/admin/users') {
+    return '系统用户管理仅限系统管理员访问';
+  }
+  return '权限提示';
 })
 
 const roleWarningMessage = computed(() => {
-  if (route.path === '/admin/users') {
-    return '您当前的角色是小区管理员，无法访问系统用户管理功能。如需访问，请联系系统管理员提升您的权限。'
+  if (userStore.isSysAdmin &&
+     (route.path === '/admin/announcements' ||
+      route.path === '/admin/claims' ||
+      route.path === '/admin/residents')) {
+    return '作为系统管理员，您只能访问系统用户管理功能。';
   }
-  return '您没有足够的权限访问此页面'
+
+  if (userStore.isCommunityAdmin && !userStore.isSysAdmin && route.path === '/admin/users') {
+    return '您当前的角色是小区管理员，无法访问系统用户管理功能。如需访问，请联系系统管理员提升您的权限。';
+  }
+
+  return '您没有足够的权限访问此页面';
 })
 
 // 方法
@@ -287,10 +281,6 @@ const logout = async () => {
   color: #bfcbd9;
   font-size: 18px;
   cursor: pointer;
-}
-
-.dev-mode-banner {
-  margin-bottom: 20px;
 }
 
 .role-warning {

@@ -32,6 +32,7 @@ export interface UserState {
   loading: boolean
   error: string | undefined
   lastFetch: number | null
+  initialized: boolean
 }
 
 export const useUserStore = defineStore('user', {
@@ -40,34 +41,23 @@ export const useUserStore = defineStore('user', {
     token: localStorage.getItem('token'),
     loading: false,
     error: undefined,
-    lastFetch: null // 记录上次获取用户数据的时间戳
+    lastFetch: null, // 记录上次获取用户数据的时间戳
+    initialized: false // 标记用户状态是否已初始化
   }),
 
   getters: {
-    isAuthenticated: (state) => !!state.token && !!state.user,
+    isAuthenticated: (state) => {
+      return !!state.token && !!state.user;
+    },
     isAdmin: (state) => {
-      // 在开发环境中，如果VITE_ALLOW_ADMIN_ACCESS设置为true，认为用户拥有管理员权限
-      const isDev = import.meta.env.DEV
-      const allowAdminAccess = import.meta.env.VITE_ALLOW_ADMIN_ACCESS === 'true'
-      const bypassCheck = isDev && allowAdminAccess
-
-      return bypassCheck || state.user?.role === 'admin' || state.user?.role === 'sysadmin'
+      return state.user?.role === 'admin' || state.user?.role === 'sysadmin'
     },
     isSysAdmin: (state) => {
-      // 在开发环境中，如果VITE_ALLOW_ADMIN_ACCESS设置为true，认为用户拥有系统管理员权限
-      const isDev = import.meta.env.DEV
-      const allowAdminAccess = import.meta.env.VITE_ALLOW_ADMIN_ACCESS === 'true'
-      const bypassCheck = isDev && allowAdminAccess
-
-      return bypassCheck || state.user?.role === 'sysadmin'
+      return state.user?.role === 'sysadmin'
     },
     // 添加新的getter: 判断用户是否是小区管理员（不包括系统管理员）
     isCommunityAdmin: (state) => {
-      const isDev = import.meta.env.DEV
-      const allowAdminAccess = import.meta.env.VITE_ALLOW_ADMIN_ACCESS === 'true'
-      const bypassCheck = isDev && allowAdminAccess
-
-      return bypassCheck || state.user?.role === 'admin'
+      return state.user?.role === 'admin'
     },
     userProfile: (state) => state.user,
     // 判断是否需要重新获取用户数据（5分钟过期）
@@ -154,6 +144,14 @@ export const useUserStore = defineStore('user', {
         if (response.data.success) {
           const responseData = response.data.data
           const token = responseData.token
+          const role = responseData.role
+
+          // 验证角色是否为居民用户
+          if (role !== 'resident') {
+            this.error = '管理员账号请使用管理员登录入口'
+            console.log('[UserStore] Login failed: Not a resident account')
+            return { success: false, message: this.error }
+          }
 
           // 构建用户对象
           const user: User = {
@@ -173,12 +171,12 @@ export const useUserStore = defineStore('user', {
 
           return { success: true }
         } else {
-          this.error = response.data.message || '登录失败'
+          this.error = response.data.message || '登录失败，请检查用户名和密码'
           console.log('[UserStore] Login failed:', this.error)
           return { success: false, message: this.error }
         }
       } catch (error: any) {
-        this.handleApiError(error, '登录失败，请检查用户名和密码')
+        this.handleApiError(error, '登录失败，请稍后再试')
         return { success: false, message: this.error }
       } finally {
         this.loading = false
@@ -206,30 +204,34 @@ export const useUserStore = defineStore('user', {
     },
 
     /**
-     * 退出登录
+     * 初始化用户状态
+     * 在应用启动时调用，验证token并加载用户数据
      */
-    logout(): void {
-      console.log('[UserStore] Logging out user')
-      this.user = null
-      this.token = null
-      this.lastFetch = null
-      localStorage.removeItem('token')
-    },
+    async initialize(): Promise<boolean> {
+      // 如果已经初始化，跳过
+      if (this.initialized) {
+        return this.isAuthenticated;
+      }
 
-    /**
-     * 设置令牌
-     */
-    setToken(token: string): void {
-      this.token = token
-      localStorage.setItem('token', token)
-    },
+      console.log('[UserStore] Initializing user state');
 
-    /**
-     * 设置用户信息
-     */
-    setUser(user: User): void {
-      this.user = user
-      this.lastFetch = Date.now()
+      // 如果没有token，标记为已初始化并返回
+      if (!this.token) {
+        console.log('[UserStore] No token found during initialization');
+        this.initialized = true;
+        return false;
+      }
+
+      try {
+        // 尝试获取用户信息
+        const result = await this.fetchCurrentUser();
+        this.initialized = true;
+        return result.success;
+      } catch (error) {
+        console.error('[UserStore] Initialization error:', error);
+        this.initialized = true;
+        return false;
+      }
     },
 
     /**
@@ -278,6 +280,8 @@ export const useUserStore = defineStore('user', {
           return { success: true }
         } else {
           console.error('[UserStore] fetchCurrentUser: API returned error:', response.data.message)
+          // 处理令牌失效的情况
+          this.clearUserData()
           throw new Error(response.data.message || '获取用户信息失败')
         }
       } catch (error: any) {
@@ -286,13 +290,47 @@ export const useUserStore = defineStore('user', {
         // 令牌无效或过期，清除本地数据
         if (error.response?.status === 401 || error.response?.status === 403) {
           console.log('[UserStore] fetchCurrentUser: Invalid token, logging out')
-          this.logout()
+          this.clearUserData()
         }
 
         return { success: false, message: this.error }
       } finally {
         this.loading = false
       }
+    },
+
+    /**
+     * 清除用户数据（保持登出逻辑不变，但提取公共逻辑到一个单独的方法）
+     */
+    clearUserData(): void {
+      this.user = null
+      this.token = null
+      this.lastFetch = null
+      localStorage.removeItem('token')
+    },
+
+    /**
+     * 退出登录
+     */
+    logout(): void {
+      console.log('[UserStore] Logging out user')
+      this.clearUserData()
+    },
+
+    /**
+     * 设置令牌
+     */
+    setToken(token: string): void {
+      this.token = token
+      localStorage.setItem('token', token)
+    },
+
+    /**
+     * 设置用户信息
+     */
+    setUser(user: User): void {
+      this.user = user
+      this.lastFetch = Date.now()
     },
 
     /**

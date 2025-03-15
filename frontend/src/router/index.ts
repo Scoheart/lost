@@ -96,25 +96,6 @@ const router = createRouter({
       component: () => import('../views/found-items/FoundItemDetailView.vue'),
       meta: { title: '招领详情' }
     },
-    // 邻里论坛
-    {
-      path: '/forum',
-      name: 'forum',
-      component: () => import('../views/forum/ForumView.vue'),
-      meta: { title: '邻里论坛' }
-    },
-    {
-      path: '/forum/create',
-      name: 'create-post',
-      component: () => import('../views/forum/CreatePostView.vue'),
-      meta: { title: '发布帖子', requiresAuth: true }
-    },
-    {
-      path: '/forum/:id',
-      name: 'post-detail',
-      component: () => import('../views/forum/PostDetailView.vue'),
-      meta: { title: '帖子详情' }
-    },
     // 登录/注册
     {
       path: '/login',
@@ -153,12 +134,6 @@ const router = createRouter({
           name: 'admin-announcements',
           component: () => import('../views/admin/AnnouncementsManageView.vue'),
           meta: { title: '公告管理', requiresAuth: true, requiresAdmin: true }
-        },
-        {
-          path: 'reports',
-          name: 'admin-reports',
-          component: () => import('../views/admin/ReportsManageView.vue'),
-          meta: { title: '举报管理', requiresAuth: true, requiresAdmin: true }
         },
         {
           path: 'claims',
@@ -201,17 +176,6 @@ router.beforeEach(async (to, from, next) => {
   // 记录路由守卫开始
   console.log(`[Router Guard] Navigating to: ${to.path}`)
 
-  // 检查是否允许绕过管理员权限验证（开发环境下）
-  const isDev = import.meta.env.DEV
-  const allowAdminAccess = import.meta.env.VITE_ALLOW_ADMIN_ACCESS === 'true'
-  const bypassAdminCheck = isDev && allowAdminAccess
-
-  if (bypassAdminCheck && (to.meta.requiresAdmin || to.meta.requiresSysAdmin)) {
-    console.log('[Router Guard] Development mode: bypassing admin permission check')
-    next()
-    return
-  }
-
   // 如果当前有用户信息，直接通过
   if (userStore.isAuthenticated) {
     console.log('[Router Guard] User is already authenticated')
@@ -226,8 +190,22 @@ router.beforeEach(async (to, from, next) => {
     // 检查是否需要系统管理员权限
     if (to.meta.requiresSysAdmin && !userStore.isSysAdmin) {
       console.log('[Router Guard] Access denied: SysAdmin privileges required')
-      next({ name: 'admin' })
+      next({ name: 'admin-announcements' })
       return
+    }
+
+    // 处理特定的admin路径
+    if (to.path === '/admin' && userStore.isAuthenticated) {
+      // 系统管理员直接进入用户管理
+      if (userStore.isSysAdmin) {
+        next({ name: 'admin-users' })
+        return
+      }
+      // 小区管理员进入公告管理
+      else if (userStore.isCommunityAdmin) {
+        next({ name: 'admin-announcements' })
+        return
+      }
     }
 
     // 权限符合，放行
@@ -260,7 +238,7 @@ router.beforeEach(async (to, from, next) => {
 
         if (to.meta.requiresSysAdmin && !userStore.isSysAdmin) {
           console.log('[Router Guard] Access denied: SysAdmin privileges required')
-          next({ name: 'admin' })
+          next({ name: 'admin-announcements' })
           return
         }
 

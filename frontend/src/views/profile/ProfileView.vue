@@ -1,20 +1,6 @@
 <template>
   <main-layout>
     <div class="profile-container">
-      <!-- Development mode indicator -->
-      <div v-if="isDev && allowAdminAccess" class="dev-mode-banner">
-        <el-alert
-          title="开发模式: 管理员权限已绕过"
-          type="warning"
-          :closable="false"
-          show-icon
-        >
-          <template #default>
-            系统当前处于开发环境，管理员权限检查已绕过。这仅适用于开发测试。
-          </template>
-        </el-alert>
-      </div>
-
       <el-row :gutter="20">
         <!-- 侧边栏导航 -->
         <el-col :xs="24" :sm="6" :md="5" :lg="4">
@@ -104,10 +90,6 @@ const messageStore = useMessageStore()
 const isLoaded = ref(false)
 const loading = ref(false)
 
-// 开发环境变量
-const isDev = import.meta.env.DEV
-const allowAdminAccess = import.meta.env.VITE_ALLOW_ADMIN_ACCESS === 'true'
-
 // 计算属性
 const currentUser = computed(() => userStore.user || {} as User)
 const userAvatar = computed(() => (currentUser.value?.avatar as string) || '')
@@ -142,10 +124,6 @@ onMounted(async () => {
 <style scoped>
 .profile-container {
   padding: 20px;
-}
-
-.dev-mode-banner {
-  margin-bottom: 20px;
 }
 
 .profile-sidebar {

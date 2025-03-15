@@ -142,7 +142,16 @@ const handleSubmit = async () => {
             return
           }
         } else {
-          error.value = result.message || '登录失败，请检查账号和密码'
+          if (result.message && result.message.includes('没有管理员权限')) {
+            // 显示更友好的错误提示，引导居民用户使用正确的登录入口
+            error.value = '您正在使用居民账号登录管理员入口，请前往居民登录页面'
+            ElMessage.warning({
+              message: '请使用居民登录入口',
+              duration: 5000
+            })
+          } else {
+            error.value = result.message || '登录失败，请检查账号和密码'
+          }
         }
       } catch (err) {
         console.error('Admin login error:', err)
