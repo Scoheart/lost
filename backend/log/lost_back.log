@@ -15268,3 +15268,77 @@ org.springframework.web.HttpRequestMethodNotSupportedException: Request method '
 2025-03-15T21:35:34.917+08:00 DEBUG 90704 --- [http-nio-0.0.0.0-8080-exec-8] c.c.l.r.UserRepository.findById          : <==      Total: 1
 2025-03-15T21:35:34.917+08:00 DEBUG 90704 --- [http-nio-0.0.0.0-8080-exec-8] c.c.l.controller.UserController          : User found: admin1
 2025-03-15T21:46:20.769+08:00  WARN 90704 --- [HikariPool-1 housekeeper] com.zaxxer.hikari.pool.HikariPool        : HikariPool-1 - Thread starvation or clock leap detected (housekeeper delta=9m24s531ms).
+2025-03-15T21:55:17.978+08:00  INFO 90704 --- [SpringApplicationShutdownHook] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Shutdown initiated...
+2025-03-15T21:55:17.980+08:00  INFO 90704 --- [SpringApplicationShutdownHook] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Shutdown completed.
+2025-03-15T21:59:12.739+08:00  INFO 13250 --- [main] c.c.l.LostAndFoundApplication            : Starting LostAndFoundApplication using Java 23.0.1 with PID 13250 (/Users/scoheart/temp/lost-and-found/backend/target/classes started by scoheart in /Users/scoheart/temp/lost-and-found/backend)
+2025-03-15T21:59:12.740+08:00 DEBUG 13250 --- [main] c.c.l.LostAndFoundApplication            : Running with Spring Boot v3.2.3, Spring v6.1.4
+2025-03-15T21:59:12.740+08:00  INFO 13250 --- [main] c.c.l.LostAndFoundApplication            : No active profile set, falling back to 1 default profile: "default"
+2025-03-15T21:59:13.009+08:00  INFO 13250 --- [main] .s.d.r.c.RepositoryConfigurationDelegate : Multiple Spring Data modules found, entering strict repository configuration mode
+2025-03-15T21:59:13.010+08:00  INFO 13250 --- [main] .s.d.r.c.RepositoryConfigurationDelegate : Bootstrapping Spring Data Redis repositories in DEFAULT mode.
+2025-03-15T21:59:13.022+08:00  INFO 13250 --- [main] .s.d.r.c.RepositoryConfigurationDelegate : Finished Spring Data repository scanning in 6 ms. Found 0 Redis repository interfaces.
+2025-03-15T21:59:13.236+08:00  INFO 13250 --- [main] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat initialized with port 8080 (http)
+2025-03-15T21:59:13.240+08:00  INFO 13250 --- [main] o.apache.catalina.core.StandardService   : Starting service [Tomcat]
+2025-03-15T21:59:13.241+08:00  INFO 13250 --- [main] o.apache.catalina.core.StandardEngine    : Starting Servlet engine: [Apache Tomcat/10.1.19]
+2025-03-15T21:59:13.254+08:00  INFO 13250 --- [main] o.a.c.c.C.[Tomcat].[localhost].[/api]    : Initializing Spring embedded WebApplicationContext
+2025-03-15T21:59:13.255+08:00  INFO 13250 --- [main] w.s.c.ServletWebServerApplicationContext : Root WebApplicationContext: initialization completed in 496 ms
+2025-03-15T21:59:13.397+08:00 DEBUG 13250 --- [main] c.c.l.security.AuthTokenFilter           : Filter 'authTokenFilter' configured for use
+2025-03-15T21:59:13.593+08:00  INFO 13250 --- [main] o.s.s.web.DefaultSecurityFilterChain     : Will secure any request with [org.springframework.security.web.session.DisableEncodeUrlFilter@77ab5214, org.springframework.security.web.context.request.async.WebAsyncManagerIntegrationFilter@6d420cdd, org.springframework.security.web.context.SecurityContextHolderFilter@37cfda1c, org.springframework.security.web.header.HeaderWriterFilter@57416e49, org.springframework.web.filter.CorsFilter@bd273b2, org.springframework.security.web.authentication.logout.LogoutFilter@5408d4b3, com.community.lostandfound.security.AuthTokenFilter@35d7386b, org.springframework.security.web.savedrequest.RequestCacheAwareFilter@5f45bc8e, org.springframework.security.web.servletapi.SecurityContextHolderAwareRequestFilter@33e50ff2, org.springframework.security.web.authentication.AnonymousAuthenticationFilter@78128dd0, org.springframework.security.web.session.SessionManagementFilter@75ed7512, org.springframework.security.web.access.ExceptionTranslationFilter@2f1f9515, org.springframework.security.web.access.intercept.AuthorizationFilter@44abdb1f]
+2025-03-15T21:59:13.811+08:00  INFO 13250 --- [main] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat started on port 8080 (http) with context path '/api'
+2025-03-15T21:59:13.815+08:00  INFO 13250 --- [main] c.c.l.LostAndFoundApplication            : Started LostAndFoundApplication in 1.254 seconds (process running for 1.521)
+2025-03-15T21:59:13.815+08:00  INFO 13250 --- [main] c.c.l.config.AdminInitializer            : 正在检查系统管理员账户...
+2025-03-15T21:59:13.820+08:00  INFO 13250 --- [main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Starting...
+2025-03-15T21:59:14.005+08:00  INFO 13250 --- [main] com.zaxxer.hikari.pool.HikariPool        : HikariPool-1 - Added connection com.mysql.cj.jdbc.ConnectionImpl@39004e4f
+2025-03-15T21:59:14.005+08:00  INFO 13250 --- [main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Start completed.
+2025-03-15T21:59:14.009+08:00 DEBUG 13250 --- [main] c.c.l.repository.UserRepository.findAll  : ==>  Preparing: SELECT * FROM users
+2025-03-15T21:59:14.021+08:00 DEBUG 13250 --- [main] c.c.l.repository.UserRepository.findAll  : ==> Parameters: 
+2025-03-15T21:59:14.049+08:00 DEBUG 13250 --- [main] c.c.l.repository.UserRepository.findAll  : <==      Total: 3
+2025-03-15T21:59:14.051+08:00  INFO 13250 --- [main] c.c.l.config.AdminInitializer            : 系统中已存在系统管理员账户，跳过初始化
+2025-03-15T21:59:14.052+08:00  INFO 13250 --- [main] c.c.l.config.AdminInitializer            : 正在重置管理员 sysadmin 的密码...
+2025-03-15T21:59:14.069+08:00 DEBUG 13250 --- [main] c.c.l.r.UserRepository.findById          : ==>  Preparing: SELECT * FROM users WHERE id = ?
+2025-03-15T21:59:14.070+08:00 DEBUG 13250 --- [main] c.c.l.r.UserRepository.findById          : ==> Parameters: 1(Long)
+2025-03-15T21:59:14.086+08:00 DEBUG 13250 --- [main] c.c.l.r.UserRepository.findById          : <==      Total: 1
+2025-03-15T21:59:14.086+08:00 DEBUG 13250 --- [main] c.c.l.service.impl.UserServiceImpl       : Updating user: sysadmin, ID: 1
+2025-03-15T21:59:14.086+08:00 DEBUG 13250 --- [main] c.c.l.service.impl.UserServiceImpl       : Encoding new password for user: sysadmin
+2025-03-15T21:59:14.159+08:00 DEBUG 13250 --- [main] c.c.l.repository.UserRepository.update   : ==>  Preparing: UPDATE users SET username = ?, email = ?, password = ?, role = ?, avatar = ?, phone = ?, real_name = ?, updated_at = ?, is_enabled = ? WHERE id = ?
+2025-03-15T21:59:14.160+08:00 DEBUG 13250 --- [main] c.c.l.repository.UserRepository.update   : ==> Parameters: sysadmin(String), sysadmin@example.com(String), $2a$10$.SKNaQ1FSLFiC.wlOARLBuY2bwiAyfKjZ7JSbFz7kXNm2WkpGsv1m(String), sysadmin(String), null, (String), 系统管理员(String), 2025-03-15T21:59:14.158558(LocalDateTime), true(Boolean), 1(Long)
+2025-03-15T21:59:14.190+08:00 DEBUG 13250 --- [main] c.c.l.repository.UserRepository.update   : <==    Updates: 1
+2025-03-15T21:59:14.190+08:00 DEBUG 13250 --- [main] c.c.l.service.impl.UserServiceImpl       : User updated successfully: sysadmin
+2025-03-15T21:59:14.223+08:00  INFO 13250 --- [main] c.c.l.config.AdminInitializer            : 管理员 sysadmin 密码重置成功，新密码: admin123
+2025-03-15T21:59:14.298+08:00  INFO 13250 --- [main] c.c.l.config.AdminInitializer            : 密码验证结果: true, 密码哈希: $2a$10$.SKNaQ1FSLFiC.wlOARLBuY2bwiAyfKjZ7JSbFz7kXNm2WkpGsv1m
+2025-03-15T21:59:24.402+08:00  INFO 13250 --- [SpringApplicationShutdownHook] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Shutdown initiated...
+2025-03-15T21:59:24.406+08:00  INFO 13250 --- [SpringApplicationShutdownHook] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Shutdown completed.
+2025-03-15T21:59:25.569+08:00  INFO 13276 --- [main] c.c.l.LostAndFoundApplication            : Starting LostAndFoundApplication using Java 23.0.1 with PID 13276 (/Users/scoheart/temp/lost-and-found/backend/target/classes started by scoheart in /Users/scoheart/temp/lost-and-found/backend)
+2025-03-15T21:59:25.569+08:00 DEBUG 13276 --- [main] c.c.l.LostAndFoundApplication            : Running with Spring Boot v3.2.3, Spring v6.1.4
+2025-03-15T21:59:25.570+08:00  INFO 13276 --- [main] c.c.l.LostAndFoundApplication            : No active profile set, falling back to 1 default profile: "default"
+2025-03-15T21:59:25.826+08:00  INFO 13276 --- [main] .s.d.r.c.RepositoryConfigurationDelegate : Multiple Spring Data modules found, entering strict repository configuration mode
+2025-03-15T21:59:25.827+08:00  INFO 13276 --- [main] .s.d.r.c.RepositoryConfigurationDelegate : Bootstrapping Spring Data Redis repositories in DEFAULT mode.
+2025-03-15T21:59:25.838+08:00  INFO 13276 --- [main] .s.d.r.c.RepositoryConfigurationDelegate : Finished Spring Data repository scanning in 6 ms. Found 0 Redis repository interfaces.
+2025-03-15T21:59:26.044+08:00  INFO 13276 --- [main] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat initialized with port 8080 (http)
+2025-03-15T21:59:26.048+08:00  INFO 13276 --- [main] o.apache.catalina.core.StandardService   : Starting service [Tomcat]
+2025-03-15T21:59:26.049+08:00  INFO 13276 --- [main] o.apache.catalina.core.StandardEngine    : Starting Servlet engine: [Apache Tomcat/10.1.19]
+2025-03-15T21:59:26.064+08:00  INFO 13276 --- [main] o.a.c.c.C.[Tomcat].[localhost].[/api]    : Initializing Spring embedded WebApplicationContext
+2025-03-15T21:59:26.064+08:00  INFO 13276 --- [main] w.s.c.ServletWebServerApplicationContext : Root WebApplicationContext: initialization completed in 472 ms
+2025-03-15T21:59:26.190+08:00 DEBUG 13276 --- [main] c.c.l.security.AuthTokenFilter           : Filter 'authTokenFilter' configured for use
+2025-03-15T21:59:26.376+08:00  INFO 13276 --- [main] o.s.s.web.DefaultSecurityFilterChain     : Will secure any request with [org.springframework.security.web.session.DisableEncodeUrlFilter@77ab5214, org.springframework.security.web.context.request.async.WebAsyncManagerIntegrationFilter@6d420cdd, org.springframework.security.web.context.SecurityContextHolderFilter@37cfda1c, org.springframework.security.web.header.HeaderWriterFilter@57416e49, org.springframework.web.filter.CorsFilter@bd273b2, org.springframework.security.web.authentication.logout.LogoutFilter@5408d4b3, com.community.lostandfound.security.AuthTokenFilter@35d7386b, org.springframework.security.web.savedrequest.RequestCacheAwareFilter@5f45bc8e, org.springframework.security.web.servletapi.SecurityContextHolderAwareRequestFilter@33e50ff2, org.springframework.security.web.authentication.AnonymousAuthenticationFilter@78128dd0, org.springframework.security.web.session.SessionManagementFilter@75ed7512, org.springframework.security.web.access.ExceptionTranslationFilter@2f1f9515, org.springframework.security.web.access.intercept.AuthorizationFilter@44abdb1f]
+2025-03-15T21:59:26.583+08:00  INFO 13276 --- [main] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat started on port 8080 (http) with context path '/api'
+2025-03-15T21:59:26.587+08:00  INFO 13276 --- [main] c.c.l.LostAndFoundApplication            : Started LostAndFoundApplication in 1.238 seconds (process running for 1.556)
+2025-03-15T21:59:26.588+08:00  INFO 13276 --- [main] c.c.l.config.AdminInitializer            : 正在检查系统管理员账户...
+2025-03-15T21:59:26.593+08:00  INFO 13276 --- [main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Starting...
+2025-03-15T21:59:26.773+08:00  INFO 13276 --- [main] com.zaxxer.hikari.pool.HikariPool        : HikariPool-1 - Added connection com.mysql.cj.jdbc.ConnectionImpl@57ed02e6
+2025-03-15T21:59:26.774+08:00  INFO 13276 --- [main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Start completed.
+2025-03-15T21:59:26.779+08:00 DEBUG 13276 --- [main] c.c.l.repository.UserRepository.findAll  : ==>  Preparing: SELECT * FROM users
+2025-03-15T21:59:26.794+08:00 DEBUG 13276 --- [main] c.c.l.repository.UserRepository.findAll  : ==> Parameters: 
+2025-03-15T21:59:26.823+08:00 DEBUG 13276 --- [main] c.c.l.repository.UserRepository.findAll  : <==      Total: 3
+2025-03-15T21:59:26.825+08:00  INFO 13276 --- [main] c.c.l.config.AdminInitializer            : 系统中已存在系统管理员账户，跳过初始化
+2025-03-15T21:59:26.826+08:00  INFO 13276 --- [main] c.c.l.config.AdminInitializer            : 正在重置管理员 sysadmin 的密码...
+2025-03-15T21:59:26.844+08:00 DEBUG 13276 --- [main] c.c.l.r.UserRepository.findById          : ==>  Preparing: SELECT * FROM users WHERE id = ?
+2025-03-15T21:59:26.845+08:00 DEBUG 13276 --- [main] c.c.l.r.UserRepository.findById          : ==> Parameters: 1(Long)
+2025-03-15T21:59:26.860+08:00 DEBUG 13276 --- [main] c.c.l.r.UserRepository.findById          : <==      Total: 1
+2025-03-15T21:59:26.861+08:00 DEBUG 13276 --- [main] c.c.l.service.impl.UserServiceImpl       : Updating user: sysadmin, ID: 1
+2025-03-15T21:59:26.861+08:00 DEBUG 13276 --- [main] c.c.l.service.impl.UserServiceImpl       : Encoding new password for user: sysadmin
+2025-03-15T21:59:26.966+08:00 DEBUG 13276 --- [main] c.c.l.repository.UserRepository.update   : ==>  Preparing: UPDATE users SET username = ?, email = ?, password = ?, role = ?, avatar = ?, phone = ?, real_name = ?, updated_at = ?, is_enabled = ? WHERE id = ?
+2025-03-15T21:59:26.969+08:00 DEBUG 13276 --- [main] c.c.l.repository.UserRepository.update   : ==> Parameters: sysadmin(String), sysadmin@example.com(String), $2a$10$8Jpfowz0CyuyjO9T2hqrGOVIWc50YD0g5puIITeZpjeBo5/k3Sk2G(String), sysadmin(String), null, (String), 系统管理员(String), 2025-03-15T21:59:26.965080(LocalDateTime), true(Boolean), 1(Long)
+2025-03-15T21:59:27.000+08:00 DEBUG 13276 --- [main] c.c.l.repository.UserRepository.update   : <==    Updates: 1
+2025-03-15T21:59:27.000+08:00 DEBUG 13276 --- [main] c.c.l.service.impl.UserServiceImpl       : User updated successfully: sysadmin
+2025-03-15T21:59:27.034+08:00  INFO 13276 --- [main] c.c.l.config.AdminInitializer            : 管理员 sysadmin 密码重置成功，新密码: admin123
+2025-03-15T21:59:27.108+08:00  INFO 13276 --- [main] c.c.l.config.AdminInitializer            : 密码验证结果: true, 密码哈希: $2a$10$8Jpfowz0CyuyjO9T2hqrGOVIWc50YD0g5puIITeZpjeBo5/k3Sk2G

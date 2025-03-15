@@ -236,7 +236,6 @@ public class ResidentController {
                 user.getPhone(),
                 user.getRealName(),
                 user.getIsEnabled(),
-                null, // Remove isLocked
                 user.getCreatedAt(),
                 user.getUpdatedAt()
         );

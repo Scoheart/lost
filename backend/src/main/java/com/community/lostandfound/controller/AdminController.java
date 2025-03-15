@@ -74,7 +74,6 @@ public class AdminController {
         admin.setRealName(request.getRealName());
         admin.setPhone(request.getPhone());
         admin.setIsEnabled(true);
-        admin.setIsLocked(false);
         admin.setCreatedAt(LocalDateTime.now());
         admin.setUpdatedAt(LocalDateTime.now());
         
@@ -120,7 +119,6 @@ public class AdminController {
         admin.setRealName(request.getRealName());
         admin.setPhone(request.getPhone());
         admin.setIsEnabled(true);
-        admin.setIsLocked(false);
         admin.setCreatedAt(LocalDateTime.now());
         admin.setUpdatedAt(LocalDateTime.now());
         
@@ -369,7 +367,6 @@ public class AdminController {
         user.setRealName(request.getRealName()); // realName可以为空
         user.setPhone(request.getPhone());
         user.setIsEnabled(true);
-        user.setIsLocked(false);
         user.setCreatedAt(LocalDateTime.now());
         user.setUpdatedAt(LocalDateTime.now());
         
