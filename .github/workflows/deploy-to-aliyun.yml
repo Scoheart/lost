@@ -36,10 +36,19 @@ jobs:
         mkdir -p ~/.ssh
         ssh-keyscan ${{ secrets.ALIYUN_HOST }} >> ~/.ssh/known_hosts
     
+    - name: Ensure deploy directory exists
+      run: |
+        ssh ${{ secrets.ALIYUN_USER }}@${{ secrets.ALIYUN_HOST }} "mkdir -p ${{ secrets.DEPLOY_PATH }}"
+    
     - name: Upload JAR to Aliyun ECS
       run: |
         cd backend
         scp target/*.jar ${{ secrets.ALIYUN_USER }}@${{ secrets.ALIYUN_HOST }}:${{ secrets.DEPLOY_PATH }}/app.jar
+    
+    - name: Upload deploy script
+      run: |
+        cd backend
+        scp deploy.sh ${{ secrets.ALIYUN_USER }}@${{ secrets.ALIYUN_HOST }}:${{ secrets.DEPLOY_PATH }}/deploy.sh
     
     - name: Deploy and Restart Application
       run: |
