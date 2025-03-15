@@ -25,25 +25,55 @@ public class JwtUtils {
     private long jwtExpirationMs;
 
     public String generateJwtToken(Authentication authentication) {
-        UserDetailsImpl userPrincipal = (UserDetailsImpl) authentication.getPrincipal();
-        
-        Map<String, Object> claims = new HashMap<>();
-        claims.put("id", userPrincipal.getId());
-        claims.put("username", userPrincipal.getUsername());
-        claims.put("email", userPrincipal.getEmail());
-        claims.put("role", userPrincipal.getRole());
-        
-        return buildToken(claims, userPrincipal.getUsername());
+        try {
+            log.debug("Starting JWT token generation for: {}", authentication.getName());
+            UserDetailsImpl userPrincipal = (UserDetailsImpl) authentication.getPrincipal();
+            
+            log.debug("User details: id={}, username={}, email={}, role={}", 
+                    userPrincipal.getId(), 
+                    userPrincipal.getUsername(), 
+                    userPrincipal.getEmail(), 
+                    userPrincipal.getRole());
+            
+            Map<String, Object> claims = new HashMap<>();
+            claims.put("id", userPrincipal.getId());
+            claims.put("username", userPrincipal.getUsername());
+            claims.put("email", userPrincipal.getEmail());
+            claims.put("role", userPrincipal.getRole());
+            
+            String token = buildToken(claims, userPrincipal.getUsername());
+            log.debug("JWT token generation successful");
+            return token;
+        } catch (Exception e) {
+            log.error("Error generating JWT token: ", e);
+            throw e;
+        }
     }
     
     private String buildToken(Map<String, Object> claims, String subject) {
-        return Jwts.builder()
-                .setClaims(claims)
-                .setSubject(subject)
-                .setIssuedAt(new Date())
-                .setExpiration(new Date(System.currentTimeMillis() + jwtExpirationMs))
-                .signWith(getSigningKey(), SignatureAlgorithm.HS256)
-                .compact();
+        try {
+            log.debug("Building token for subject: {}", subject);
+            if (subject == null || subject.trim().isEmpty()) {
+                log.error("Subject for JWT token is null or empty");
+                throw new IllegalArgumentException("Subject cannot be null or empty");
+            }
+            
+            Date now = new Date();
+            Date expiryDate = new Date(now.getTime() + jwtExpirationMs);
+            
+            log.debug("Token will expire at: {}", expiryDate);
+            
+            return Jwts.builder()
+                    .setClaims(claims)
+                    .setSubject(subject)
+                    .setIssuedAt(now)
+                    .setExpiration(expiryDate)
+                    .signWith(getSigningKey(), SignatureAlgorithm.HS256)
+                    .compact();
+        } catch (Exception e) {
+            log.error("Error building JWT token: ", e);
+            throw e;
+        }
     }
     
     private Key getSigningKey() {

@@ -4,8 +4,9 @@ import com.community.lostandfound.entity.User;
 import com.community.lostandfound.exception.ResourceNotFoundException;
 import com.community.lostandfound.repository.UserRepository;
 import com.community.lostandfound.service.UserService;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -16,11 +17,16 @@ import java.util.Optional;
 
 @Slf4j
 @Service
-@RequiredArgsConstructor
 public class UserServiceImpl implements UserService {
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+
+    @Autowired
+    public UserServiceImpl(UserRepository userRepository, @Lazy PasswordEncoder passwordEncoder) {
+        this.userRepository = userRepository;
+        this.passwordEncoder = passwordEncoder;
+    }
 
     @Override
     @Transactional
@@ -46,10 +52,19 @@ public class UserServiceImpl implements UserService {
         User existingUser = userRepository.findById(user.getId())
                 .orElseThrow(() -> new ResourceNotFoundException("User", "id", user.getId()));
         
-        // Only update the password if it has been provided
+        log.debug("Updating user: {}, ID: {}", existingUser.getUsername(), existingUser.getId());
+        
+        // Only update the password if it has been provided and is not already encoded
         if (user.getPassword() != null && !user.getPassword().isEmpty()) {
-            user.setPassword(passwordEncoder.encode(user.getPassword()));
+            // Check if the password is already encoded (starts with $2a$)
+            if (!user.getPassword().startsWith("$2a$")) {
+                log.debug("Encoding new password for user: {}", existingUser.getUsername());
+                user.setPassword(passwordEncoder.encode(user.getPassword()));
+            } else {
+                log.debug("Password already encoded, skipping encoding");
+            }
         } else {
+            log.debug("Preserving existing password for user: {}", existingUser.getUsername());
             user.setPassword(existingUser.getPassword());
         }
         
@@ -58,6 +73,7 @@ public class UserServiceImpl implements UserService {
         
         // Update user
         userRepository.update(user);
+        log.debug("User updated successfully: {}", existingUser.getUsername());
         
         return user;
     }
@@ -70,6 +86,20 @@ public class UserServiceImpl implements UserService {
     @Override
     public Optional<User> getUserByUsername(String username) {
         return userRepository.findByUsername(username);
+    }
+
+    @Override
+    public Optional<User> getUserByEmail(String email) {
+        return userRepository.findByEmail(email);
+    }
+
+    @Override
+    public Optional<User> getUserByUsernameOrEmail(String usernameOrEmail) {
+        Optional<User> userByUsername = userRepository.findByUsername(usernameOrEmail);
+        
+        return userByUsername.isPresent() 
+                ? userByUsername 
+                : userRepository.findByEmail(usernameOrEmail);
     }
 
     @Override

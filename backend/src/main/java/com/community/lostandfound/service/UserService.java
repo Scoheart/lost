@@ -15,6 +15,10 @@ public interface UserService {
     
     Optional<User> getUserByUsername(String username);
     
+    Optional<User> getUserByEmail(String email);
+    
+    Optional<User> getUserByUsernameOrEmail(String usernameOrEmail);
+    
     List<User> getAllUsers();
     
     boolean existsByUsername(String username);

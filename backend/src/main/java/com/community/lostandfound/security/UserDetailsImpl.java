@@ -37,7 +37,7 @@ public class UserDetailsImpl implements UserDetails {
                 user.getRole(),
                 user.getPassword(),
                 user.getIsEnabled(),
-                !user.getIsLocked()
+                user.getIsLocked()
         );
     }
 

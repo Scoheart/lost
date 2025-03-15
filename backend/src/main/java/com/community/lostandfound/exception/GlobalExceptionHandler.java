@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.context.request.WebRequest;
+import org.springframework.security.authentication.LockedException;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -47,6 +48,11 @@ public class GlobalExceptionHandler {
     @ResponseStatus(HttpStatus.UNAUTHORIZED)
     public ApiResponse<?> handleBadCredentialsException(BadCredentialsException ex, WebRequest request) {
         log.error("Bad credentials: {}", ex.getMessage());
+        if (ex.getCause() != null) {
+            log.error("Caused by: ", ex.getCause());
+        }
+        
+        // Always return the same generic message to avoid information leakage
         return ApiResponse.fail("用户名或密码错误");
     }
 
@@ -76,6 +82,13 @@ public class GlobalExceptionHandler {
     public ApiResponse<?> handleDataIntegrityViolationException(DataIntegrityViolationException ex) {
         log.error("Data integrity violation: {}", ex.getMessage());
         return ApiResponse.fail("数据冲突，请检查输入是否重复");
+    }
+
+    @ExceptionHandler(LockedException.class)
+    public ResponseEntity<ApiResponse<Void>> handleLockedException(LockedException ex) {
+        log.error("User account is locked: {}", ex.getMessage());
+        ApiResponse<Void> response = ApiResponse.error("账户已被锁定，请联系管理员", HttpStatus.FORBIDDEN);
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(response);
     }
 
     @ExceptionHandler(Exception.class)

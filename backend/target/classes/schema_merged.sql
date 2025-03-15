@@ -10,6 +10,8 @@ CREATE TABLE IF NOT EXISTS users (
     password VARCHAR(100) NOT NULL,
     role ENUM('resident', 'admin', 'sysadmin') NOT NULL DEFAULT 'resident',
     avatar VARCHAR(255),
+    phone VARCHAR(20),
+    real_name VARCHAR(100),
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     is_enabled BOOLEAN NOT NULL DEFAULT TRUE,
@@ -34,7 +36,6 @@ CREATE TABLE IF NOT EXISTS lost_items (
     user_id BIGINT NOT NULL,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
     INDEX idx_status (status),
     INDEX idx_category (category),
     INDEX idx_user_id (user_id),
@@ -52,11 +53,11 @@ CREATE TABLE IF NOT EXISTS found_items (
     category VARCHAR(50) NOT NULL,
     images TEXT, -- JSON array of image URLs
     contact_info VARCHAR(255) NOT NULL,
+    storage_location VARCHAR(255),
     status ENUM('pending', 'claimed', 'closed') NOT NULL DEFAULT 'pending',
     user_id BIGINT NOT NULL,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
     INDEX idx_status (status),
     INDEX idx_category (category),
     INDEX idx_user_id (user_id),
@@ -72,9 +73,30 @@ CREATE TABLE IF NOT EXISTS comments (
     item_id BIGINT NOT NULL,
     item_type ENUM('lost', 'found', 'forum') NOT NULL,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     INDEX idx_user_id (user_id),
     INDEX idx_item_id_type (item_id, item_type)
+);
+
+-- Claims table
+CREATE TABLE IF NOT EXISTS claims (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    lost_item_id BIGINT,
+    found_item_id BIGINT,
+    claimant_id BIGINT NOT NULL,
+    item_owner_user_id BIGINT,
+    description TEXT,
+    contact_info VARCHAR(255),
+    status ENUM('pending', 'approved', 'rejected', 'completed') NOT NULL DEFAULT 'pending',
+    admin_note TEXT,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    processed_at TIMESTAMP NULL,
+    INDEX idx_status (status),
+    INDEX idx_lost_item_id (lost_item_id),
+    INDEX idx_found_item_id (found_item_id),
+    INDEX idx_claimant_id (claimant_id),
+    INDEX idx_item_owner_user_id (item_owner_user_id)
 );
 
 -- Announcements table
@@ -82,13 +104,15 @@ CREATE TABLE IF NOT EXISTS announcements (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
     title VARCHAR(100) NOT NULL,
     content TEXT NOT NULL,
+    author_id BIGINT NOT NULL,
     is_important BOOLEAN NOT NULL DEFAULT FALSE,
-    user_id BIGINT NOT NULL, -- Admin who posted
+    is_pinned BOOLEAN NOT NULL DEFAULT FALSE,
+    status VARCHAR(20) NOT NULL DEFAULT 'published',
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
     INDEX idx_is_important (is_important),
-    INDEX idx_user_id (user_id)
+    INDEX idx_author_id (author_id),
+    INDEX idx_status (status)
 );
 
 -- Forum Posts table
@@ -100,7 +124,6 @@ CREATE TABLE IF NOT EXISTS forum_posts (
     user_id BIGINT NOT NULL,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
     INDEX idx_user_id (user_id),
     FULLTEXT INDEX ft_idx_title_content (title, content)
 );
@@ -118,8 +141,6 @@ CREATE TABLE IF NOT EXISTS reports (
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     processed_at TIMESTAMP NULL,
-    FOREIGN KEY (reporter_user_id) REFERENCES users(id) ON DELETE CASCADE,
-    FOREIGN KEY (reported_user_id) REFERENCES users(id) ON DELETE SET NULL,
     INDEX idx_report_type (report_type),
     INDEX idx_status (status),
     INDEX idx_reported_item_id (reported_item_id),
@@ -127,25 +148,18 @@ CREATE TABLE IF NOT EXISTS reports (
     INDEX idx_reported_user_id (reported_user_id)
 );
 
--- Claims table
-CREATE TABLE IF NOT EXISTS claims (
+-- Categories for Lost Items
+CREATE TABLE IF NOT EXISTS lost_items_categories (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
-    item_id BIGINT NOT NULL,
-    item_type ENUM('lost', 'found') NOT NULL,
-    claimant_user_id BIGINT NOT NULL,
-    item_owner_user_id BIGINT NOT NULL,
-    description TEXT NOT NULL,
-    status ENUM('pending', 'approved', 'rejected', 'completed') NOT NULL DEFAULT 'pending',
-    admin_note TEXT,
-    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    processed_at TIMESTAMP NULL,
-    FOREIGN KEY (claimant_user_id) REFERENCES users(id) ON DELETE CASCADE,
-    FOREIGN KEY (item_owner_user_id) REFERENCES users(id) ON DELETE CASCADE,
-    INDEX idx_item_id_type (item_id, item_type),
-    INDEX idx_status (status),
-    INDEX idx_claimant_user_id (claimant_user_id),
-    INDEX idx_item_owner_user_id (item_owner_user_id)
+    name VARCHAR(50) NOT NULL UNIQUE,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Categories for Found Items
+CREATE TABLE IF NOT EXISTS found_items_categories (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(50) NOT NULL UNIQUE,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
 -- Initial Admin User (password is 'admin123')

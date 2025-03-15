@@ -16,6 +16,8 @@ public class User {
     private String password;
     private String role; // 'resident', 'admin', 'sysadmin'
     private String avatar;
+    private String phone;
+    private String realName;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
     private Boolean isEnabled;
