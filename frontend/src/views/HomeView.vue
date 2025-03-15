@@ -180,7 +180,6 @@ import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import {
   Search,
-  FindReplace,
   Bell,
   ChatDotRound,
   Location,
@@ -188,6 +187,7 @@ import {
   Picture,
   Check as Checked,
   Timer,
+  Collection,
 } from '@element-plus/icons-vue'
 import { format } from 'date-fns'
 import MainLayout from '@/components/layout/MainLayout.vue'
@@ -248,21 +248,21 @@ const services = [
     id: 1,
     title: '寻物启事',
     description: '发布丢失物品信息，提高找回几率',
-    icon: 'Search',
+    icon: Search,
     link: '/lost-items'
   },
   {
     id: 2,
     title: '失物招领',
     description: '发布拾获物品信息，帮助失主找回',
-    icon: 'FindReplace',
+    icon: Collection,
     link: '/found-items'
   },
   {
     id: 3,
     title: '社区公告',
     description: '查看社区最新公告和通知',
-    icon: 'Bell',
+    icon: Bell,
     link: '/announcements'
   }
 ]
@@ -273,28 +273,28 @@ const stats = ref([
     id: 1,
     title: '寻物启事',
     value: '0',
-    icon: 'Search',
+    icon: Search,
     color: 'text-warning'
   },
   {
     id: 2,
     title: '失物招领',
     value: '0',
-    icon: 'FindReplace',
+    icon: Collection,
     color: 'text-primary'
   },
   {
     id: 3,
     title: '成功找回',
     value: '0',
-    icon: 'Checked',
+    icon: Checked,
     color: 'text-success'
   },
   {
     id: 4,
-    title: '平均找回时间',
-    value: '计算中...',
-    icon: 'Timer',
+    title: '正在寻找中',
+    value: '0',
+    icon: Search,
     color: 'text-info'
   }
 ])
@@ -438,44 +438,8 @@ const loadStatistics = async () => {
     const claimedItemsCount = foundItemsStore.items.filter(item => item.status === 'claimed').length
     const successCount = foundItemsCount + claimedItemsCount
 
-    // 计算平均找回时间
-    let totalDays = 0
-    let itemsWithValidDates = 0
-
-    // 计算已找到的寻物的平均时间
-    lostItemsStore.items.filter(item => item.status === 'found').forEach(item => {
-      try {
-        const lostDate = new Date(item.lostDate)
-        const foundDate = new Date(item.updatedAt) // 假设updatedAt是物品状态更新为已找到的时间
-        if (!isNaN(lostDate.getTime()) && !isNaN(foundDate.getTime())) {
-          const diffTime = Math.abs(foundDate.getTime() - lostDate.getTime())
-          const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
-          totalDays += diffDays
-          itemsWithValidDates++
-        }
-      } catch (e) {
-        console.error('Error calculating date difference:', e)
-      }
-    })
-
-    // 计算已认领的失物的平均时间
-    foundItemsStore.items.filter(item => item.status === 'claimed').forEach(item => {
-      try {
-        const foundDate = new Date(item.foundDate)
-        const claimedDate = new Date(item.updatedAt) // 假设updatedAt是物品状态更新为已认领的时间
-        if (!isNaN(foundDate.getTime()) && !isNaN(claimedDate.getTime())) {
-          const diffTime = Math.abs(claimedDate.getTime() - foundDate.getTime())
-          const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
-          totalDays += diffDays
-          itemsWithValidDates++
-        }
-      } catch (e) {
-        console.error('Error calculating date difference:', e)
-      }
-    })
-
-    // 计算平均天数
-    let avgDays = itemsWithValidDates > 0 ? (totalDays / itemsWithValidDates).toFixed(1) : '0'
+    // 正在寻找中的物品数量（状态为pending的寻物）
+    const pendingLostItemsCount = lostItemsStore.items.filter(item => item.status === 'pending').length
 
     // 更新统计数据
     stats.value = [
@@ -483,28 +447,28 @@ const loadStatistics = async () => {
         id: 1,
         title: '寻物启事',
         value: lostItemCount.toString(),
-        icon: 'Search',
+        icon: Search,
         color: 'text-warning'
       },
       {
         id: 2,
         title: '失物招领',
         value: foundItemCount.toString(),
-        icon: 'FindReplace',
+        icon: Collection,
         color: 'text-primary'
       },
       {
         id: 3,
         title: '成功找回',
         value: successCount.toString(),
-        icon: 'Checked',
+        icon: Checked,
         color: 'text-success'
       },
       {
         id: 4,
-        title: '平均找回时间',
-        value: `${avgDays}天`,
-        icon: 'Timer',
+        title: '正在寻找中',
+        value: pendingLostItemsCount.toString(),
+        icon: Search,
         color: 'text-info'
       }
     ]

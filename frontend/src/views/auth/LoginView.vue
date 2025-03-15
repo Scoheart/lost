@@ -8,19 +8,6 @@
 
       <h2 class="login-title">居民用户登录</h2>
 
-      <div class="user-login-notice">
-        <el-alert
-          title="居民用户登录入口"
-          type="info"
-          :closable="false"
-          show-icon
-        >
-          <template #default>
-            此登录入口仅供<strong>居民用户</strong>使用。管理员请使用<router-link to="/admin/login">管理员登录</router-link>。
-          </template>
-        </el-alert>
-      </div>
-
       <el-form
         ref="formRef"
         :model="loginForm"
@@ -296,22 +283,5 @@ const goToForgotPassword = () => {
 :deep(.el-input__wrapper.is-focus),
 :deep(.el-input__wrapper:hover) {
   background-color: transparent !important;
-}
-
-.user-login-notice {
-  margin-bottom: 20px;
-}
-
-.user-login-notice :deep(.el-alert) {
-  margin-bottom: 0;
-}
-
-.user-login-notice a {
-  color: #409eff;
-  text-decoration: none;
-}
-
-.user-login-notice a:hover {
-  text-decoration: underline;
 }
 </style>

@@ -23,6 +23,12 @@
               </el-upload>
               <h3>{{ currentUser.username }}</h3>
               <p>{{ currentUser.email }}</p>
+              <p v-if="currentUser.phone" class="user-phone">
+                <el-icon><Phone /></el-icon> {{ currentUser.phone }}
+              </p>
+              <p v-if="currentUser.realName" class="user-real-name">
+                {{ currentUser.realName }}
+              </p>
             </div>
 
             <el-divider />
@@ -79,7 +85,8 @@ import {
   Search,
   Collection,
   Setting,
-  Upload
+  Upload,
+  Phone
 } from '@element-plus/icons-vue'
 import MainLayout from '@/components/layout/MainLayout.vue'
 import { useUserStore, type User } from '@/stores/user'
@@ -134,6 +141,15 @@ const loadUserData = async () => {
 
   loading.value = true
   try {
+    // If we don't have user data or it's been too long since the last fetch
+    if (!userStore.user ||
+        (userStore.lastFetch && Date.now() - userStore.lastFetch > 5 * 60 * 1000)) {
+      // Fetch fresh user data
+      const result = await userStore.fetchCurrentUser()
+      if (!result.success) {
+        ElMessage.warning('获取用户信息失败，请刷新页面重试')
+      }
+    }
     isLoaded.value = true
   } catch (error) {
     console.error('Failed to load user data:', error)
@@ -205,6 +221,14 @@ onMounted(async () => {
   margin: 0;
   color: #909399;
   font-size: 14px;
+}
+
+.user-phone, .user-real-name {
+  margin-top: 5px !important;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
 }
 
 .profile-menu {

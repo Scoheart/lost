@@ -190,7 +190,7 @@ export const useFoundItemsStore = defineStore('foundItems', {
       }
     },
 
-    // GET /found-items/mine - 查询当前用户的失物招领
+    // GET /found-items/my-posts - 查询当前用户的失物招领
     async fetchMyFoundItems({ page = 1, pageSize = 10, status = '' } = {}) {
       try {
         const queryParams = new URLSearchParams()
@@ -199,36 +199,51 @@ export const useFoundItemsStore = defineStore('foundItems', {
         if (status) queryParams.append('status', status)
 
         const queryString = queryParams.toString()
-        const url = queryString ? `/found-items/mine?${queryString}` : '/found-items/mine'
+        const url = queryString ? `/found-items/my-posts?${queryString}` : '/found-items/my-posts'
 
+        console.log(`[FoundItemsStore] Fetching user's found items from: ${url}`)
         const response = await apiClient.get(url)
+        console.log('[FoundItemsStore] Response:', response.data)
 
         // 根据API响应格式处理数据
+        let items = []
+        let totalItems = 0
+        let currentPage = page
+        let currentPageSize = pageSize
+
         if (response.data.data?.items) {
           // 新API格式：response.data.data.items包含物品数组
-          this.items = response.data.data.items
-          this.pagination.total = response.data.data.totalItems || 0
-          this.pagination.page = response.data.data.currentPage || page
-          this.pagination.pageSize = response.data.data.pageSize || pageSize
+          items = response.data.data.items
+          totalItems = response.data.data.totalItems || 0
+          currentPage = response.data.data.currentPage || page
+          currentPageSize = response.data.data.pageSize || pageSize
         } else if (response.data.items) {
           // 旧格式：response.data.items包含物品数组
-          this.items = response.data.items
+          items = response.data.items
+          totalItems = response.data.total || 0
         } else if (Array.isArray(response.data.data)) {
           // 直接数组格式
-          this.items = response.data.data
+          items = response.data.data
         } else if (Array.isArray(response.data)) {
           // 最直接的数组格式
-          this.items = response.data
+          items = response.data
         } else {
           // 无法识别的格式，确保items是数组
           console.warn('API响应格式不符合预期，无法获取物品列表', response.data)
-          this.items = []
         }
+
+        this.items = items
+        this.pagination.total = totalItems
+        this.pagination.page = currentPage
+        this.pagination.pageSize = currentPageSize
 
         return {
           success: true,
           message: '获取我的失物招领列表成功',
-          data: this.items
+          items: items,
+          total: totalItems,
+          currentPage: currentPage,
+          pageSize: currentPageSize
         }
       } catch (error) {
         console.error('获取我的失物招领列表失败:', error)
@@ -236,7 +251,9 @@ export const useFoundItemsStore = defineStore('foundItems', {
         return {
           success: false,
           message: '获取我的失物招领列表失败',
-          error
+          error,
+          items: [],
+          total: 0
         }
       }
     },

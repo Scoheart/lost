@@ -147,11 +147,24 @@ const fetchLostItems = async () => {
       pageSize: pageSize.value
     })
 
-    lostItems.value = response.items || []
-    total.value = response.total || 0
+    if (response.success) {
+      lostItems.value = response.items || []
+      total.value = response.total || 0
+
+      // 同步分页状态
+      if (response.currentPage) {
+        page.value = response.currentPage
+      }
+    } else {
+      ElMessage.error(response.message || '获取寻物启事列表失败')
+      lostItems.value = []
+      total.value = 0
+    }
   } catch (error) {
     console.error('Failed to fetch lost items:', error)
     ElMessage.error('获取寻物启事列表失败')
+    lostItems.value = []
+    total.value = 0
   } finally {
     loading.value = false
   }

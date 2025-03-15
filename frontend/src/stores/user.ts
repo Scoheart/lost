@@ -8,6 +8,8 @@ export interface User {
   email: string
   role: 'resident' | 'admin' | 'sysadmin'
   avatar?: string
+  phone?: string
+  realName?: string
   createdAt: string
   updatedAt: string
 }
@@ -106,6 +108,8 @@ export const useUserStore = defineStore('user', {
             email: responseData.email,
             role: responseData.role,
             avatar: responseData.avatar,
+            phone: responseData.phone,
+            realName: responseData.realName,
             createdAt: responseData.createdAt || new Date().toISOString(),
             updatedAt: responseData.updatedAt || new Date().toISOString()
           }
@@ -160,6 +164,8 @@ export const useUserStore = defineStore('user', {
             email: responseData.email,
             role: responseData.role,
             avatar: responseData.avatar,
+            phone: responseData.phone,
+            realName: responseData.realName,
             createdAt: responseData.createdAt || new Date().toISOString(),
             updatedAt: responseData.updatedAt || new Date().toISOString()
           }
@@ -271,6 +277,8 @@ export const useUserStore = defineStore('user', {
             email: userData.email,
             role: userData.role,
             avatar: userData.avatar,
+            phone: userData.phone,
+            realName: userData.realName,
             createdAt: userData.createdAt || new Date().toISOString(),
             updatedAt: userData.updatedAt || new Date().toISOString()
           }
@@ -343,13 +351,30 @@ export const useUserStore = defineStore('user', {
       }
 
       this.loading = true
-      console.log('[UserStore] updateProfile: Updating user profile')
+      console.log('[UserStore] updateProfile: Updating user profile', profileData)
 
       try {
         const response = await apiClient.put('/users/profile', profileData)
-        this.setUser(response.data as User)
+
+        // If the response contains updated user data, update the store
+        if (response.data?.data) {
+          this.setUser({
+            ...this.user,
+            ...response.data.data
+          })
+        } else if (response.data) {
+          this.setUser({
+            ...this.user,
+            ...profileData
+          })
+        }
+
         console.log('[UserStore] updateProfile: Profile updated successfully')
-        return { success: true, message: response.data.message || '个人信息更新成功' }
+        return {
+          success: true,
+          message: response.data.message || '个人信息更新成功',
+          data: response.data.data || this.user
+        }
       } catch (error: any) {
         this.handleApiError(error, '更新个人信息失败')
         return { success: false, message: this.error }

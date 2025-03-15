@@ -2,113 +2,130 @@
   <div class="settings-container">
     <h2 class="page-title">个人设置</h2>
 
-    <!-- 个人信息设置 -->
-    <el-card shadow="never" class="settings-card">
-      <h3 class="section-title">基本信息</h3>
-      <el-form
-        ref="profileFormRef"
-        :model="profileForm"
-        :rules="profileRules"
-        label-width="100px"
-        status-icon
-      >
-        <el-form-item label="用户头像">
-          <div class="avatar-container">
-            <el-upload
-              class="avatar-uploader"
-              :action="uploadUrl"
-              :headers="uploadHeaders"
-              :show-file-list="false"
-              :on-success="handleAvatarSuccess"
-              :before-upload="beforeAvatarUpload"
-            >
-              <div class="avatar-wrapper">
-                <el-avatar v-if="avatarUrl" :size="100" :src="avatarUrl" />
-                <div v-else class="avatar-placeholder">
-                  <el-icon class="avatar-icon"><Plus /></el-icon>
-                </div>
-                <div class="avatar-overlay">
-                  <el-icon><Edit /></el-icon>
-                  <span>更换头像</span>
-                </div>
-              </div>
-            </el-upload>
-            <div class="upload-hint">点击上传头像，图片格式为 JPG/PNG，不超过 2MB</div>
+    <div v-if="isLoading" class="loading-container">
+      <el-skeleton style="width: 100%" animated>
+        <template #template>
+          <div style="padding: 20px">
+            <el-skeleton-item variant="p" style="width: 60%; height: 40px" />
+            <div style="display: flex; justify-content: space-between; align-items: center; margin: 20px 0">
+              <el-skeleton-item variant="text" style="width: 30%" />
+              <el-skeleton-item variant="text" style="width: 30%" />
+            </div>
+            <el-skeleton-item variant="p" style="width: 100%; height: 300px" />
           </div>
-        </el-form-item>
+        </template>
+      </el-skeleton>
+    </div>
 
-        <el-form-item label="用户名" prop="username">
-          <el-input v-model="profileForm.username" disabled placeholder="用户名不可修改" />
-        </el-form-item>
+    <div v-else>
+      <!-- 个人信息设置 -->
+      <el-card shadow="never" class="settings-card">
+        <h3 class="section-title">基本信息</h3>
+        <el-form
+          ref="profileFormRef"
+          :model="profileForm"
+          :rules="profileRules"
+          label-width="100px"
+          status-icon
+        >
+          <el-form-item label="用户头像">
+            <div class="avatar-container">
+              <el-upload
+                class="avatar-uploader"
+                :action="uploadUrl"
+                :headers="uploadHeaders"
+                :show-file-list="false"
+                :on-success="handleAvatarSuccess"
+                :before-upload="beforeAvatarUpload"
+              >
+                <div class="avatar-wrapper">
+                  <el-avatar v-if="avatarUrl" :size="100" :src="avatarUrl" />
+                  <div v-else class="avatar-placeholder">
+                    <el-icon class="avatar-icon"><Plus /></el-icon>
+                  </div>
+                  <div class="avatar-overlay">
+                    <el-icon><Edit /></el-icon>
+                    <span>更换头像</span>
+                  </div>
+                </div>
+              </el-upload>
+              <div class="upload-hint">点击上传头像，图片格式为 JPG/PNG，不超过 2MB</div>
+            </div>
+          </el-form-item>
 
-        <el-form-item label="电子邮箱" prop="email">
-          <el-input v-model="profileForm.email" placeholder="请输入您的电子邮箱" />
-        </el-form-item>
+          <el-form-item label="用户名" prop="username">
+            <el-input v-model="profileForm.username" disabled placeholder="用户名不可修改" />
+          </el-form-item>
 
-        <el-form-item label="手机号码" prop="phone">
-          <el-input v-model="profileForm.phone" placeholder="请输入您的手机号码" />
-        </el-form-item>
+          <el-form-item label="电子邮箱" prop="email">
+            <el-input v-model="profileForm.email" placeholder="请输入您的电子邮箱" />
+          </el-form-item>
 
-        <el-form-item label="姓名" prop="realName">
-          <el-input v-model="profileForm.realName" placeholder="请输入您的真实姓名" />
-        </el-form-item>
+          <el-form-item label="手机号码" prop="phone">
+            <el-input v-model="profileForm.phone" placeholder="请输入您的手机号码" />
+          </el-form-item>
 
-        <el-form-item label="注册时间">
-          <div>{{ userCreatedAt }}</div>
-        </el-form-item>
+          <el-form-item label="姓名" prop="realName">
+            <el-input v-model="profileForm.realName" placeholder="请输入您的真实姓名" />
+          </el-form-item>
 
-        <el-form-item>
-          <el-button type="primary" @click="updateProfile" :loading="profileLoading">
-            保存修改
-          </el-button>
-        </el-form-item>
-      </el-form>
-    </el-card>
+          <el-form-item label="注册时间">
+            <div>{{ userCreatedAt }}</div>
+          </el-form-item>
 
-    <!-- 修改密码 -->
-    <el-card shadow="never" class="settings-card">
-      <h3 class="section-title">修改密码</h3>
-      <el-form
-        ref="passwordFormRef"
-        :model="passwordForm"
-        :rules="passwordRules"
-        label-width="100px"
-        status-icon
-      >
-        <el-form-item label="当前密码" prop="currentPassword">
-          <el-input
-            v-model="passwordForm.currentPassword"
-            type="password"
-            placeholder="请输入当前密码"
-            show-password
-          />
-        </el-form-item>
+          <el-form-item>
+            <el-button type="primary" @click="updateProfile" :loading="profileLoading">
+              保存修改
+            </el-button>
+          </el-form-item>
+        </el-form>
+      </el-card>
 
-        <el-form-item label="新密码" prop="newPassword">
-          <el-input
-            v-model="passwordForm.newPassword"
-            type="password"
-            placeholder="请输入新密码"
-            show-password
-          />
-        </el-form-item>
+      <!-- 修改密码 -->
+      <el-card shadow="never" class="settings-card">
+        <h3 class="section-title">修改密码</h3>
+        <el-form
+          ref="passwordFormRef"
+          :model="passwordForm"
+          :rules="passwordRules"
+          label-width="100px"
+          status-icon
+        >
+          <el-form-item label="当前密码" prop="currentPassword">
+            <el-input
+              v-model="passwordForm.currentPassword"
+              type="password"
+              placeholder="请输入当前密码"
+              show-password
+            />
+          </el-form-item>
 
-        <el-form-item label="确认密码" prop="confirmPassword">
-          <el-input
-            v-model="passwordForm.confirmPassword"
-            type="password"
-            placeholder="请再次输入新密码"
-            show-password
-          />
-        </el-form-item>
+          <el-form-item label="新密码" prop="newPassword">
+            <el-input
+              v-model="passwordForm.newPassword"
+              type="password"
+              placeholder="请输入新密码"
+              show-password
+            />
+          </el-form-item>
 
-        <el-form-item>
-          <el-button type="primary" @click="updatePassword" :loading="passwordLoading">
-            修改密码
-          </el-button>
-        </el-form-item>
-      </el-form>
-    </el-card>
+          <el-form-item label="确认密码" prop="confirmPassword">
+            <el-input
+              v-model="passwordForm.confirmPassword"
+              type="password"
+              placeholder="请再次输入新密码"
+              show-password
+            />
+          </el-form-item>
+
+          <el-form-item>
+            <el-button type="primary" @click="updatePassword" :loading="passwordLoading">
+              修改密码
+            </el-button>
+          </el-form-item>
+        </el-form>
+      </el-card>
+    </div>
   </div>
 </template>
 
@@ -120,22 +137,6 @@ import type { FormInstance, FormRules } from 'element-plus'
 import { useUserStore, type User } from '@/stores/user'
 import { format } from 'date-fns'
 
-// 扩展User接口，添加表单中需要的额外字段
-interface ExtendedUser extends User {
-  phone?: string
-  realName?: string
-}
-
-// 扩展API响应接口
-interface ApiResponse<T> {
-  success: boolean
-  message: string
-  data: T
-  status: string | null
-}
-
-const userStore = useUserStore()
-
 // 表单引用
 const profileFormRef = ref<FormInstance>()
 const passwordFormRef = ref<FormInstance>()
@@ -143,6 +144,7 @@ const passwordFormRef = ref<FormInstance>()
 // 加载状态
 const profileLoading = ref(false)
 const passwordLoading = ref(false)
+const isLoading = ref(true)
 
 // 个人信息表单
 const profileForm = reactive({
@@ -159,8 +161,10 @@ const passwordForm = reactive({
   confirmPassword: ''
 })
 
+const userStore = useUserStore()
+
 // 上传相关
-const uploadUrl = 'https://api.example.com/upload/avatar'
+const uploadUrl = computed(() => '/api/users/avatar') // Use actual API endpoint
 const uploadHeaders = computed(() => ({
   Authorization: `Bearer ${userStore.token}`
 }))
@@ -232,18 +236,21 @@ const passwordRules = reactive<FormRules>({
 
 // 方法
 const loadUserData = () => {
+  isLoading.value = true
+
   const user = userStore.user
-  if (!user) return
+  if (!user) {
+    isLoading.value = false
+    return
+  }
 
   profileForm.username = user.username || ''
   profileForm.email = user.email || ''
-
-  // Handle extended profile fields that might come from the API
-  const extendedUser = user as any
-  profileForm.phone = extendedUser.phone || ''
-  profileForm.realName = extendedUser.realName || ''
-
+  profileForm.phone = user.phone || ''
+  profileForm.realName = user.realName || ''
   avatarUrl.value = user.avatar || ''
+
+  isLoading.value = false
 }
 
 const updateProfile = async () => {
@@ -254,16 +261,22 @@ const updateProfile = async () => {
       profileLoading.value = true
       try {
         // Create update data with typed fields for the API
-        const updateData = {
+        const updateData: Partial<User> = {
           email: profileForm.email,
           phone: profileForm.phone,
           realName: profileForm.realName
         }
 
-        const result = await userStore.updateProfile(updateData as any)
+        const result = await userStore.updateProfile(updateData)
 
         if (result.success) {
           ElMessage.success('个人信息已更新')
+          // Update form with the returned data if available
+          if (result.data) {
+            profileForm.email = result.data.email || profileForm.email
+            profileForm.phone = result.data.phone || profileForm.phone
+            profileForm.realName = result.data.realName || profileForm.realName
+          }
         } else {
           ElMessage.error(result.message || '更新失败')
         }
@@ -343,6 +356,11 @@ onMounted(() => {
 <style scoped>
 .settings-container {
   padding: 0 10px;
+}
+
+.loading-container {
+  min-height: 400px;
+  padding: 20px;
 }
 
 .page-title {
