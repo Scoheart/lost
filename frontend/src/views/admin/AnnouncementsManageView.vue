@@ -81,7 +81,7 @@
                 size="small"
                 type="primary"
                 @click="handleEdit(scope.row)"
-                link
+                text
               >
                 编辑
               </el-button>
@@ -90,7 +90,7 @@
                 size="small"
                 type="warning"
                 @click="handleSetSticky(scope.row)"
-                link
+                text
               >
                 置顶
               </el-button>
@@ -99,7 +99,7 @@
                 size="small"
                 type="info"
                 @click="handleCancelSticky(scope.row)"
-                link
+                text
               >
                 取消置顶
               </el-button>
@@ -114,7 +114,7 @@
                   <el-button
                     size="small"
                     type="danger"
-                    link
+                    text
                   >
                     删除
                   </el-button>
@@ -544,6 +544,8 @@ onMounted(() => {
   display: flex;
   flex-wrap: nowrap;
   gap: 4px;
+  white-space: nowrap;
+  min-width: fit-content;
   justify-content: center;
   position: relative;
   overflow-x: visible;

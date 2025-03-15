@@ -70,7 +70,7 @@
       >
         <el-table-column prop="id" label="ID" width="80" sortable />
         <el-table-column prop="username" label="用户名" min-width="120" />
-        <el-table-column prop="email" label="邮箱" min-width="180" />
+        <el-table-column prop="email" label="邮箱" min-width="280" />
         <el-table-column prop="realName" label="真实姓名" min-width="120">
           <template #default="scope">
             {{ scope.row.realName || '-' }}
@@ -98,46 +98,35 @@
         </el-table-column>
         <el-table-column label="状态" width="120">
           <template #default="scope">
-            <div>
-              <el-tag
-                :type="scope.row.isLocked ? 'danger' : 'success'"
-                effect="plain"
-                style="margin-right: 5px"
-              >
-                {{ scope.row.isLocked ? '锁定' : '正常' }}
-              </el-tag>
-              <el-tag
-                v-if="!scope.row.isEnabled"
-                type="info"
-                effect="plain"
-              >
-                已禁用
-              </el-tag>
-            </div>
+            <el-tag
+              :type="scope.row.isEnabled ? 'success' : 'danger'"
+              effect="plain"
+            >
+              {{ scope.row.isEnabled ? '正常' : '锁定' }}
+            </el-tag>
           </template>
         </el-table-column>
         <el-table-column label="操作" width="250" fixed="right">
           <template #default="scope">
-            <el-button-group>
+            <div class="operation-buttons">
               <el-button
                 type="primary"
                 size="small"
                 @click="openEditDialog(scope.row)"
-                :icon="Edit"
                 text
               >
                 编辑
               </el-button>
               <el-button
-                :type="scope.row.isLocked ? 'danger' : 'success'"
+                :type="scope.row.isEnabled ? 'warning' : 'success'"
                 size="small"
                 @click="toggleUserStatus(scope.row)"
                 text
               >
-                {{ scope.row.isLocked ? '解锁' : '锁定' }}
+                {{ scope.row.isEnabled ? '锁定' : '解锁' }}
               </el-button>
               <el-button
-                type="warning"
+                type="info"
                 size="small"
                 @click="resetPassword(scope.row)"
                 text
@@ -149,12 +138,11 @@
                 type="danger"
                 size="small"
                 @click="deleteUser(scope.row)"
-                :icon="Delete"
                 text
               >
                 删除
               </el-button>
-            </el-button-group>
+            </div>
           </template>
         </el-table-column>
       </el-table>
@@ -251,7 +239,6 @@ interface User {
   realName?: string | null
   avatar?: string | null
   isEnabled: boolean
-  isLocked: boolean
   createdAt: string
   updatedAt: string
 }
@@ -322,14 +309,15 @@ onMounted(() => {
 
 // 方法定义
 const loadUsers = async () => {
-  loading.value = true
+  loading.value = true;
   try {
-    // 将前端的status转换为后端API所需的isLocked参数
-    let isLocked = undefined;
-    if (statusFilter.value === 'locked') {
-      isLocked = true;
-    } else if (statusFilter.value === 'active') {
-      isLocked = false;
+    // 将前端的status转换为后端API所需参数
+    let isEnabled = undefined;
+
+    if (statusFilter.value === 'active') {
+      isEnabled = true;
+    } else if (statusFilter.value === 'locked') {
+      isEnabled = false;
     }
 
     const params = {
@@ -337,18 +325,20 @@ const loadUsers = async () => {
       size: pageSize.value,
       search: searchQuery.value || undefined,
       role: roleFilter.value || undefined,
-      isLocked: isLocked
-    }
+      isEnabled
+    };
 
-    const response = await apiClient.get('/admin/users', { params })
-    // 更新为新的数据结构
-    users.value = response.data.data.items
-    total.value = response.data.data.totalItems
+    console.log('请求参数:', params);
+    const response = await apiClient.get('/admin/users', { params });
+    console.log('API响应:', response.data);
+
+    users.value = response.data.data.items;
+    total.value = response.data.data.totalItems;
   } catch (error) {
-    console.error('Failed to load users:', error)
-    ElMessage.error('加载用户数据失败')
+    console.error('Failed to load users:', error);
+    ElMessage.error('加载用户数据失败');
   } finally {
-    loading.value = false
+    loading.value = false;
   }
 }
 
@@ -452,7 +442,7 @@ const openEditDialog = async (user: User) => {
     userForm.role = userDetails.role
     userForm.phone = userDetails.phone || ''
     userForm.realName = userDetails.realName || ''
-    userForm.status = userDetails.isLocked ? 'locked' : 'active'
+    userForm.status = userDetails.isEnabled ? 'active' : 'locked'
     dialogVisible.value = true
   } catch (error) {
     console.error('Error opening edit dialog:', error)
@@ -500,7 +490,7 @@ const saveUser = async () => {
           // 如果状态需要更新，单独调用状态更新API
           if (status !== getStatusFromServerData(editingUser.value)) {
             await apiClient.put(`/admin/users/${userForm.id}/status`, {
-              isLocked: status === 'locked'
+              isEnabled: status === 'active'
             })
             ElMessage.success('用户状态更新成功')
           }
@@ -513,18 +503,11 @@ const saveUser = async () => {
             phone: userForm.phone || null,
             realName: userForm.realName || null,
             role: userForm.role,
+            isEnabled: userForm.status === 'active'
           };
 
           // 创建用户
           const response = await apiClient.post('/admin/users', newUserData)
-
-          // 如果需要锁定用户，调用状态API
-          if (userForm.status === 'locked' && response.data?.data?.id) {
-            await apiClient.put(`/admin/users/${response.data.data.id}/status`, {
-              isEnabled: true,
-              isLocked: true
-            })
-          }
 
           ElMessage.success('用户添加成功')
         }
@@ -547,8 +530,8 @@ const toggleUserStatus = async (user: User) => {
     return
   }
 
-  const action = user.isLocked ? '解锁' : '锁定'
-  const newLockStatus = !user.isLocked
+  const action = user.isEnabled ? '锁定' : '解锁'
+  const newEnabled = !user.isEnabled
 
   try {
     await ElMessageBox.confirm(
@@ -561,15 +544,14 @@ const toggleUserStatus = async (user: User) => {
       }
     )
 
-    // 按照API规范更新状态，保持enabled状态不变
+    // 更新状态
     await apiClient.put(`/admin/users/${user.id}/status`, {
-      isEnabled: user.isEnabled,
-      isLocked: newLockStatus
+      isEnabled: newEnabled
     })
 
     ElMessage.success(`用户${action}成功`)
     // 更新本地数据
-    user.isLocked = newLockStatus
+    user.isEnabled = newEnabled
   } catch (error: any) {
     if (error !== 'cancel') {
       const errorMsg = error.response?.data?.message || `${action}失败，请稍后再试`
@@ -613,9 +595,9 @@ const deleteUser = async (user: User) => {
   }
 }
 
-// 把服务器数据的isEnabled和isLocked转换为前端界面使用的status
+// 把服务器数据的isLocked转换为前端界面使用的status
 const getStatusFromServerData = (user: User): 'active' | 'locked' => {
-  return user.isLocked ? 'locked' : 'active'
+  return user.isEnabled ? 'active' : 'locked'
 }
 
 // 添加重置密码的函数
@@ -658,6 +640,15 @@ const resetPassword = async (user: User) => {
       ElMessage.error(errorMsg)
     }
   }
+}
+
+// 新增辅助方法来处理状态显示
+const getStatusTagType = (user: User): string => {
+  return user.isEnabled ? 'success' : 'danger';
+}
+
+const getStatusLabel = (user: User): string => {
+  return user.isEnabled ? '正常' : '锁定';
 }
 </script>
 
@@ -709,6 +700,22 @@ const resetPassword = async (user: User) => {
   margin-top: 20px;
   display: flex;
   justify-content: flex-end;
+}
+
+.operation-buttons {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 4px;
+  white-space: nowrap;
+  min-width: fit-content;
+  justify-content: center;
+}
+
+.operation-buttons .el-button {
+  padding-left: 6px;
+  padding-right: 6px;
+  margin-left: 0;
+  margin-right: 0;
 }
 
 @media (max-width: 768px) {

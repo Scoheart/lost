@@ -56,21 +56,19 @@
         </el-table-column>
         <el-table-column label="操作" width="200" fixed="right">
           <template #default="scope">
-            <el-button-group>
+            <div class="operation-buttons">
               <el-button
                 type="primary"
                 size="small"
                 @click="openEditDialog(scope.row)"
-                :icon="Edit"
                 text
               >
                 编辑
               </el-button>
               <el-button
-                :type="scope.row.isEnabled ? 'danger' : 'success'"
+                :type="scope.row.isEnabled ? 'warning' : 'success'"
                 size="small"
                 @click="toggleResidentStatus(scope.row)"
-                :icon="scope.row.isEnabled ? 'Lock' : 'Unlock'"
                 text
               >
                 {{ scope.row.isEnabled ? '锁定' : '解锁' }}
@@ -79,12 +77,11 @@
                 type="danger"
                 size="small"
                 @click="deleteResident(scope.row)"
-                :icon="Delete"
                 text
               >
                 删除
               </el-button>
-            </el-button-group>
+            </div>
           </template>
         </el-table-column>
       </el-table>
@@ -236,8 +233,9 @@ const loadResidents = async () => {
       search: searchQuery.value || undefined
     }
 
+    console.log('请求参数:', params)
     const response = await apiClient.get('/residents', { params })
-    console.log('Residents API Response:', response.data)
+    console.log('API响应:', response.data)
 
     if (response.data.success) {
       residents.value = response.data.data.items || []
@@ -399,6 +397,15 @@ const deleteResident = async (resident: Resident) => {
     }
   }
 }
+
+// 辅助函数用于获取状态标签类型和文本
+const getStatusTagType = (resident: Resident): string => {
+  return resident.isEnabled ? 'success' : 'danger'
+}
+
+const getStatusLabel = (resident: Resident): string => {
+  return resident.isEnabled ? '正常' : '锁定'
+}
 </script>
 
 <style scoped>
@@ -437,6 +444,22 @@ const deleteResident = async (resident: Resident) => {
   margin-top: 20px;
   display: flex;
   justify-content: flex-end;
+}
+
+.operation-buttons {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 4px;
+  white-space: nowrap;
+  min-width: fit-content;
+  justify-content: center;
+}
+
+.operation-buttons .el-button {
+  padding-left: 6px;
+  padding-right: 6px;
+  margin-left: 0;
+  margin-right: 0;
 }
 
 @media (max-width: 768px) {

@@ -159,10 +159,12 @@
         <div v-if="loadingStats" class="loading-container">
           <el-skeleton :rows="1" animated />
         </div>
-        <el-row v-else :gutter="30">
-          <el-col :xs="12" :sm="12" :md="6" :lg="6" v-for="stat in stats" :key="stat.id">
+        <el-row v-else :gutter="20">
+          <el-col :xs="24" :sm="12" :md="12" :lg="6" v-for="stat in stats" :key="stat.id" class="stat-col">
             <el-card shadow="hover" class="stat-card">
-              <el-icon :size="32" :class="stat.color"><component :is="stat.icon" /></el-icon>
+              <div class="stat-icon-wrapper" :class="stat.color">
+                <el-icon :size="28"><component :is="stat.icon" /></el-icon>
+              </div>
               <div class="stat-info">
                 <h3 class="stat-title">{{ stat.title }}</h3>
                 <p class="stat-value">{{ stat.value }}</p>
@@ -218,27 +220,27 @@ const announcements = ref<Announcement[]>([])
 const banners = [
   {
     id: 1,
+    title: '社区公告，了解最新动态',
+    description: '查看社区最新通知和信息，及时获取重要资讯',
+    buttonText: '查看公告',
+    link: '/announcements',
+    image: 'https://images.unsplash.com/photo-1523240795612-9a054b0db644?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80'
+  },
+  {
+    id: 2,
     title: '丢失物品？立即发布寻物启事',
     description: '通过我们的平台发布寻物启事，提高物品找回几率',
     buttonText: '发布寻物启事',
     link: '/lost-items/create',
-    image: 'https://images.unsplash.com/photo-1606293926794-de930d0b3113'
+    image: 'https://images.unsplash.com/photo-1541577141970-eebc83ebe30e?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80'
   },
   {
-    id: 2,
+    id: 3,
     title: '拾获物品？发布失物招领',
     description: '拾获物品后在平台上发布，帮助失主尽快认领',
     buttonText: '发布失物招领',
     link: '/found-items/create',
-    image: 'https://images.unsplash.com/photo-1577979749830-f1d742b96791'
-  },
-  {
-    id: 3,
-    title: '社区互助，让每一次丢失都有回家的可能',
-    description: '共建互助社区，提高物品归还率',
-    buttonText: '了解更多',
-    link: '/announcements',
-    image: 'https://images.unsplash.com/photo-1528605248644-14dd04022da1'
+    image: 'https://images.unsplash.com/photo-1591710668263-bee1e9db2a26?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80'
   }
 ]
 
@@ -702,27 +704,66 @@ const loadStatistics = async () => {
   margin-bottom: 40px;
 }
 
+.stat-col {
+  margin-bottom: 20px;
+}
+
 .stat-card {
   display: flex;
+  flex-direction: column;
   align-items: center;
-  padding: 20px;
-  margin-bottom: 20px;
+  justify-content: center;
+  text-align: center;
+  padding: 24px 15px;
   overflow: hidden;
-  transition: transform 0.3s ease;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  height: 180px;
+  box-sizing: border-box;
+  border-radius: 8px;
 }
 
 .stat-card:hover {
   transform: translateY(-5px);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.1);
+}
+
+.stat-icon-wrapper {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  margin-bottom: 16px;
+  background-color: rgba(0, 0, 0, 0.05);
+}
+
+.stat-icon-wrapper.text-warning {
+  background-color: rgba(230, 162, 60, 0.1);
+}
+
+.stat-icon-wrapper.text-primary {
+  background-color: rgba(64, 158, 255, 0.1);
+}
+
+.stat-icon-wrapper.text-success {
+  background-color: rgba(103, 194, 58, 0.1);
+}
+
+.stat-icon-wrapper.text-info {
+  background-color: rgba(144, 147, 153, 0.1);
 }
 
 .stat-info {
-  margin-left: 15px;
-  overflow: hidden;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 
 .stat-title {
   font-size: 16px;
-  margin: 0 0 5px;
+  margin: 0 0 10px;
   color: #606266;
   white-space: nowrap;
   overflow: hidden;
@@ -730,10 +771,11 @@ const loadStatistics = async () => {
 }
 
 .stat-value {
-  font-size: 24px;
+  font-size: 30px;
   font-weight: 600;
   margin: 0;
   color: #303133;
+  line-height: 1.2;
 }
 
 .text-warning {
@@ -774,16 +816,22 @@ const loadStatistics = async () => {
   }
 
   .stat-card {
-    margin-bottom: 15px;
-    padding: 15px;
+    height: 160px;
+    padding: 20px 10px;
+  }
+
+  .stat-icon-wrapper {
+    width: 56px;
+    height: 56px;
+    margin-bottom: 12px;
   }
 
   .stat-info {
-    margin-left: 10px;
+    margin-left: 0;
   }
 
   .stat-value {
-    font-size: 20px;
+    font-size: 24px;
   }
 }
 </style>

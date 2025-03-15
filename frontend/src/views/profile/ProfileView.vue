@@ -14,21 +14,14 @@
                 :on-success="handleAvatarSuccess"
                 :before-upload="beforeAvatarUpload"
               >
-                <el-avatar :size="80" :src="userAvatar" class="avatar-image">
+                <el-avatar :size="100" :src="userAvatar" class="avatar-image" :shape="'square'">
                   <el-icon v-if="!userAvatar"><UserIcon /></el-icon>
                 </el-avatar>
                 <div class="avatar-overlay">
                   <el-icon><Upload /></el-icon>
                 </div>
               </el-upload>
-              <h3>{{ currentUser.username }}</h3>
-              <p>{{ currentUser.email }}</p>
-              <p v-if="currentUser.phone" class="user-phone">
-                <el-icon><Phone /></el-icon> {{ currentUser.phone }}
-              </p>
-              <p v-if="currentUser.realName" class="user-real-name">
-                {{ currentUser.realName }}
-              </p>
+              <div class="upload-hint">点击更换头像</div>
             </div>
 
             <el-divider />
@@ -173,22 +166,35 @@ onMounted(async () => {
 }
 
 .profile-sidebar {
-  margin-bottom: 20px;
+  margin: 0 0 20px 0;
 }
 
 .user-info {
   text-align: center;
   padding: 20px 0;
+  background-color: #f9f9f9;
+  border-radius: 10px;
+  margin: 0 10px 20px 10px;
 }
 
 .avatar-uploader {
   display: inline-block;
   position: relative;
   cursor: pointer;
+  margin-bottom: 10px;
 }
 
 .avatar-image {
   transition: all 0.3s;
+  border-radius: 8px !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1) !important;
+  width: 100px !important;
+  height: 100px !important;
+}
+
+.avatar-uploader:hover .avatar-image {
+  transform: translateY(-3px);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15) !important;
 }
 
 .avatar-overlay {
@@ -202,7 +208,7 @@ onMounted(async () => {
   justify-content: center;
   color: #fff;
   background-color: rgba(0, 0, 0, 0.5);
-  border-radius: 50%;
+  border-radius: 8px;
   opacity: 0;
   transition: opacity 0.3s;
 }
@@ -211,24 +217,11 @@ onMounted(async () => {
   opacity: 1;
 }
 
-.user-info h3 {
-  margin: 15px 0 5px;
-  font-size: 18px;
-  font-weight: 600;
-}
-
-.user-info p {
-  margin: 0;
+.upload-hint {
+  font-size: 13px;
   color: #909399;
-  font-size: 14px;
-}
-
-.user-phone, .user-real-name {
-  margin-top: 5px !important;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 5px;
+  margin-top: 10px;
+  text-align: center;
 }
 
 .profile-menu {

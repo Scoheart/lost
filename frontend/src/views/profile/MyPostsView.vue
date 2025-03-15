@@ -22,7 +22,7 @@
           <el-table
             :data="lostItems"
             style="width: 100%"
-            @row-click="(row) => viewLostItemDetail(row.id)"
+            @row-click="(row: any) => viewLostItemDetail(row.id)"
           >
             <el-table-column label="物品图片" width="120">
               <template #default="scope">
@@ -30,7 +30,7 @@
                   v-if="scope.row.images && scope.row.images.length > 0"
                   :src="scope.row.images[0]"
                   fit="cover"
-                  style="width: 80px; height: 80px; border-radius: 4px"
+                  style="width: 80px; height: 80px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);"
                   :preview-src-list="scope.row.images"
                 >
                   <template #error>
@@ -39,7 +39,7 @@
                     </div>
                   </template>
                 </el-image>
-                <div v-else class="image-placeholder" style="width: 80px; height: 80px">
+                <div v-else class="image-placeholder" style="width: 80px; height: 80px; border-radius: 8px;">
                   <el-icon><Picture /></el-icon>
                 </div>
               </template>
@@ -127,7 +127,7 @@
           <el-table
             :data="foundItems"
             style="width: 100%"
-            @row-click="(row) => viewFoundItemDetail(row.id)"
+            @row-click="(row: any) => viewFoundItemDetail(row.id)"
           >
             <el-table-column label="物品图片" width="120">
               <template #default="scope">
@@ -135,7 +135,7 @@
                   v-if="scope.row.images && scope.row.images.length > 0"
                   :src="scope.row.images[0]"
                   fit="cover"
-                  style="width: 80px; height: 80px; border-radius: 4px"
+                  style="width: 80px; height: 80px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);"
                   :preview-src-list="scope.row.images"
                 >
                   <template #error>
@@ -144,7 +144,7 @@
                     </div>
                   </template>
                 </el-image>
-                <div v-else class="image-placeholder" style="width: 80px; height: 80px">
+                <div v-else class="image-placeholder" style="width: 80px; height: 80px; border-radius: 8px;">
                   <el-icon><Picture /></el-icon>
                 </div>
               </template>
@@ -252,7 +252,7 @@ const totalLostItems = ref(0)
 const totalFoundItems = ref(0)
 
 // 方法
-const handleTabChange = (tab) => {
+const handleTabChange = (tab: string) => {
   if (tab === 'lost-items' && lostItems.value.length === 0) {
     fetchLostItems()
   } else if (tab === 'found-items' && foundItems.value.length === 0) {
@@ -260,7 +260,7 @@ const handleTabChange = (tab) => {
   }
 }
 
-const formatDate = (dateString) => {
+const formatDate = (dateString: string) => {
   try {
     return format(new Date(dateString), 'yyyy-MM-dd')
   } catch (error) {
@@ -272,7 +272,7 @@ const formatDate = (dateString) => {
 const fetchLostItems = async () => {
   loadingLostItems.value = true
   try {
-    const response = await lostItemsStore.fetchUserLostItems({
+    const response = await lostItemsStore.fetchMyLostItems({
       page: lostItemsPage.value,
       pageSize: pageSize.value
     })
@@ -287,20 +287,20 @@ const fetchLostItems = async () => {
   }
 }
 
-const handleLostItemsPageChange = (page) => {
+const handleLostItemsPageChange = (page: number) => {
   lostItemsPage.value = page
   fetchLostItems()
 }
 
-const viewLostItemDetail = (id) => {
+const viewLostItemDetail = (id: number) => {
   router.push(`/lost-items/${id}`)
 }
 
-const editLostItem = (id) => {
+const editLostItem = (id: number) => {
   router.push(`/lost-items/edit/${id}`)
 }
 
-const deleteLostItem = (id, title) => {
+const deleteLostItem = (id: number, title: string) => {
   ElMessageBox.confirm(
     `确定要删除寻物启事 "${title}" 吗？`,
     '删除确认',
@@ -333,7 +333,7 @@ const deleteLostItem = (id, title) => {
 const fetchFoundItems = async () => {
   loadingFoundItems.value = true
   try {
-    const response = await foundItemsStore.fetchUserFoundItems({
+    const response = await foundItemsStore.fetchMyFoundItems({
       page: foundItemsPage.value,
       pageSize: pageSize.value
     })
@@ -348,20 +348,20 @@ const fetchFoundItems = async () => {
   }
 }
 
-const handleFoundItemsPageChange = (page) => {
+const handleFoundItemsPageChange = (page: number) => {
   foundItemsPage.value = page
   fetchFoundItems()
 }
 
-const viewFoundItemDetail = (id) => {
+const viewFoundItemDetail = (id: number) => {
   router.push(`/found-items/${id}`)
 }
 
-const editFoundItem = (id) => {
+const editFoundItem = (id: number) => {
   router.push(`/found-items/edit/${id}`)
 }
 
-const deleteFoundItem = (id, title) => {
+const deleteFoundItem = (id: number, title: string) => {
   ElMessageBox.confirm(
     `确定要删除失物招领 "${title}" 吗？`,
     '删除确认',
@@ -423,6 +423,8 @@ onMounted(() => {
   justify-content: center;
   background-color: #f5f7fa;
   color: #909399;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .pagination-container {

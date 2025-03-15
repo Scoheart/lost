@@ -19,7 +19,7 @@
       <el-table
         :data="foundItems"
         style="width: 100%"
-        @row-click="(row) => viewFoundItemDetail(row.id)"
+        @row-click="(row: any) => viewFoundItemDetail(row.id)"
       >
         <el-table-column label="物品图片" width="120">
           <template #default="scope">
@@ -27,7 +27,7 @@
               v-if="scope.row.images && scope.row.images.length > 0"
               :src="scope.row.images[0]"
               fit="cover"
-              style="width: 80px; height: 80px; border-radius: 4px"
+              style="width: 80px; height: 80px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);"
               :preview-src-list="scope.row.images"
             >
               <template #error>
@@ -36,7 +36,7 @@
                 </div>
               </template>
             </el-image>
-            <div v-else class="image-placeholder" style="width: 80px; height: 80px">
+            <div v-else class="image-placeholder" style="width: 80px; height: 80px; border-radius: 8px;">
               <el-icon><Picture /></el-icon>
             </div>
           </template>
@@ -245,6 +245,8 @@ onMounted(() => {
   justify-content: center;
   background-color: #f5f7fa;
   color: #909399;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .pagination-container {

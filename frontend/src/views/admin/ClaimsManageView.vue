@@ -60,18 +60,20 @@
         </el-table-column>
         <el-table-column label="操作" width="200">
           <template #default="scope">
-            <el-button v-if="scope.row.status === 'pending'" type="success" size="small" @click="approveClaim(scope.row)">
-              批准
-            </el-button>
-            <el-button v-if="scope.row.status === 'pending'" type="danger" size="small" @click="rejectClaim(scope.row)">
-              拒绝
-            </el-button>
-            <el-button v-if="scope.row.status === 'approved'" type="primary" size="small" @click="completeClaim(scope.row)">
-              完成交接
-            </el-button>
-            <el-button type="info" size="small" @click="viewDetail(scope.row)">
-              详情
-            </el-button>
+            <div class="operation-buttons">
+              <el-button v-if="scope.row.status === 'pending'" type="success" size="small" @click="approveClaim(scope.row)" text>
+                批准
+              </el-button>
+              <el-button v-if="scope.row.status === 'pending'" type="danger" size="small" @click="rejectClaim(scope.row)" text>
+                拒绝
+              </el-button>
+              <el-button v-if="scope.row.status === 'approved'" type="primary" size="small" @click="completeClaim(scope.row)" text>
+                完成交接
+              </el-button>
+              <el-button type="info" size="small" @click="viewDetail(scope.row)" text>
+                详情
+              </el-button>
+            </div>
           </template>
         </el-table-column>
       </el-table>
@@ -534,5 +536,21 @@ onMounted(() => {
 .detail-section p {
   margin: 8px 0;
   line-height: 1.6;
+}
+
+.operation-buttons {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 4px;
+  white-space: nowrap;
+  min-width: fit-content;
+  justify-content: center;
+}
+
+.operation-buttons .el-button {
+  padding-left: 6px;
+  padding-right: 6px;
+  margin-left: 0;
+  margin-right: 0;
 }
 </style>
