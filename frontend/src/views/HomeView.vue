@@ -156,7 +156,10 @@
       <!-- 统计数据 -->
       <div class="stats-section">
         <h2 class="section-title text-center">系统总览</h2>
-        <el-row :gutter="30">
+        <div v-if="loadingStats" class="loading-container">
+          <el-skeleton :rows="1" animated />
+        </div>
+        <el-row v-else :gutter="30">
           <el-col :xs="12" :sm="12" :md="6" :lg="6" v-for="stat in stats" :key="stat.id">
             <el-card shadow="hover" class="stat-card">
               <el-icon :size="32" :class="stat.color"><component :is="stat.icon" /></el-icon>
@@ -183,10 +186,8 @@ import {
   Location,
   Calendar,
   Picture,
-  Promotion,
-  Checked,
+  Check as Checked,
   Timer,
-  Files
 } from '@element-plus/icons-vue'
 import { format } from 'date-fns'
 import MainLayout from '@/components/layout/MainLayout.vue'
@@ -206,6 +207,7 @@ const announcementsStore = useAnnouncementsStore()
 const loadingLostItems = ref(false)
 const loadingFoundItems = ref(false)
 const loadingAnnouncements = ref(false)
+const loadingStats = ref(false)
 
 // 数据
 const latestLostItems = ref<LostItem[]>([])
@@ -266,36 +268,36 @@ const services = [
 ]
 
 // 统计数据
-const stats = [
+const stats = ref([
   {
     id: 1,
     title: '寻物启事',
-    value: '158',
+    value: '0',
     icon: 'Search',
     color: 'text-warning'
   },
   {
     id: 2,
     title: '失物招领',
-    value: '203',
+    value: '0',
     icon: 'FindReplace',
     color: 'text-primary'
   },
   {
     id: 3,
     title: '成功找回',
-    value: '132',
+    value: '0',
     icon: 'Checked',
     color: 'text-success'
   },
   {
     id: 4,
     title: '平均找回时间',
-    value: '3.5天',
+    value: '计算中...',
     icon: 'Timer',
     color: 'text-info'
   }
-]
+])
 
 // 方法
 const goToPage = (link: string) => {
@@ -389,16 +391,10 @@ onMounted(async () => {
   // 获取最新寻物启事
   loadingLostItems.value = true
   try {
-    const result = await lostItemsStore.fetchLostItems({ pageSize: 4 })
-    if (result.success && Array.isArray(lostItemsStore.items)) {
-      latestLostItems.value = lostItemsStore.items.slice(0, 4)
-    } else {
-      latestLostItems.value = []
-      console.warn('寻物启事数据不是数组或获取失败', lostItemsStore.items)
-    }
+    await lostItemsStore.fetchLostItems()
+    latestLostItems.value = lostItemsStore.items.slice(0, 4)
   } catch (error) {
     console.error('Failed to fetch lost items:', error)
-    latestLostItems.value = []
   } finally {
     loadingLostItems.value = false
   }
@@ -406,16 +402,10 @@ onMounted(async () => {
   // 获取最新失物招领
   loadingFoundItems.value = true
   try {
-    const result = await foundItemsStore.fetchFoundItems({ pageSize: 4 })
-    if (result.success && Array.isArray(foundItemsStore.items)) {
-      latestFoundItems.value = foundItemsStore.items.slice(0, 4)
-    } else {
-      latestFoundItems.value = []
-      console.warn('失物招领数据不是数组或获取失败', foundItemsStore.items)
-    }
+    await foundItemsStore.fetchFoundItems()
+    latestFoundItems.value = foundItemsStore.items.slice(0, 4)
   } catch (error) {
     console.error('Failed to fetch found items:', error)
-    latestFoundItems.value = []
   } finally {
     loadingFoundItems.value = false
   }
@@ -424,19 +414,106 @@ onMounted(async () => {
   loadingAnnouncements.value = true
   try {
     await announcementsStore.fetchAnnouncements()
-    if (Array.isArray(announcementsStore.announcements)) {
-      announcements.value = announcementsStore.announcements.slice(0, 3)
-    } else {
-      announcements.value = []
-      console.warn('公告数据不是数组', announcementsStore.announcements)
-    }
+    announcements.value = announcementsStore.announcements.slice(0, 3)
   } catch (error) {
     console.error('Failed to fetch announcements:', error)
-    announcements.value = []
   } finally {
     loadingAnnouncements.value = false
   }
+
+  // 加载统计数据
+  await loadStatistics()
 })
+
+// 加载统计数据
+const loadStatistics = async () => {
+  loadingStats.value = true
+  try {
+    // 获取统计数据
+    const lostItemCount = lostItemsStore.items.length
+    const foundItemCount = foundItemsStore.items.length
+
+    // 成功找回的物品数量（状态为已找到的寻物+已认领的失物）
+    const foundItemsCount = lostItemsStore.items.filter(item => item.status === 'found').length
+    const claimedItemsCount = foundItemsStore.items.filter(item => item.status === 'claimed').length
+    const successCount = foundItemsCount + claimedItemsCount
+
+    // 计算平均找回时间
+    let totalDays = 0
+    let itemsWithValidDates = 0
+
+    // 计算已找到的寻物的平均时间
+    lostItemsStore.items.filter(item => item.status === 'found').forEach(item => {
+      try {
+        const lostDate = new Date(item.lostDate)
+        const foundDate = new Date(item.updatedAt) // 假设updatedAt是物品状态更新为已找到的时间
+        if (!isNaN(lostDate.getTime()) && !isNaN(foundDate.getTime())) {
+          const diffTime = Math.abs(foundDate.getTime() - lostDate.getTime())
+          const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
+          totalDays += diffDays
+          itemsWithValidDates++
+        }
+      } catch (e) {
+        console.error('Error calculating date difference:', e)
+      }
+    })
+
+    // 计算已认领的失物的平均时间
+    foundItemsStore.items.filter(item => item.status === 'claimed').forEach(item => {
+      try {
+        const foundDate = new Date(item.foundDate)
+        const claimedDate = new Date(item.updatedAt) // 假设updatedAt是物品状态更新为已认领的时间
+        if (!isNaN(foundDate.getTime()) && !isNaN(claimedDate.getTime())) {
+          const diffTime = Math.abs(claimedDate.getTime() - foundDate.getTime())
+          const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
+          totalDays += diffDays
+          itemsWithValidDates++
+        }
+      } catch (e) {
+        console.error('Error calculating date difference:', e)
+      }
+    })
+
+    // 计算平均天数
+    let avgDays = itemsWithValidDates > 0 ? (totalDays / itemsWithValidDates).toFixed(1) : '0'
+
+    // 更新统计数据
+    stats.value = [
+      {
+        id: 1,
+        title: '寻物启事',
+        value: lostItemCount.toString(),
+        icon: 'Search',
+        color: 'text-warning'
+      },
+      {
+        id: 2,
+        title: '失物招领',
+        value: foundItemCount.toString(),
+        icon: 'FindReplace',
+        color: 'text-primary'
+      },
+      {
+        id: 3,
+        title: '成功找回',
+        value: successCount.toString(),
+        icon: 'Checked',
+        color: 'text-success'
+      },
+      {
+        id: 4,
+        title: '平均找回时间',
+        value: `${avgDays}天`,
+        icon: 'Timer',
+        color: 'text-info'
+      }
+    ]
+  } catch (error) {
+    console.error('Failed to load statistics:', error)
+  } finally {
+    loadingStats.value = false
+  }
+}
 </script>
 
 <style scoped>

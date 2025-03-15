@@ -39,10 +39,16 @@ const router = createRouter({
           meta: { title: '个人设置', requiresAuth: true }
         },
         {
-          path: 'my-posts',
-          name: 'my-posts',
-          component: () => import('../views/profile/MyPostsView.vue'),
-          meta: { title: '我的发布', requiresAuth: true }
+          path: 'my-lost-items',
+          name: 'my-lost-items',
+          component: () => import('../views/profile/MyLostItemsView.vue'),
+          meta: { title: '我的寻物', requiresAuth: true }
+        },
+        {
+          path: 'my-found-items',
+          name: 'my-found-items',
+          component: () => import('../views/profile/MyFoundItemsView.vue'),
+          meta: { title: '我的招领', requiresAuth: true }
         }
       ]
     },

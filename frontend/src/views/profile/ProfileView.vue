@@ -6,9 +6,21 @@
         <el-col :xs="24" :sm="6" :md="5" :lg="4">
           <el-card class="profile-sidebar" shadow="never">
             <div class="user-info">
-              <el-avatar :size="80" :src="userAvatar">
-                <el-icon v-if="!userAvatar"><UserIcon /></el-icon>
-              </el-avatar>
+              <el-upload
+                class="avatar-uploader"
+                action="/api/users/avatar"
+                :headers="uploadHeaders"
+                :show-file-list="false"
+                :on-success="handleAvatarSuccess"
+                :before-upload="beforeAvatarUpload"
+              >
+                <el-avatar :size="80" :src="userAvatar" class="avatar-image">
+                  <el-icon v-if="!userAvatar"><UserIcon /></el-icon>
+                </el-avatar>
+                <div class="avatar-overlay">
+                  <el-icon><Upload /></el-icon>
+                </div>
+              </el-upload>
               <h3>{{ currentUser.username }}</h3>
               <p>{{ currentUser.email }}</p>
             </div>
@@ -24,10 +36,6 @@
                 <el-icon><Setting /></el-icon>
                 <span>个人设置</span>
               </el-menu-item>
-              <el-menu-item index="/profile/my-posts">
-                <el-icon><Document /></el-icon>
-                <span>我的发布</span>
-              </el-menu-item>
               <el-menu-item index="/profile/my-lost-items">
                 <el-icon><Search /></el-icon>
                 <span>我的寻物</span>
@@ -35,11 +43,6 @@
               <el-menu-item index="/profile/my-found-items">
                 <el-icon><Collection /></el-icon>
                 <span>我的招领</span>
-              </el-menu-item>
-              <el-menu-item index="/profile/messages">
-                <el-icon><ChatDotRound /></el-icon>
-                <span>我的消息</span>
-                <el-badge v-if="unreadMessageCount > 0" :value="unreadMessageCount" class="menu-badge" />
               </el-menu-item>
             </el-menu>
           </el-card>
@@ -73,37 +76,64 @@ import { ref, computed, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import {
   User as UserIcon,
-  Document,
   Search,
   Collection,
-  ChatDotRound,
-  Setting
+  Setting,
+  Upload
 } from '@element-plus/icons-vue'
 import MainLayout from '@/components/layout/MainLayout.vue'
 import { useUserStore, type User } from '@/stores/user'
-import { useMessageStore } from '@/stores/messages'
 import { ElMessage } from 'element-plus'
 
 const route = useRoute()
 const userStore = useUserStore()
-const messageStore = useMessageStore()
 const isLoaded = ref(false)
 const loading = ref(false)
 
 // 计算属性
 const currentUser = computed(() => userStore.user || {} as User)
 const userAvatar = computed(() => (currentUser.value?.avatar as string) || '')
-const unreadMessageCount = computed(() => messageStore.unreadCount || 0)
 const activeMenu = computed(() => route.path)
+const uploadHeaders = computed(() => ({
+  Authorization: `Bearer ${userStore.token}`
+}))
 
-// 加载用户资料并获取未读消息
+// 头像上传处理
+const handleAvatarSuccess = (response: any) => {
+  if (response.success) {
+    ElMessage.success('头像上传成功')
+    userStore.setUser({
+      ...currentUser.value,
+      avatar: response.data.url
+    })
+  } else {
+    ElMessage.error(response.message || '头像上传失败')
+  }
+}
+
+// 上传前验证
+const beforeAvatarUpload = (file: File) => {
+  const isJPG = file.type === 'image/jpeg'
+  const isPNG = file.type === 'image/png'
+  const isLt2M = file.size / 1024 / 1024 < 2
+
+  if (!isJPG && !isPNG) {
+    ElMessage.error('头像只能是 JPG 或 PNG 格式!')
+    return false
+  }
+  if (!isLt2M) {
+    ElMessage.error('头像大小不能超过 2MB!')
+    return false
+  }
+  return true
+}
+
+// 加载用户资料
 const loadUserData = async () => {
   if (loading.value) return
 
   loading.value = true
   try {
-    // 加载未读消息数量
-    await messageStore.fetchUnreadCount()
     isLoaded.value = true
   } catch (error) {
     console.error('Failed to load user data:', error)
@@ -135,6 +165,36 @@ onMounted(async () => {
   padding: 20px 0;
 }
 
+.avatar-uploader {
+  display: inline-block;
+  position: relative;
+  cursor: pointer;
+}
+
+.avatar-image {
+  transition: all 0.3s;
+}
+
+.avatar-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  background-color: rgba(0, 0, 0, 0.5);
+  border-radius: 50%;
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+
+.avatar-uploader:hover .avatar-overlay {
+  opacity: 1;
+}
+
 .user-info h3 {
   margin: 15px 0 5px;
   font-size: 18px;
@@ -149,10 +209,6 @@ onMounted(async () => {
 
 .profile-menu {
   border-right: none;
-}
-
-.menu-badge {
-  margin-left: 10px;
 }
 
 .loading-container {
