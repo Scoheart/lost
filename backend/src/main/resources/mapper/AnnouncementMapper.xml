@@ -8,7 +8,6 @@
         <result property="title" column="title" />
         <result property="content" column="content" />
         <result property="adminId" column="admin_id" />
-        <result property="isSticky" column="is_sticky" />
         <result property="status" column="status" />
         <result property="createdAt" column="created_at" />
         <result property="updatedAt" column="updated_at" />
@@ -18,9 +17,9 @@
     <!-- 保存公告 -->
     <insert id="save" parameterType="com.community.lostandfound.entity.Announcement" useGeneratedKeys="true" keyProperty="id">
         INSERT INTO announcements (
-            title, content, admin_id, is_sticky, status, created_at, updated_at, is_pinned
+            title, content, admin_id, status, created_at, updated_at
         ) VALUES (
-            #{title}, #{content}, #{adminId}, #{isSticky}, #{status}, #{createdAt}, #{updatedAt}, #{isSticky}
+            #{title}, #{content}, #{adminId}, #{status}, #{createdAt}, #{updatedAt}
         )
     </insert>
     
@@ -29,8 +28,6 @@
         UPDATE announcements SET
             title = #{title},
             content = #{content},
-            is_sticky = #{isSticky},
-            is_pinned = #{isSticky},
             status = #{status},
             updated_at = #{updatedAt}
         WHERE id = #{id}
@@ -54,7 +51,7 @@
                 AND u.username LIKE CONCAT('%', #{adminName}, '%')
             </if>
         </where>
-        ORDER BY a.is_sticky DESC, a.created_at DESC
+        ORDER BY a.created_at DESC
         LIMIT #{pageSize} OFFSET #{offset}
     </select>
     
@@ -87,7 +84,7 @@
         FROM announcements a
         LEFT JOIN users u ON a.admin_id = u.id
         WHERE a.status = 'published'
-        ORDER BY a.is_sticky DESC, a.created_at DESC
+        ORDER BY a.created_at DESC
         LIMIT #{pageSize} OFFSET #{offset}
     </select>
     
@@ -102,7 +99,7 @@
         FROM announcements a
         LEFT JOIN users u ON a.admin_id = u.id
         WHERE a.admin_id = #{adminId}
-        ORDER BY a.is_sticky DESC, a.created_at DESC
+        ORDER BY a.created_at DESC
         LIMIT #{pageSize} OFFSET #{offset}
     </select>
     

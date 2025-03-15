@@ -38,7 +38,6 @@
             @back="$router.push('/announcements')"
             :title="announcement.title"
           />
-          <el-tag v-if="announcement.isSticky" type="warning">置顶</el-tag>
         </div>
 
         <div class="announcement-content">
@@ -121,8 +120,7 @@ const announcement = ref<Partial<Announcement>>({
   title: '',
   content: '',
   adminName: '',
-  publishDate: '',
-  isSticky: false
+  publishDate: ''
 })
 const relatedAnnouncements = ref<Partial<Announcement>[]>([])
 
@@ -163,7 +161,7 @@ const fetchRelatedAnnouncements = async () => {
     // 这里简化为获取最新的3条公告，排除当前公告
     await announcementsStore.fetchAnnouncements({
       page: 1,
-      pageSize: 10
+      pageSize: 5
     })
 
     console.log('All announcements for related selection:', announcementsStore.announcements);

@@ -32,17 +32,17 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("/announcements")
 @RequiredArgsConstructor
 public class AnnouncementController {
-    
+
     private static final Logger log = LoggerFactory.getLogger(AnnouncementController.class);
-    
+
     private final AnnouncementService announcementService;
 
     /**
      * 【管理员接口】获取所有公告（分页），包括未发布的公告
      *
-     * @param page     页码（从1开始）
-     * @param pageSize 每页条数
-     * @param keyword  搜索关键词（模糊匹配标题或内容）
+     * @param page      页码（从1开始）
+     * @param pageSize  每页条数
+     * @param keyword   搜索关键词（模糊匹配标题或内容）
      * @param adminName 管理员用户名筛选
      * @return 分页公告列表
      */
@@ -53,8 +53,8 @@ public class AnnouncementController {
             @RequestParam(defaultValue = "10") int pageSize,
             @RequestParam(required = false) String keyword,
             @RequestParam(required = false) String adminName) {
-        
-        log.info("获取所有公告列表, 页码: {}, 每页条数: {}, 关键词: {}, 管理员: {}", 
+
+        log.info("获取所有公告列表, 页码: {}, 每页条数: {}, 关键词: {}, 管理员: {}",
                 page, pageSize, keyword, adminName);
         AnnouncementPageDto result = announcementService.getAllAnnouncements(page, pageSize, keyword, adminName);
         return ResponseEntity.ok(ApiResponse.success("获取所有公告成功", result));
@@ -72,7 +72,7 @@ public class AnnouncementController {
     public ResponseEntity<ApiResponse<AnnouncementPageDto>> getPublishedAnnouncements(
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "10") int pageSize) {
-        
+
         log.info("获取已发布公告列表, 页码: {}, 每页条数: {}", page, pageSize);
         AnnouncementPageDto result = announcementService.getPublishedAnnouncements(page, pageSize);
         return ResponseEntity.ok(ApiResponse.success("获取已发布公告成功", result));
@@ -88,17 +88,17 @@ public class AnnouncementController {
     @GetMapping("/{id}")
     public ResponseEntity<ApiResponse<AnnouncementDto>> getAnnouncementById(@PathVariable Long id) {
         log.info("获取公告详情, ID: {}", id);
-        
+
         try {
             AnnouncementDto announcement = announcementService.getAnnouncementById(id);
-            
+
             // 如果公告未发布，且当前用户非管理员，则返回404
             if (!"published".equals(announcement.getStatus()) && !isCurrentUserAdmin()) {
                 log.warn("非管理员用户尝试访问未发布公告, ID: {}", id);
                 return ResponseEntity.status(HttpStatus.NOT_FOUND)
                         .body(ApiResponse.fail("公告不存在"));
             }
-            
+
             return ResponseEntity.ok(ApiResponse.success("获取公告成功", announcement));
         } catch (ResourceNotFoundException e) {
             log.warn("公告不存在, ID: {}", id);
@@ -110,7 +110,7 @@ public class AnnouncementController {
     /**
      * 【管理员接口】创建公告
      *
-     * @param request 创建公告请求
+     * @param request     创建公告请求
      * @param currentUser 当前用户
      * @return 创建的公告
      */
@@ -119,7 +119,7 @@ public class AnnouncementController {
     public ResponseEntity<ApiResponse<AnnouncementDto>> createAnnouncement(
             @Valid @RequestBody CreateAnnouncementRequest request,
             @CurrentUser UserDetailsImpl currentUser) {
-        
+
         // 获取当前用户ID
         Long userId = getCurrentUserId(currentUser);
         if (userId == null) {
@@ -127,7 +127,7 @@ public class AnnouncementController {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                     .body(ApiResponse.fail("未授权操作，请重新登录"));
         }
-        
+
         log.info("创建公告: {}, 用户ID: {}", request.getTitle(), userId);
         try {
             AnnouncementDto createdAnnouncement = announcementService.createAnnouncement(request, userId);
@@ -143,8 +143,8 @@ public class AnnouncementController {
     /**
      * 【管理员接口】更新公告
      *
-     * @param id 公告ID
-     * @param request 更新公告请求
+     * @param id          公告ID
+     * @param request     更新公告请求
      * @param currentUser 当前用户
      * @return 更新后的公告
      */
@@ -154,7 +154,7 @@ public class AnnouncementController {
             @PathVariable Long id,
             @Valid @RequestBody UpdateAnnouncementRequest request,
             @CurrentUser UserDetailsImpl currentUser) {
-        
+
         // 获取当前用户ID
         Long userId = getCurrentUserId(currentUser);
         if (userId == null) {
@@ -162,9 +162,9 @@ public class AnnouncementController {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                     .body(ApiResponse.fail("未授权操作，请重新登录"));
         }
-        
+
         log.info("更新公告, ID: {}, 用户ID: {}", id, userId);
-        
+
         try {
             AnnouncementDto updatedAnnouncement = announcementService.updateAnnouncement(id, request, userId);
             return ResponseEntity.ok(ApiResponse.success("公告更新成功", updatedAnnouncement));
@@ -186,7 +186,7 @@ public class AnnouncementController {
     /**
      * 【管理员接口】删除公告
      *
-     * @param id 公告ID
+     * @param id          公告ID
      * @param currentUser 当前用户
      * @return 删除结果
      */
@@ -195,7 +195,7 @@ public class AnnouncementController {
     public ResponseEntity<ApiResponse<Void>> deleteAnnouncement(
             @PathVariable Long id,
             @CurrentUser UserDetailsImpl currentUser) {
-        
+
         // 获取当前用户ID
         Long userId = getCurrentUserId(currentUser);
         if (userId == null) {
@@ -203,12 +203,12 @@ public class AnnouncementController {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                     .body(ApiResponse.fail("未授权操作，请重新登录"));
         }
-        
+
         log.info("删除公告, ID: {}, 用户ID: {}", id, userId);
-        
+
         try {
             boolean deleted = announcementService.deleteAnnouncement(id, userId);
-            
+
             if (deleted) {
                 return ResponseEntity.ok(ApiResponse.success("公告删除成功", null));
             } else {
@@ -233,8 +233,8 @@ public class AnnouncementController {
     /**
      * 【管理员接口】获取当前管理员发布的公告（分页）
      *
-     * @param page     页码（从1开始）
-     * @param pageSize 每页条数
+     * @param page        页码（从1开始）
+     * @param pageSize    每页条数
      * @param currentUser 当前用户
      * @return 分页公告列表
      */
@@ -244,7 +244,7 @@ public class AnnouncementController {
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "10") int pageSize,
             @CurrentUser UserDetailsImpl currentUser) {
-        
+
         // 获取当前用户ID
         Long userId = getCurrentUserId(currentUser);
         if (userId == null) {
@@ -252,14 +252,14 @@ public class AnnouncementController {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                     .body(ApiResponse.fail("未授权操作，请重新登录"));
         }
-        
-        log.info("获取当前管理员发布的公告, 用户ID: {}, 页码: {}, 每页条数: {}", 
+
+        log.info("获取当前管理员发布的公告, 用户ID: {}, 页码: {}, 每页条数: {}",
                 userId, page, pageSize);
-        
+
         try {
             AnnouncementPageDto result = announcementService.getAnnouncementsByAdminId(
                     userId, page, pageSize);
-            
+
             return ResponseEntity.ok(ApiResponse.success("获取我的公告成功", result));
         } catch (Exception e) {
             log.error("获取我的公告时发生错误", e);
@@ -267,34 +267,10 @@ public class AnnouncementController {
                     .body(ApiResponse.fail("获取我的公告失败: " + e.getMessage()));
         }
     }
-    
-    /**
-     * 【公开接口】获取置顶公告列表（用于首页展示）
-     * 该接口仅返回已发布且置顶的公告
-     *
-     * @param limit 最大返回条数
-     * @return 置顶公告列表
-     */
-    @GetMapping("/sticky")
-    public ResponseEntity<ApiResponse<AnnouncementPageDto>> getStickyAnnouncements(
-            @RequestParam(defaultValue = "5") int limit) {
-        
-        log.info("获取置顶公告列表, 最大条数: {}", limit);
-        try {
-            AnnouncementPageDto result = announcementService.getPublishedAnnouncements(1, limit);
-            // 这里假设service会优先返回置顶的公告，如果service不支持，需要进行修改
-            
-            return ResponseEntity.ok(ApiResponse.success("获取置顶公告成功", result));
-        } catch (Exception e) {
-            log.error("获取置顶公告时发生错误", e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(ApiResponse.fail("获取置顶公告失败: " + e.getMessage()));
-        }
-    }
-    
+
     /**
      * 检查当前用户是否为管理员
-     * 
+     *
      * @return 是否为管理员
      */
     private boolean isCurrentUserAdmin() {
@@ -302,16 +278,16 @@ public class AnnouncementController {
         if (authentication == null || !authentication.isAuthenticated()) {
             return false;
         }
-        
+
         return authentication.getAuthorities().stream()
-                .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN") || 
-                               a.getAuthority().equals("ROLE_SYSADMIN"));
+                .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN") ||
+                        a.getAuthority().equals("ROLE_SYSADMIN"));
     }
-    
+
     /**
      * 获取当前用户ID
      * 如果通过@CurrentUser获取的用户为null，则尝试从SecurityContextHolder获取
-     * 
+     *
      * @param currentUser 通过@CurrentUser注解获取的当前用户
      * @return 当前用户ID，如果无法获取则返回null
      */
@@ -320,20 +296,20 @@ public class AnnouncementController {
         if (currentUser != null) {
             return currentUser.getId();
         }
-        
+
         // 如果currentUser为null，尝试从SecurityContext获取
         log.debug("从@CurrentUser获取的用户为null，尝试从SecurityContextHolder获取");
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        if (authentication != null && authentication.isAuthenticated() && 
+        if (authentication != null && authentication.isAuthenticated() &&
                 authentication.getPrincipal() instanceof UserDetailsImpl) {
             UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
             log.debug("从SecurityContextHolder获取到用户: {}", userDetails.getUsername());
             return userDetails.getId();
         } else if (authentication != null) {
-            log.warn("认证信息存在但类型不匹配: {}", 
+            log.warn("认证信息存在但类型不匹配: {}",
                     authentication.getPrincipal() != null ? authentication.getPrincipal().getClass().getName() : "null");
         }
-        
+
         log.warn("无法获取当前用户信息");
         return null;
     }

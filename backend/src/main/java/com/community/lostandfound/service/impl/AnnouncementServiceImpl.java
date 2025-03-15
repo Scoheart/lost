@@ -96,7 +96,6 @@ public class AnnouncementServiceImpl implements AnnouncementService {
                 .title(request.getTitle())
                 .content(request.getContent())
                 .adminId(adminId)
-                .isSticky(request.getIsSticky())
                 .status(request.getStatus())
                 .createdAt(LocalDateTime.now())
                 .updatedAt(LocalDateTime.now())
@@ -135,9 +134,6 @@ public class AnnouncementServiceImpl implements AnnouncementService {
         }
         if (request.getContent() != null) {
             announcement.setContent(request.getContent());
-        }
-        if (request.getIsSticky() != null) {
-            announcement.setIsSticky(request.getIsSticky());
         }
         if (request.getStatus() != null) {
             announcement.setStatus(request.getStatus());
@@ -266,7 +262,6 @@ public class AnnouncementServiceImpl implements AnnouncementService {
                 .content(announcement.getContent())
                 .adminId(announcement.getAdminId())
                 .adminName(announcement.getAdminName())
-                .isSticky(announcement.getIsSticky())
                 .status(announcement.getStatus())
                 .createdAt(announcement.getCreatedAt())
                 .updatedAt(announcement.getUpdatedAt())

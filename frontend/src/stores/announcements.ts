@@ -6,7 +6,6 @@ export interface Announcement {
   id: number
   title: string
   content: string
-  isSticky: boolean
   publishDate: string
   adminId: number
   adminName: string
@@ -40,16 +39,6 @@ export const useAnnouncementsStore = defineStore('announcements', {
   }),
 
   getters: {
-    stickyAnnouncements: (state) => {
-      // Get announcements that are sticky
-      return state.announcements.filter(item => item.isSticky);
-    },
-
-    regularAnnouncements: (state) => {
-      // Get announcements that are not sticky
-      return state.announcements.filter(item => !item.isSticky);
-    },
-
     total: (state) => {
       return state.pagination.total;
     },
@@ -67,7 +56,6 @@ export const useAnnouncementsStore = defineStore('announcements', {
       page?: number;
       pageSize?: number;
       keyword?: string;
-      isSticky?: boolean | null;
     }) {
       this.loading = true
       this.error = null
@@ -124,28 +112,11 @@ export const useAnnouncementsStore = defineStore('announcements', {
       }
     },
 
-    // 公开接口：获取置顶公告（用于首页显示）
-    async fetchStickyAnnouncements() {
-      this.loading = true
-      this.error = null
-
-      try {
-        const response = await apiClient.get('/announcements/sticky')
-        return { success: true, data: response.data }
-      } catch (error: any) {
-        this.error = error.response?.data?.message || '获取置顶公告失败'
-        return { success: false, message: this.error }
-      } finally {
-        this.loading = false
-      }
-    },
-
     // 管理员接口：获取所有公告
     async fetchAdminAnnouncements(params?: {
       page?: number;
       pageSize?: number;
       keyword?: string;
-      isSticky?: boolean | null;
     }) {
       this.loading = true
       this.error = null
@@ -184,7 +155,6 @@ export const useAnnouncementsStore = defineStore('announcements', {
       page?: number;
       pageSize?: number;
       keyword?: string;
-      isSticky?: boolean | null;
     }) {
       this.loading = true
       this.error = null

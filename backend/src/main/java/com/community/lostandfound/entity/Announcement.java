@@ -37,11 +37,6 @@ public class Announcement {
     private Long adminId;
     
     /**
-     * 是否置顶
-     */
-    private Boolean isSticky;
-    
-    /**
      * 公告状态: published(已发布), draft(草稿)
      */
     private String status;
