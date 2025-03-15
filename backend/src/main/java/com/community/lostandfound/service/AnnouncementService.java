@@ -13,11 +13,13 @@ public interface AnnouncementService {
     /**
      * 获取所有公告（分页）
      *
-     * @param page     页码
-     * @param pageSize 每页条数
+     * @param page      页码
+     * @param pageSize  每页条数
+     * @param keyword   搜索关键词（标题或内容，可选）
+     * @param adminName 管理员用户名（可选）
      * @return 分页公告列表
      */
-    AnnouncementPageDto getAllAnnouncements(int page, int pageSize);
+    AnnouncementPageDto getAllAnnouncements(int page, int pageSize, String keyword, String adminName);
     
     /**
      * 获取已发布公告（分页）

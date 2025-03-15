@@ -1,19 +1,20 @@
-package com.community.lostandfound.entity;
+package com.community.lostandfound.dto.comment;
 
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
 
 /**
- * 留言实体类
- * 用于寻物启事和失物招领的留言
+ * 留言数据传输对象
  */
 @Data
+@Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class Comment {
+public class CommentDto {
     
     /**
      * 留言ID
@@ -26,7 +27,7 @@ public class Comment {
     private String content;
     
     /**
-     * 关联的物品ID（寻物启事或失物招领的ID）
+     * 关联的物品ID
      */
     private Long itemId;
     
@@ -41,22 +42,17 @@ public class Comment {
     private Long userId;
     
     /**
-     * 创建时间
-     */
-    private LocalDateTime createdAt;
-    
-    /**
-     * 更新时间
-     */
-    private LocalDateTime updatedAt;
-    
-    /**
-     * 非持久化字段 - 用户名
+     * 用户名
      */
     private String username;
     
     /**
-     * 非持久化字段 - 用户头像
+     * 用户头像
      */
     private String userAvatar;
+    
+    /**
+     * 创建时间
+     */
+    private LocalDateTime createdAt;
 } 

@@ -56,7 +56,7 @@ public class AuthController {
 
             // Add detailed logging
             log.debug("Authentication successful in controller for: {}", loginRequest.getUsernameOrEmail());
-            
+
             try {
                 String jwt = jwtUtils.generateJwtToken(authentication);
                 log.debug("JWT token generated successfully");

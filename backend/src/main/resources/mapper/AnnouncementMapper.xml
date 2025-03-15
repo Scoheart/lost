@@ -46,6 +46,14 @@
         SELECT a.*, u.username 
         FROM announcements a
         LEFT JOIN users u ON a.admin_id = u.id
+        <where>
+            <if test="keyword != null and keyword != ''">
+                AND (a.title LIKE CONCAT('%', #{keyword}, '%') OR a.content LIKE CONCAT('%', #{keyword}, '%'))
+            </if>
+            <if test="adminName != null and adminName != ''">
+                AND u.username LIKE CONCAT('%', #{adminName}, '%')
+            </if>
+        </where>
         ORDER BY a.is_sticky DESC, a.created_at DESC
         LIMIT #{pageSize} OFFSET #{offset}
     </select>
@@ -60,7 +68,17 @@
     
     <!-- 查询公告总数 -->
     <select id="count" resultType="long">
-        SELECT COUNT(*) FROM announcements
+        SELECT COUNT(*) 
+        FROM announcements a
+        LEFT JOIN users u ON a.admin_id = u.id
+        <where>
+            <if test="keyword != null and keyword != ''">
+                AND (a.title LIKE CONCAT('%', #{keyword}, '%') OR a.content LIKE CONCAT('%', #{keyword}, '%'))
+            </if>
+            <if test="adminName != null and adminName != ''">
+                AND u.username LIKE CONCAT('%', #{adminName}, '%')
+            </if>
+        </where>
     </select>
     
     <!-- 查询已发布公告（分页） -->

@@ -28,7 +28,7 @@ public class AnnouncementServiceImpl implements AnnouncementService {
     private final AnnouncementRepository announcementRepository;
 
     @Override
-    public AnnouncementPageDto getAllAnnouncements(int page, int pageSize) {
+    public AnnouncementPageDto getAllAnnouncements(int page, int pageSize, String keyword, String adminName) {
         // 验证分页参数
         validatePaginationParams(page, pageSize);
         
@@ -36,10 +36,10 @@ public class AnnouncementServiceImpl implements AnnouncementService {
         int offset = (page - 1) * pageSize;
         
         // 查询公告列表
-        List<Announcement> announcements = announcementRepository.findAll(offset, pageSize);
+        List<Announcement> announcements = announcementRepository.findAll(offset, pageSize, keyword, adminName);
         
         // 统计总数
-        long totalCount = announcementRepository.count();
+        long totalCount = announcementRepository.count(keyword, adminName);
         
         // 转换为DTO
         List<AnnouncementDto> announcementDtos = announcements.stream()

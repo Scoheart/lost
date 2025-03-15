@@ -40,11 +40,17 @@ public interface AnnouncementRepository {
     /**
      * 查询所有公告（分页）
      *
-     * @param offset   偏移量
-     * @param pageSize 每页条数
+     * @param offset    偏移量
+     * @param pageSize  每页条数
+     * @param keyword   搜索关键词（标题或内容，可选）
+     * @param adminName 管理员用户名（可选）
      * @return 公告列表
      */
-    List<Announcement> findAll(@Param("offset") int offset, @Param("pageSize") int pageSize);
+    List<Announcement> findAll(
+            @Param("offset") int offset, 
+            @Param("pageSize") int pageSize,
+            @Param("keyword") String keyword,
+            @Param("adminName") String adminName);
     
     /**
      * 根据ID查询公告
@@ -57,9 +63,13 @@ public interface AnnouncementRepository {
     /**
      * 统计公告总数
      *
+     * @param keyword   搜索关键词（标题或内容，可选）
+     * @param adminName 管理员用户名（可选）
      * @return 公告总数
      */
-    long count();
+    long count(
+            @Param("keyword") String keyword,
+            @Param("adminName") String adminName);
     
     /**
      * 查询已发布公告（分页）
