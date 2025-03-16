@@ -62,7 +62,13 @@ jobs:
     - name: Build frontend for production
       run: |
         cd frontend
-        NODE_ENV=production pnpm run build:prod
+        echo "Starting frontend build..."
+        echo "Current directory: $(pwd)"
+        echo "Node version: $(node -v)"
+        echo "PNPM version: $(pnpm -v)"
+        NODE_ENV=production VITE_DEBUG=true pnpm run build:prod
+        echo "✅ Frontend build completed successfully!"
+      continue-on-error: false
     
     # Setup SSH for deployment
     - name: Setup SSH

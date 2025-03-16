@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="600" height="400" viewBox="0 0 600 400" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- 背景圆形 -->
+  <circle cx="300" cy="200" r="150" fill="#f0f5ff" />
+  
+  <!-- 404 文字 -->
+  <path d="M180 140V260H210V210H250V260H280V140H250V180H210V140H180Z" fill="#409EFF" />
+  <path d="M300 140C300 140 300 260 300 260C300 260 330 260 330 260C330 260 330 240 330 240C330 240 360 240 360 240C360 240 360 260 360 260C360 260 390 260 390 260C390 260 390 140 390 140C390 140 360 140 360 140C360 140 360 210 360 210C360 210 330 210 330 210C330 210 330 140 330 140C330 140 300 140 300 140Z" fill="#409EFF" />
+  <path d="M410 140V260H440V210H480V260H510V140H480V180H440V140H410Z" fill="#409EFF" />
+  
+  <!-- 小人图案 -->
+  <circle cx="300" cy="300" r="20" fill="#409EFF" />
+  <path d="M300 320V350" stroke="#409EFF" stroke-width="4"/>
+  <path d="M280 335L300 350L320 335" stroke="#409EFF" stroke-width="4"/>
+  <path d="M300 350L300 380" stroke="#409EFF" stroke-width="4"/>
+  <path d="M270 380L300 360L330 380" stroke="#409EFF" stroke-width="4"/>
+  
+  <!-- 问号 -->
+  <path d="M350 110C350 97.7 340.3 88 328 88C315.7 88 306 97.7 306 110C306 122.3 315.7 132 328 132" stroke="#409EFF" stroke-width="3"/>
+  <circle cx="328" cy="142" r="5" fill="#409EFF"/>
+</svg> 

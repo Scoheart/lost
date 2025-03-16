@@ -110,6 +110,18 @@ If you encounter issues with the GitHub Actions workflow:
 
 2. **Build Errors**: If the frontend build fails, check that your pnpm-lock.yaml file is committed to the repository and that your dependencies are compatible with Node.js 20.
 
-3. **Deployment Errors**: If the deployment to Aliyun fails, verify that all required secrets are correctly set up in your GitHub repository settings and that your server has the necessary permissions and software installed.
+3. **Static Asset Issues**: If you encounter errors like `Could not resolve "../assets/images/404.svg"`, ensure that all referenced assets exist in the correct paths. The project structure expects images to be in `frontend/src/assets/images/`.
 
-4. **Nginx Configuration**: If Nginx fails to restart, check the Nginx error logs on your server (`sudo tail /var/log/nginx/error.log`) to identify any syntax or permission issues. 
+4. **Deployment Errors**: If the deployment to Aliyun fails, verify that all required secrets are correctly set up in your GitHub repository settings and that your server has the necessary permissions and software installed.
+
+5. **Nginx Configuration**: If Nginx fails to restart, check the Nginx error logs on your server (`sudo tail /var/log/nginx/error.log`) to identify any syntax or permission issues.
+
+### Static Assets Best Practices
+
+1. **Asset Organization**: Keep all static assets in the `frontend/src/assets/` directory, organized by type (images, icons, etc.)
+
+2. **Import Paths**: When importing assets in Vue components, use relative paths from the component file (e.g., `../assets/images/logo.svg`) or alias imports (e.g., `@/assets/images/logo.svg`).
+
+3. **SVG Usage**: For critical UI elements, consider using SVG files that can be embedded directly in components or using icon libraries like Element Plus icons.
+
+4. **Asset Optimization**: Large images should be optimized before adding them to the project. Consider using tools like ImageOptim or TinyPNG. 

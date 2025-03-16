@@ -22,4 +22,20 @@ export default defineConfig({
       },
     },
   },
+  build: {
+    // 更好的处理资源错误和警告
+    reportCompressedSize: false,
+    chunkSizeWarningLimit: 1000,
+    rollupOptions: {
+      // 优化静态资源分组
+      output: {
+        manualChunks: {
+          vendor: ['vue', 'vue-router', 'pinia'],
+          ui: ['element-plus', '@element-plus/icons-vue'],
+        }
+      }
+    }
+  },
+  // 导入静态资源自动转换为模块
+  assetsInclude: ['**/*.svg', '**/*.png', '**/*.jpg', '**/*.jpeg', '**/*.gif'],
 })
