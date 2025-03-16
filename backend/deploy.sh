@@ -19,6 +19,7 @@ JAR_FILE="$DEPLOY_DIR/app.jar"
 
 # 确保目录存在
 mkdir -p "$DEPLOY_DIR/logs"
+mkdir -p "$DEPLOY_DIR/uploads"  # 确保上传目录存在
 
 # 检查应用是否正在运行
 if [ -f "$PID_FILE" ]; then
@@ -49,10 +50,30 @@ echo $! > "$PID_FILE"
 echo "[$APP_NAME] 应用已启动 (PID: $(cat $PID_FILE))，日志: $DEPLOY_DIR/logs/$LOG_FILE"
 
 # 检查应用是否成功启动
-sleep 10
+echo "[$APP_NAME] 等待应用启动 (30秒)..."
+sleep 15
+
+# 检查是否成功启动
 if ps -p $(cat "$PID_FILE") > /dev/null; then
-    echo "[$APP_NAME] 应用启动成功!"
+    # 检查日志中是否有启动成功的标志
+    if grep -q "Started" "$DEPLOY_DIR/logs/$LOG_FILE"; then
+        echo "[$APP_NAME] 应用启动成功!"
+    else
+        # 应用进程存在但可能尚未完全启动，再等待
+        echo "[$APP_NAME] 应用正在启动中，继续等待..."
+        sleep 15
+        if grep -q "Started" "$DEPLOY_DIR/logs/$LOG_FILE"; then
+            echo "[$APP_NAME] 应用启动成功!"
+        else
+            echo "[$APP_NAME] 应用可能未完全启动，最近的错误日志:"
+            tail -n 50 "$DEPLOY_DIR/logs/$LOG_FILE" | grep -i "error\|exception"
+            echo "[$APP_NAME] 请检查完整日志: $DEPLOY_DIR/logs/$LOG_FILE"
+            exit 1
+        fi
+    fi
 else
-    echo "[$APP_NAME] 应用启动失败，请检查日志!"
+    echo "[$APP_NAME] 应用启动失败，最近的错误日志:"
+    tail -n 50 "$DEPLOY_DIR/logs/$LOG_FILE" | grep -i "error\|exception"
+    echo "[$APP_NAME] 请检查完整日志: $DEPLOY_DIR/logs/$LOG_FILE"
     exit 1
 fi 

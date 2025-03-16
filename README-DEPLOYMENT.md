@@ -116,6 +116,39 @@ If you encounter issues with the GitHub Actions workflow:
 
 5. **Nginx Configuration**: If Nginx fails to restart, check the Nginx error logs on your server (`sudo tail /var/log/nginx/error.log`) to identify any syntax or permission issues.
 
+### Backend Application Issues
+
+If the backend application fails to start on deployment:
+
+1. **Database Connection**: Check the MySQL connection settings in `application-prod.yml`. Ensure MySQL is running on the server and the database exists with the correct credentials.
+
+2. **Redis Connection**: Ensure Redis is running on the server or update the Redis configuration to match your server setup.
+
+3. **Permissions**: Ensure that the deployment directory and all subdirectories have the correct permissions:
+   ```bash
+   chmod -R 755 /path/to/deployment
+   chmod -R 777 /path/to/deployment/uploads # If needed for file uploads
+   ```
+
+4. **Memory Issues**: If the JVM is running out of memory, adjust the JVM options in `deploy.sh`:
+   ```
+   JVM_OPTS="-Xms256m -Xmx512m" # Reduce memory if server has limited resources
+   ```
+
+5. **Check Logs**: The most valuable information will be in the application logs:
+   ```bash
+   sudo tail -f /path/to/deployment/logs/app.log
+   ```
+
+6. **Database Schema**: If the database schema is inconsistent, you might need to run schema migration scripts manually.
+
+7. **Network Issues**: Ensure that the ports required by the application (8080) are open in the firewall:
+   ```bash
+   sudo ufw allow 8080/tcp # If using UFW firewall
+   ```
+
+8. **Profile Issues**: Ensure that the `spring.profiles.active=prod` property is correctly set in the deployment command.
+
 ### Static Assets Best Practices
 
 1. **Asset Organization**: Keep all static assets in the `frontend/src/assets/` directory, organized by type (images, icons, etc.)

@@ -1,3 +1,5 @@
+# Production environment configuration
+
 server:
   port: 8080
   servlet:
@@ -6,17 +8,24 @@ server:
 
 file:
   upload:
-    dir: uploads
+    dir: ${user.dir}/uploads
     allowed-extensions: jpg,jpeg,png,gif,webp
     max-file-size: 5
     max-request-size: 10MB
 
 spring:
   datasource:
-    url: jdbc:mysql://39.101.76.177:3306/lost_and_found?useSSL=false&serverTimezone=UTC
+    url: jdbc:mysql://localhost:3306/lost_and_found?useSSL=false&serverTimezone=UTC
     username: root
     password: shuhao201028
     driver-class-name: com.mysql.cj.jdbc.Driver
+    # 连接池配置
+    hikari:
+      connection-timeout: 30000
+      maximum-pool-size: 10
+      minimum-idle: 5
+      idle-timeout: 600000
+      max-lifetime: 1800000
   servlet:
     multipart:
       max-request-size: 10MB
@@ -28,6 +37,10 @@ spring:
     password:
     database: 0
     timeout: 10000
+    # Redis连接失败时不要让应用启动失败
+    lettuce:
+      shutdown-timeout: 0ms
+
   main:
     allow-circular-references: true
 
@@ -45,9 +58,13 @@ jwt:
 
 logging:
   level:
-    com.community.lostandfound: DEBUG
-    org.springframework.web: INFO
-    org.springframework.security: INFO
-    org.mybatis: INFO
+    com.community.lostandfound: INFO
+    org.springframework.web: WARN
+    org.springframework.security: WARN
+    org.mybatis: WARN
+    root: WARN
   file:
     name: ./logs/lost_and_found.log
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
+    file: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n" 

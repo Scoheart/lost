@@ -81,6 +81,32 @@ jobs:
         mkdir -p ~/.ssh
         ssh-keyscan ${{ secrets.ALIYUN_HOST }} >> ~/.ssh/known_hosts
     
+    # Server preparation
+    - name: Prepare server environment
+      run: |
+        ssh ${{ secrets.ALIYUN_USER }}@${{ secrets.ALIYUN_HOST }} '
+          # 检查MySQL服务
+          if ! systemctl is-active --quiet mysql; then
+            echo "MySQL服务未运行，正在启动..."
+            sudo systemctl start mysql
+          fi
+          
+          # 检查Redis服务
+          if ! systemctl is-active --quiet redis-server; then
+            echo "Redis服务未运行，正在启动..."
+            sudo systemctl start redis-server
+          fi
+          
+          # 确保数据库存在
+          echo "正在检查和创建数据库..."
+          mysql -u root -p${{ secrets.DB_PASSWORD }} -e "CREATE DATABASE IF NOT EXISTS lost_and_found CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
+          
+          # 确保部署目录存在并有适当权限
+          mkdir -p ${{ secrets.DEPLOY_PATH }}/logs
+          mkdir -p ${{ secrets.DEPLOY_PATH }}/uploads
+          chmod -R 755 ${{ secrets.DEPLOY_PATH }}
+        '
+    
     # Ensure deployment directories exist
     - name: Ensure deploy directories exist
       run: |
