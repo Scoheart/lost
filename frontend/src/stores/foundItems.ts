@@ -2,11 +2,32 @@
 import { defineStore } from 'pinia'
 import apiClient from '@/utils/api'
 import { getUpdateEndpoint, handleApiError, processCommentsResponse } from '@/utils/apiHelpers'
+import { getFoundStatusChangeMessage } from '@/utils/statusHelpers'
 import type { Comment, CommentPagination } from '@/stores/lostItems'
 import type { Ref } from 'vue'
-import { addSearchParams } from '@/utils/urlHelpers'
-import { getFoundStatusChangeMessage } from '@/utils/statusHelpers'
-import type { FoundItemComment } from '@/types/comment'
+
+// 内部辅助函数替代 urlHelpers 缺失的功能
+function addSearchParams(url: string, params: Record<string, any>): string {
+  const urlObj = new URL(url, window.location.origin);
+
+  Object.entries(params).forEach(([key, value]) => {
+    if (value !== null && value !== undefined && value !== '') {
+      urlObj.searchParams.append(key, String(value));
+    }
+  });
+
+  return urlObj.pathname + urlObj.search;
+}
+
+// 定义失物招领评论类型
+export interface FoundItemComment {
+  id: number;
+  content: string;
+  userId: number;
+  username: string;
+  createdAt: string;
+  updatedAt: string;
+}
 
 export interface FoundItem {
   id: number
@@ -14,6 +35,7 @@ export interface FoundItem {
   description: string
   foundDate: string
   foundLocation: string
+  storageLocation?: string
   category: string
   images: string[]
   contactInfo: string
@@ -609,7 +631,7 @@ export const useFoundItemsStore = defineStore('foundItems', {
      * @param status 新状态
      * @returns 操作结果
      */
-    async updateStatus(id: number, status: string) {
+    async updateStatus(id: number, status: 'pending' | 'processing' | 'claimed' | 'closed') {
       if (!id) return { success: false, message: '无效的ID' }
 
       try {

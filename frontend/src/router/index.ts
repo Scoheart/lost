@@ -9,20 +9,20 @@ const router = createRouter({
       path: '/',
       name: 'home',
       component: HomeView,
-      meta: { title: '首页' }
+      meta: { title: '首页' },
     },
     // 公告浏览
     {
       path: '/announcements',
       name: 'announcements',
       component: () => import('../views/announcements/AnnouncementsView.vue'),
-      meta: { title: '社区公告' }
+      meta: { title: '社区公告' },
     },
     {
       path: '/announcements/:id',
       name: 'announcement-detail',
       component: () => import('../views/announcements/AnnouncementDetailView.vue'),
-      meta: { title: '公告详情' }
+      meta: { title: '公告详情' },
     },
     // 个人中心
     {
@@ -36,97 +36,97 @@ const router = createRouter({
           path: 'settings',
           name: 'settings',
           component: () => import('../views/profile/SettingsView.vue'),
-          meta: { title: '个人设置', requiresAuth: true }
+          meta: { title: '个人设置', requiresAuth: true },
         },
         {
           path: 'my-lost-items',
           name: 'my-lost-items',
           component: () => import('../views/profile/MyLostItemsView.vue'),
-          meta: { title: '我的寻物', requiresAuth: true }
+          meta: { title: '我的寻物', requiresAuth: true },
         },
         {
           path: 'my-found-items',
           name: 'my-found-items',
           component: () => import('../views/profile/MyFoundItemsView.vue'),
-          meta: { title: '我的招领', requiresAuth: true }
-        }
-      ]
+          meta: { title: '我的招领', requiresAuth: true },
+        },
+      ],
     },
     // 寻物启事
     {
       path: '/lost-items',
       name: 'lost-items',
       component: () => import('../views/lost-items/LostItemsView.vue'),
-      meta: { title: '寻物启事' }
+      meta: { title: '寻物启事' },
     },
     {
       path: '/lost-items/create',
       name: 'create-lost-item',
       component: () => import('../views/lost-items/EditLostItemView.vue'),
-      meta: { title: '发布寻物启事', requiresAuth: true }
+      meta: { title: '发布寻物启事', requiresAuth: true },
     },
     {
       path: '/lost-items/edit/:id',
       name: 'edit-lost-item',
       component: () => import('../views/lost-items/EditLostItemView.vue'),
-      meta: { title: '编辑寻物启事', requiresAuth: true }
+      meta: { title: '编辑寻物启事', requiresAuth: true },
     },
     {
       path: '/lost-items/:id',
       name: 'lost-item-detail',
       component: () => import('../views/lost-items/LostItemDetailView.vue'),
-      meta: { title: '寻物详情' }
+      meta: { title: '寻物详情' },
     },
     // 失物招领
     {
       path: '/found-items',
       name: 'found-items',
       component: () => import('../views/found-items/FoundItemsView.vue'),
-      meta: { title: '失物招领' }
+      meta: { title: '失物招领' },
     },
     {
       path: '/found-items/create',
       name: 'create-found-item',
       component: () => import('../views/found-items/EditFoundItemView.vue'),
-      meta: { title: '发布失物招领', requiresAuth: true }
+      meta: { title: '发布失物招领', requiresAuth: true },
     },
     {
       path: '/found-items/edit/:id',
       name: 'edit-found-item',
       component: () => import('../views/found-items/EditFoundItemView.vue'),
-      meta: { title: '编辑失物招领', requiresAuth: true }
+      meta: { title: '编辑失物招领', requiresAuth: true },
     },
     {
       path: '/found-items/:id',
       name: 'found-item-detail',
       component: () => import('../views/found-items/FoundItemDetailView.vue'),
-      meta: { title: '招领详情' }
+      meta: { title: '招领详情' },
     },
     // 登录/注册
     {
       path: '/login',
       name: 'login',
       component: () => import('../views/auth/LoginView.vue'),
-      meta: { title: '登录' }
+      meta: { title: '登录' },
     },
     {
       path: '/register',
       name: 'register',
       component: () => import('../views/auth/RegisterView.vue'),
-      meta: { title: '注册' }
+      meta: { title: '注册' },
     },
     // 管理员登录
     {
       path: '/admin/login',
       name: 'admin-login',
       component: () => import('../views/auth/AdminLoginView.vue'),
-      meta: { title: '管理员登录' }
+      meta: { title: '管理员登录' },
     },
     {
       path: '/admin/forgot-password',
       name: 'admin-forgot-password',
       component: () => import('../views/auth/AdminForgotPasswordView.vue'),
-      meta: { title: '管理员密码找回' }
+      meta: { title: '管理员密码找回' },
     },
     // 管理员页面
     {
@@ -139,36 +139,51 @@ const router = createRouter({
           path: 'announcements',
           name: 'admin-announcements',
           component: () => import('../views/admin/AnnouncementsManageView.vue'),
-          meta: { title: '公告管理', requiresAuth: true, requiresAdmin: true }
+          meta: { title: '公告管理', requiresAuth: true, requiresAdmin: true },
         },
         {
           path: 'claims',
           name: 'admin-claims',
           component: () => import('../views/admin/ClaimsManageView.vue'),
-          meta: { title: '认领管理', requiresAuth: true, requiresAdmin: true }
+          meta: { title: '认领管理', requiresAuth: true, requiresAdmin: true },
         },
         {
           path: 'residents',
           name: 'admin-residents',
           component: () => import('../views/admin/ResidentsManageView.vue'),
-          meta: { title: '居民管理', requiresAuth: true, requiresAdmin: true }
+          meta: { title: '居民管理', requiresAuth: true, requiresAdmin: true },
         },
         {
           path: 'users',
           name: 'admin-users',
           component: () => import('../views/admin/UsersManageView.vue'),
-          meta: { title: '用户管理', requiresAuth: true, requiresAdmin: true, requiresSysAdmin: true }
-        }
-      ]
+          meta: {
+            title: '用户管理',
+            requiresAuth: true,
+            requiresAdmin: true,
+            requiresSysAdmin: true,
+          },
+        },
+      ],
+    },
+    // 认领交流路由
+    {
+      path: '/claim-communications',
+      name: 'claim-communications',
+      component: () => import('../views/claim-communications/ClaimCommunicationsView.vue'),
+      meta: {
+        title: '认领交流',
+        requiresAuth: true,
+      },
     },
     // 404页面
     {
       path: '/:pathMatch(.*)*',
       name: 'not-found',
       component: () => import('../views/NotFoundView.vue'),
-      meta: { title: '页面未找到' }
-    }
-  ]
+      meta: { title: '页面未找到' },
+    },
+  ],
 })
 
 // 路由守卫，处理鉴权和页面标题

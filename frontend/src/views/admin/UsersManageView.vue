@@ -325,7 +325,7 @@ const loadUsers = async () => {
       size: pageSize.value,
       search: searchQuery.value || undefined,
       role: roleFilter.value || undefined,
-      isEnabled
+      status: isEnabled
     };
 
     console.log('请求参数:', params);

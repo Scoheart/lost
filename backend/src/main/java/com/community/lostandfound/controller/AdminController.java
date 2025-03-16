@@ -262,40 +262,40 @@ public class AdminController {
     }
     
     /**
-     * 获取所有用户列表(包括居民、管理员和系统管理员)
+     * 获取所有用户的分页列表（支持筛选）
      * 
      * @param page 页码（从1开始）
      * @param size 每页数量
+     * @param search 搜索关键字
+     * @param role 用户角色
+     * @param status 用户状态
      * @return 分页用户列表
      */
     @GetMapping("/users")
     @PreAuthorize("hasRole('SYSADMIN')")
     public ResponseEntity<ApiResponse<AdminUserPageDto>> getAllUsers(
             @RequestParam(value = "page", defaultValue = "1") int page,
-            @RequestParam(value = "size", defaultValue = "10") int size) {
+            @RequestParam(value = "size", defaultValue = "10") int size,
+            @RequestParam(value = "search", required = false) String search,
+            @RequestParam(value = "role", required = false) String role,
+            @RequestParam(value = "status", required = false) Boolean status) {
         
-        log.debug("系统管理员请求获取所有用户列表: page={}, size={}", page, size);
-        
-        // 获取所有用户
-        List<User> allUsers = userService.getAllUsers();
+        log.debug("系统管理员请求获取用户列表: page={}, size={}, search={}, role={}, status={}", 
+                page, size, search, role, status);
         
         // 计算分页参数
         page = Math.max(1, page);
         size = Math.max(1, Math.min(100, size));
         
-        int totalItems = allUsers.size();
+        // 获取过滤后的用户列表
+        List<User> filteredUsers = userService.getFilteredUsers(search, role, status, page - 1, size);
+        
+        // 获取符合条件的总用户数
+        int totalItems = userService.countFilteredUsers(search, role, status);
         int totalPages = (int) Math.ceil((double) totalItems / size);
         
-        int fromIndex = (page - 1) * size;
-        int toIndex = Math.min(fromIndex + size, totalItems);
-        
-        // 如果fromIndex超出范围，返回空列表
-        List<User> pagedUsers = fromIndex < totalItems 
-                ? allUsers.subList(fromIndex, toIndex) 
-                : List.of();
-        
         // 转换为DTO
-        List<AdminUserDto> userDtos = pagedUsers.stream()
+        List<AdminUserDto> userDtos = filteredUsers.stream()
                 .map(this::convertToAdminDto)
                 .collect(Collectors.toList());
         

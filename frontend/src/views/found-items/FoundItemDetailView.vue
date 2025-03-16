@@ -185,36 +185,34 @@
             >
               <template v-if="isOwner">
                 <p><strong>该物品正在被申请认领中</strong></p>
-                <p v-if="claimInfo">
-                  申请人：{{ claimInfo.username }}<br>
-                  联系方式：{{ claimInfo.contactInfo || '未提供' }}<br>
-                  申请时间：{{ formatDate(claimInfo.applyTime || '', true) }}
-                </p>
-                <p v-else>正在加载申请信息...</p>
+                <p>请前往 <router-link to="/claim-communication?tab=processing">认领交流</router-link> 页面查看认领申请</p>
               </template>
               <template v-else>
-                <p>该物品正在被认领中，请等待确认。</p>
+                <p>该物品正在被认领中，请等待确认或查看其他物品。</p>
               </template>
             </el-alert>
+          </div>
 
-            <!-- 物品发布者的操作 -->
-            <div class="owner-actions mt-3" v-if="isOwner">
-              <p class="mb-2">认领成功后，请点击"完成认领"按钮：</p>
-              <el-button
-                type="success"
-                @click="markAsClaimed"
-                :loading="actionLoading"
-              >
-                完成认领
-              </el-button>
-              <el-button
-                type="warning"
-                @click="rejectClaim"
-                :loading="actionLoading"
-              >
-                拒绝认领
-              </el-button>
-            </div>
+          <!-- 已认领状态 -->
+          <div class="item-actions" v-if="foundItem.status === 'claimed'">
+            <el-alert
+              type="success"
+              :closable="false"
+              show-icon
+            >
+              <p><strong>该物品已被认领</strong></p>
+            </el-alert>
+          </div>
+
+          <!-- 已关闭状态 -->
+          <div class="item-actions" v-if="foundItem.status === 'closed'">
+            <el-alert
+              type="info"
+              :closable="false"
+              show-icon
+            >
+              <p><strong>该失物招领已关闭</strong></p>
+            </el-alert>
           </div>
         </el-card>
 
@@ -410,12 +408,14 @@ import { ElMessage, ElMessageBox, ElImage } from 'element-plus'
 import MainLayout from '@/components/layout/MainLayout.vue'
 import { useFoundItemsStore } from '@/stores/foundItems'
 import { useUserStore } from '@/stores/user'
+import { useClaimsStore } from '@/stores/claims'
 import type { FoundItem, Comment } from '@/stores/foundItems'
 
 const router = useRouter()
 const route = useRoute()
 const foundItemsStore = useFoundItemsStore()
 const userStore = useUserStore()
+const claimsStore = useClaimsStore()
 
 // 状态变量
 const loading = ref(false)
@@ -750,85 +750,29 @@ const handlePageChange = (newPage: number) => {
 
 // 提交认领申请
 const submitClaimApplication = async () => {
-  if (!foundItem.value || !itemId.value) return
+  if (!claimFormRef.value) return
 
-  // 表单验证
-  const valid = await claimFormRef.value?.validate().catch(() => false)
-  if (!valid) {
-    ElMessage.warning('请正确填写认领信息')
-    return
-  }
-
-  claimSubmitting.value = true
   try {
-    const result = await foundItemsStore.applyToClaim(itemId.value, {
+    // 手动验证表单
+    const valid = await claimFormRef.value.validate().catch(() => false)
+    if (!valid || !foundItem.value || !itemId.value) {
+      return
+    }
+
+    claimSubmitting.value = true
+    await claimsStore.applyForClaim(itemId.value, {
       description: claimForm.value.description
     })
 
-    if (result.success) {
-      ElMessage.success('认领申请已提交')
-      claimDialogVisible.value = false
+    claimDialogVisible.value = false
 
-      // 添加评论作为认领记录
-      await foundItemsStore.addComment(itemId.value, {
-        content: `【认领申请】\n${claimForm.value.description}`,
-        type: 'claim'
-      })
-
-      // 重新加载物品和评论
-      await loadItemDetail()
-    } else {
-      ElMessage.error(result.message || '认领申请提交失败')
-    }
+    // 重新加载物品详情，显示最新状态
+    await loadItemDetail()
   } catch (error) {
-    console.error('Error submitting claim application:', error)
-    ElMessage.error('认领申请提交时发生错误')
+    console.error('Failed to submit claim application:', error)
   } finally {
     claimSubmitting.value = false
   }
-}
-
-// 拒绝认领申请
-const rejectClaim = async () => {
-  if (!foundItem.value || !itemId.value) return
-
-  ElMessageBox.confirm(
-    '确认拒绝当前的认领申请吗？物品状态将恢复为"待认领"。',
-    '拒绝认领',
-    {
-      confirmButtonText: '确认拒绝',
-      cancelButtonText: '取消',
-      type: 'warning'
-    }
-  ).then(async () => {
-    actionLoading.value = true
-    try {
-      // 恢复为待认领状态
-      const result = await foundItemsStore.updateStatus(itemId.value, 'pending')
-
-      if (result.success) {
-        // 添加评论作为拒绝记录
-        await foundItemsStore.addComment(itemId.value!, {
-          content: '【认领申请已被拒绝】\n该物品可以继续被其他人申请认领。',
-          type: 'system'
-        })
-
-        ElMessage.success('已拒绝认领申请')
-
-        // 重新加载物品和评论
-        await loadItemDetail()
-      } else {
-        ElMessage.error(result.message || '操作失败')
-      }
-    } catch (error) {
-      console.error('Failed to reject claim:', error)
-      ElMessage.error('操作失败，请稍后再试')
-    } finally {
-      actionLoading.value = false
-    }
-  }).catch(() => {
-    // 用户取消操作
-  })
 }
 </script>
 

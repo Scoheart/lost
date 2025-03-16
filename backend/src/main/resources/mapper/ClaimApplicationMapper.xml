@@ -12,26 +12,25 @@
         <result property="createdAt" column="created_at" />
         <result property="updatedAt" column="updated_at" />
         <result property="processedAt" column="processed_at" />
-        <result property="applicantName" column="applicant_name" />
+        <result property="applicantName" column="applicant_username" />
         <result property="applicantContact" column="applicant_contact" />
         <result property="foundItemTitle" column="found_item_title" />
         <result property="foundItemOwnerId" column="owner_id" />
-        <result property="foundItemOwnerName" column="owner_name" />
+        <result property="foundItemOwnerName" column="owner_username" />
     </resultMap>
     
-    <!-- SQL片段 -->
-    <sql id="selectClaimApplicationWithDetails">
-        SELECT 
-            ca.*,
-            a.username as applicant_name,
-            a.phone as applicant_contact,
-            f.title as found_item_title,
-            f.user_id as owner_id,
-            o.username as owner_name
-        FROM claim_applications ca
-        LEFT JOIN users a ON ca.applicant_id = a.id
-        LEFT JOIN found_items f ON ca.found_item_id = f.id
-        LEFT JOIN users o ON f.user_id = o.id
+    <!-- 通用查询列 -->
+    <sql id="Base_Column_List">
+        ca.id, ca.found_item_id, ca.applicant_id, ca.description, ca.status, 
+        ca.created_at, ca.updated_at, ca.processed_at
+    </sql>
+    
+    <!-- 带用户信息的查询列 -->
+    <sql id="Full_Column_List">
+        ca.id, ca.found_item_id, ca.applicant_id, ca.description, ca.status, 
+        ca.created_at, ca.updated_at, ca.processed_at,
+        a.username as applicant_username, a.phone as applicant_contact,
+        fi.title as found_item_title, fi.user_id as owner_id, o.username as owner_username
     </sql>
     
     <!-- 保存认领申请 -->
@@ -59,7 +58,11 @@
     
     <!-- 查询所有认领申请（分页） -->
     <select id="findAll" resultMap="ClaimApplicationResultMap">
-        <include refid="selectClaimApplicationWithDetails" />
+        SELECT <include refid="Full_Column_List" />
+        FROM claim_applications ca
+        LEFT JOIN found_items fi ON ca.found_item_id = fi.id
+        LEFT JOIN users a ON ca.applicant_id = a.id
+        LEFT JOIN users o ON fi.user_id = o.id
         <where>
             <if test="status != null and status != ''">
                 AND ca.status = #{status}
@@ -71,7 +74,11 @@
     
     <!-- 根据ID查询认领申请 -->
     <select id="findById" resultMap="ClaimApplicationResultMap">
-        <include refid="selectClaimApplicationWithDetails" />
+        SELECT <include refid="Full_Column_List" />
+        FROM claim_applications ca
+        LEFT JOIN found_items fi ON ca.found_item_id = fi.id
+        LEFT JOIN users a ON ca.applicant_id = a.id
+        LEFT JOIN users o ON fi.user_id = o.id
         WHERE ca.id = #{id}
     </select>
     
@@ -80,14 +87,18 @@
         SELECT COUNT(*) FROM claim_applications
         <where>
             <if test="status != null and status != ''">
-                status = #{status}
+                AND status = #{status}
             </if>
         </where>
     </select>
     
-    <!-- 根据失物招领ID查询认领申请（分页） -->
+    <!-- 根据失物招领ID查询认领申请 -->
     <select id="findByFoundItemId" resultMap="ClaimApplicationResultMap">
-        <include refid="selectClaimApplicationWithDetails" />
+        SELECT <include refid="Full_Column_List" />
+        FROM claim_applications ca
+        LEFT JOIN found_items fi ON ca.found_item_id = fi.id
+        LEFT JOIN users a ON ca.applicant_id = a.id
+        LEFT JOIN users o ON fi.user_id = o.id
         WHERE ca.found_item_id = #{foundItemId}
         ORDER BY ca.created_at DESC
         LIMIT #{pageSize} OFFSET #{offset}
@@ -101,7 +112,11 @@
     
     <!-- 根据用户ID查询该用户提交的认领申请（分页） -->
     <select id="findByApplicantId" resultMap="ClaimApplicationResultMap">
-        <include refid="selectClaimApplicationWithDetails" />
+        SELECT <include refid="Full_Column_List" />
+        FROM claim_applications ca
+        LEFT JOIN found_items fi ON ca.found_item_id = fi.id
+        LEFT JOIN users a ON ca.applicant_id = a.id
+        LEFT JOIN users o ON fi.user_id = o.id
         WHERE ca.applicant_id = #{applicantId}
         <if test="status != null and status != ''">
             AND ca.status = #{status}
@@ -121,8 +136,12 @@
     
     <!-- 查询需要由用户处理的认领申请（分页）-->
     <select id="findByFoundItemOwnerId" resultMap="ClaimApplicationResultMap">
-        <include refid="selectClaimApplicationWithDetails" />
-        WHERE f.user_id = #{ownerId}
+        SELECT <include refid="Full_Column_List" />
+        FROM claim_applications ca
+        LEFT JOIN found_items fi ON ca.found_item_id = fi.id
+        LEFT JOIN users a ON ca.applicant_id = a.id
+        LEFT JOIN users o ON fi.user_id = o.id
+        WHERE fi.user_id = #{ownerId}
         <if test="status != null and status != ''">
             AND ca.status = #{status}
         </if>
@@ -130,11 +149,12 @@
         LIMIT #{pageSize} OFFSET #{offset}
     </select>
     
-    <!-- 统计指定用户需要处理的认领申请总数 -->
+    <!-- 统计需要由用户处理的认领申请总数 -->
     <select id="countByFoundItemOwnerId" resultType="long">
-        SELECT COUNT(*) FROM claim_applications ca
-        JOIN found_items f ON ca.found_item_id = f.id
-        WHERE f.user_id = #{ownerId}
+        SELECT COUNT(*) 
+        FROM claim_applications ca
+        JOIN found_items fi ON ca.found_item_id = fi.id
+        WHERE fi.user_id = #{ownerId}
         <if test="status != null and status != ''">
             AND ca.status = #{status}
         </if>
@@ -142,19 +162,28 @@
     
     <!-- 检查用户是否已经申请认领某个失物招领 -->
     <select id="existsByFoundItemIdAndApplicantId" resultType="boolean">
-        SELECT COUNT(*) > 0 FROM claim_applications
-        WHERE found_item_id = #{foundItemId} AND applicant_id = #{applicantId}
+        SELECT EXISTS(
+            SELECT 1 FROM claim_applications
+            WHERE found_item_id = #{foundItemId} AND applicant_id = #{applicantId}
+        )
     </select>
     
     <!-- 根据失物招领ID和状态查询认领申请 -->
     <select id="findByFoundItemIdAndStatus" resultMap="ClaimApplicationResultMap">
-        <include refid="selectClaimApplicationWithDetails" />
-        WHERE ca.found_item_id = #{foundItemId} AND ca.status = #{status}
+        SELECT <include refid="Full_Column_List" />
+        FROM claim_applications ca
+        LEFT JOIN found_items fi ON ca.found_item_id = fi.id
+        LEFT JOIN users a ON ca.applicant_id = a.id
+        LEFT JOIN users o ON fi.user_id = o.id
+        WHERE ca.found_item_id = #{foundItemId}
+        AND ca.status = #{status}
     </select>
     
     <!-- 检查失物招领是否有已批准的认领申请 -->
     <select id="hasApprovedApplication" resultType="boolean">
-        SELECT COUNT(*) > 0 FROM claim_applications
-        WHERE found_item_id = #{foundItemId} AND status = 'approved'
+        SELECT EXISTS(
+            SELECT 1 FROM claim_applications
+            WHERE found_item_id = #{foundItemId} AND status = 'approved'
+        )
     </select>
 </mapper> 

@@ -82,24 +82,23 @@ CREATE TABLE IF NOT EXISTS found_items (
     INDEX idx_found_date (found_date)
 );
 
--- 认领申请表
-CREATE TABLE IF NOT EXISTS claims (
-    id BIGINT AUTO_INCREMENT PRIMARY KEY,
-    item_id BIGINT NOT NULL COMMENT '物品ID',
-    item_type VARCHAR(10) NOT NULL COMMENT '物品类型: lost(寻物), found(招领)',
-    claimant_user_id BIGINT NOT NULL COMMENT '认领者ID',
-    item_owner_user_id BIGINT NOT NULL COMMENT '物品发布者ID',
-    description TEXT COMMENT '认领描述/证明',
-    status VARCHAR(20) NOT NULL DEFAULT 'pending' COMMENT '状态: pending(待处理), approved(已批准), rejected(已拒绝), completed(已完成)',
-    admin_note TEXT COMMENT '管理员备注',
-    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+-- 认领申请表，与ClaimApplication实体对应
+CREATE TABLE IF NOT EXISTS claim_applications (
+    id BIGINT PRIMARY KEY AUTO_INCREMENT COMMENT '认领申请ID',
+    found_item_id BIGINT NOT NULL COMMENT '失物招领ID',
+    applicant_id BIGINT NOT NULL COMMENT '申请人ID',
+    description VARCHAR(500) NOT NULL COMMENT '申请说明',
+    status VARCHAR(20) NOT NULL DEFAULT 'pending' COMMENT '申请状态：pending(待处理), approved(已批准), rejected(已拒绝)',
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
     processed_at TIMESTAMP NULL COMMENT '处理时间',
-    INDEX idx_item_id_type (item_id, item_type),
-    INDEX idx_claimant_user_id (claimant_user_id),
-    INDEX idx_item_owner_user_id (item_owner_user_id),
-    INDEX idx_status (status),
-    INDEX idx_created_at (created_at)
+    
+    INDEX idx_found_item_id (found_item_id) COMMENT '失物招领索引',
+    INDEX idx_applicant_id (applicant_id) COMMENT '申请人索引',
+    INDEX idx_status (status) COMMENT '状态索引',
+    
+    CONSTRAINT fk_claim_application_found_item FOREIGN KEY (found_item_id) REFERENCES found_items (id) ON DELETE CASCADE,
+    CONSTRAINT fk_claim_application_user FOREIGN KEY (applicant_id) REFERENCES users (id) ON DELETE CASCADE
 );
 
 -- 评论表

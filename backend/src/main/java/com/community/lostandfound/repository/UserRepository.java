@@ -100,4 +100,77 @@ public interface UserRepository {
     
     @Select("SELECT EXISTS(SELECT 1 FROM users WHERE email = #{email})")
     boolean existsByEmail(@Param("email") String email);
+    
+    /**
+     * 根据条件查询用户并分页
+     * @param search 搜索词（匹配用户名、邮箱或电话）
+     * @param role 用户角色
+     * @param isEnabled 账号状态
+     * @param offset 偏移量
+     * @param limit 每页数量
+     * @return 用户列表
+     */
+    @Select({"<script>",
+            "SELECT * FROM users",
+            "WHERE 1=1",
+            "<if test='search != null and search != \"\"'>",
+            "  AND (username LIKE CONCAT('%', #{search}, '%') ",
+            "       OR email LIKE CONCAT('%', #{search}, '%') ",
+            "       OR phone LIKE CONCAT('%', #{search}, '%'))",
+            "</if>",
+            "<if test='role != null and role != \"\"'>",
+            "  AND role = #{role}",
+            "</if>",
+            "<if test='isEnabled != null'>",
+            "  AND is_enabled = #{isEnabled}",
+            "</if>",
+            "ORDER BY id DESC",
+            "LIMIT #{offset}, #{limit}",
+            "</script>"})
+    @Results({
+        @Result(property = "id", column = "id"),
+        @Result(property = "username", column = "username"),
+        @Result(property = "email", column = "email"),
+        @Result(property = "password", column = "password"),
+        @Result(property = "role", column = "role"),
+        @Result(property = "avatar", column = "avatar"),
+        @Result(property = "phone", column = "phone"),
+        @Result(property = "realName", column = "real_name"),
+        @Result(property = "createdAt", column = "created_at"),
+        @Result(property = "updatedAt", column = "updated_at"),
+        @Result(property = "isEnabled", column = "is_enabled")
+    })
+    List<User> findWithFilters(
+            @Param("search") String search,
+            @Param("role") String role,
+            @Param("isEnabled") Boolean isEnabled,
+            @Param("offset") int offset,
+            @Param("limit") int limit);
+    
+    /**
+     * 统计符合条件的用户总数
+     * @param search 搜索词（匹配用户名、邮箱或电话）
+     * @param role 用户角色
+     * @param isEnabled 账号状态
+     * @return 用户总数
+     */
+    @Select({"<script>",
+            "SELECT COUNT(*) FROM users",
+            "WHERE 1=1",
+            "<if test='search != null and search != \"\"'>",
+            "  AND (username LIKE CONCAT('%', #{search}, '%') ",
+            "       OR email LIKE CONCAT('%', #{search}, '%') ",
+            "       OR phone LIKE CONCAT('%', #{search}, '%'))",
+            "</if>",
+            "<if test='role != null and role != \"\"'>",
+            "  AND role = #{role}",
+            "</if>",
+            "<if test='isEnabled != null'>",
+            "  AND is_enabled = #{isEnabled}",
+            "</if>",
+            "</script>"})
+    int countWithFilters(
+            @Param("search") String search,
+            @Param("role") String role,
+            @Param("isEnabled") Boolean isEnabled);
 } 

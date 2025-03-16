@@ -38,9 +38,6 @@
                       <el-dropdown-item @click="$router.push('/profile')">
                         <el-icon><User /></el-icon> 个人中心
                       </el-dropdown-item>
-                      <el-dropdown-item @click="$router.push('/profile/my-posts')">
-                        <el-icon><Document /></el-icon> 我的发布
-                      </el-dropdown-item>
                       <el-dropdown-item v-if="isAdmin" @click="$router.push('/admin')">
                         <el-icon><Setting /></el-icon> 管理中心
                       </el-dropdown-item>

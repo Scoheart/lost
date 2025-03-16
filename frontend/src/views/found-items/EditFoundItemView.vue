@@ -452,8 +452,8 @@ const submitForm = async () => {
 
           if (isEditing.value && itemId.value) {
             router.push(`/found-items/${itemId.value}`)
-          } else if (result.id) {
-            router.push(`/found-items/${result.id}`)
+          } else if (result.data && result.data.id) {
+            router.push(`/found-items/${result.data.id}`)
           } else {
             router.push('/found-items')
           }
@@ -497,13 +497,11 @@ const loadItemData = async () => {
       formData.images = item.images || []
 
       // Prepare file list for upload component
-      fileList.value = formData.images.map((url, index) => {
-        return {
-          name: `image-${index + 1}.jpg`,
-          url,
-          uid: `existing-${index}`
-        }
-      })
+      fileList.value = formData.images.map((url, index) => ({
+        name: `image-${index + 1}.jpg`,
+        url,
+        uid: index
+      }))
     } else {
       error.value = true
     }

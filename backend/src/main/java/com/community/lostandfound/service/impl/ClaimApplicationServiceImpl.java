@@ -376,7 +376,7 @@ public class ClaimApplicationServiceImpl implements ClaimApplicationService {
         Optional<FoundItem> foundItemOptional = foundItemService.getFoundItemById(application.getFoundItemId());
         if (foundItemOptional.isPresent()) {
             FoundItem foundItem = foundItemOptional.get();
-            List<String> images = foundItem.getImages();
+            List<String> images = foundItem.getImagesListForSerialization();
             if (images != null && !images.isEmpty()) {
                 foundItemImage = images.get(0);
             }
