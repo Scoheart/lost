@@ -32,18 +32,24 @@ jobs:
     - name: Set up Node.js
       uses: actions/setup-node@v3
       with:
-        node-version: '18'
-        cache: 'npm'
+        node-version: '20'
+        cache: 'pnpm'
     
+    - name: Install pnpm
+      uses: pnpm/action-setup@v2
+      with:
+        version: 9
+        run_install: false
+
     - name: Install frontend dependencies
       run: |
         cd frontend
-        npm ci
+        pnpm install --frozen-lockfile
     
     - name: Build frontend for production
       run: |
         cd frontend
-        NODE_ENV=production npm run build:prod
+        NODE_ENV=production pnpm run build:prod
     
     # Setup SSH for deployment
     - name: Setup SSH
@@ -101,10 +107,13 @@ jobs:
     # Upload and configure Nginx (if needed)
     - name: Configure Nginx
       run: |
+        # Use DOMAIN_NAME if available, otherwise fall back to server IP
+        SERVER_NAME="${{ secrets.DOMAIN_NAME || secrets.ALIYUN_HOST }}"
+        
         echo '
         server {
             listen 80;
-            server_name ${{ secrets.DOMAIN_NAME }};
+            server_name '"$SERVER_NAME"';
             
             # Frontend - serve static files
             location / {

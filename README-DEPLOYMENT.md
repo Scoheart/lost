@@ -11,7 +11,11 @@ To deploy both the backend and frontend applications to Aliyun ECS, you need to 
 | `ALIYUN_HOST` | IP address or hostname of your Aliyun server |
 | `DEPLOY_PATH` | Path where backend application will be deployed (e.g., `/opt/lostandfound/backend`) |
 | `FRONTEND_DEPLOY_PATH` | Path where frontend files will be deployed (e.g., `/var/www/html/lostandfound`) |
-| `DOMAIN_NAME` | Your domain name for Nginx configuration (e.g., `example.com`) |
+| `DOMAIN_NAME` | *(Optional)* Your domain name for Nginx configuration (e.g., `example.com`). If not provided, the server's IP address (`ALIYUN_HOST`) will be used instead |
+
+## No Domain Name?
+
+If you don't have a domain name for your server, you can simply omit the `DOMAIN_NAME` secret. The workflow will automatically use your server's IP address (`ALIYUN_HOST` value) in the Nginx configuration. You'll be able to access your application by visiting `http://your-server-ip` in your browser.
 
 ## Server Prerequisites
 
@@ -21,6 +25,13 @@ Ensure your Aliyun server has the following:
 2. Nginx installed and running
 3. Proper permissions for the deploy directories
 4. Sudo access for the deployment user (to configure Nginx)
+
+## Development Environment
+
+The project uses:
+- Node.js 20.x
+- pnpm 9.x as the package manager
+- Java 17 for backend development
 
 ## Backend Configuration
 
@@ -53,6 +64,28 @@ VITE_API_BASE_URL="/api"
 ```
 
 If your API is hosted on a different domain, update accordingly.
+
+## Local Development
+
+For local frontend development:
+
+```bash
+# Install dependencies
+pnpm install
+
+# Start development server
+pnpm dev
+```
+
+For local backend development:
+
+```bash
+# Navigate to backend directory
+cd backend
+
+# Run Spring Boot application
+./mvnw spring-boot:run
+```
 
 ## Nginx Configuration
 
