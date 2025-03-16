@@ -87,22 +87,10 @@ jobs:
       run: |
         echo "服务器需要初始化，准备运行初始化脚本..."
         chmod +x devops/scripts/server-init.sh
-        chmod +x devops/scripts/init-database.sh
-        
-        # 创建临时目录用于脚本
-        ssh ${{ secrets.ALIYUN_USER }}@${{ secrets.ALIYUN_HOST }} 'mkdir -p /tmp/devops_scripts'
-        
-        # 上传所有初始化脚本
-        scp devops/scripts/server-init.sh ${{ secrets.ALIYUN_USER }}@${{ secrets.ALIYUN_HOST }}:/tmp/devops_scripts/
-        scp devops/scripts/init-database.sh ${{ secrets.ALIYUN_USER }}@${{ secrets.ALIYUN_HOST }}:/tmp/devops_scripts/
-        scp devops/scripts/init-database.sql ${{ secrets.ALIYUN_USER }}@${{ secrets.ALIYUN_HOST }}:/tmp/devops_scripts/
-        
-        # 执行服务器初始化脚本
+        scp devops/scripts/server-init.sh ${{ secrets.ALIYUN_USER }}@${{ secrets.ALIYUN_HOST }}:/tmp/
         ssh ${{ secrets.ALIYUN_USER }}@${{ secrets.ALIYUN_HOST }} '
-          cd /tmp/devops_scripts
-          chmod +x server-init.sh
-          chmod +x init-database.sh
-          sudo ./server-init.sh "${{ secrets.DB_PASSWORD }}" "${{ secrets.DEPLOY_PATH }}" "${{ secrets.FRONTEND_DEPLOY_PATH }}"
+          chmod +x /tmp/server-init.sh
+          sudo /tmp/server-init.sh "${{ secrets.DB_PASSWORD }}" "${{ secrets.DEPLOY_PATH }}" "${{ secrets.FRONTEND_DEPLOY_PATH }}"
         '
     
     # 后端构建和部署
@@ -180,7 +168,7 @@ jobs:
         echo "Node版本: $(node -v)"
         echo "PNPM版本: $(pnpm -v)"
         NODE_ENV=production VITE_DEBUG=true pnpm run build:prod
-        echo "✅ 前端构建完成成功!"
+        echo "✅ 前端构建完成"
       continue-on-error: false
     
     - name: 部署前端文件
