@@ -98,4 +98,18 @@ You can customize the Nginx configuration in the GitHub workflow file if needed.
 
 ## Testing Deployment
 
-After setting up the workflow, push changes to your repository and check the GitHub Actions tab to ensure the deployment runs successfully. Then verify your application is accessible via your domain. 
+After setting up the workflow, push changes to your repository and check the GitHub Actions tab to ensure the deployment runs successfully. Then verify your application is accessible via your domain or IP address.
+
+## Troubleshooting
+
+### GitHub Actions Issues
+
+If you encounter issues with the GitHub Actions workflow:
+
+1. **pnpm Installation**: The workflow is set up to install pnpm before using it. If you see errors related to pnpm not being found, ensure the installation step is properly configured and comes before any steps that use pnpm.
+
+2. **Build Errors**: If the frontend build fails, check that your pnpm-lock.yaml file is committed to the repository and that your dependencies are compatible with Node.js 20.
+
+3. **Deployment Errors**: If the deployment to Aliyun fails, verify that all required secrets are correctly set up in your GitHub repository settings and that your server has the necessary permissions and software installed.
+
+4. **Nginx Configuration**: If Nginx fails to restart, check the Nginx error logs on your server (`sudo tail /var/log/nginx/error.log`) to identify any syntax or permission issues. 
