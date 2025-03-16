@@ -34,29 +34,25 @@ export const useAnnouncementsStore = defineStore('announcements', {
     pagination: {
       page: 1,
       pageSize: 10,
-      total: 0
-    }
+      total: 0,
+    },
   }),
 
   getters: {
     total: (state) => {
-      return state.pagination.total;
+      return state.pagination.total
     },
 
     paginatedAnnouncements: (state) => {
-      const start = (state.pagination.page - 1) * state.pagination.pageSize;
-      const end = start + state.pagination.pageSize;
-      return state.announcements.slice(start, end);
-    }
+      const start = (state.pagination.page - 1) * state.pagination.pageSize
+      const end = start + state.pagination.pageSize
+      return state.announcements.slice(start, end)
+    },
   },
 
   actions: {
     // 公开接口：获取已发布公告列表
-    async fetchAnnouncements(params?: {
-      page?: number;
-      pageSize?: number;
-      keyword?: string;
-    }) {
+    async fetchAnnouncements(params?: { page?: number; pageSize?: number; keyword?: string }) {
       this.loading = true
       this.error = null
 
@@ -64,21 +60,21 @@ export const useAnnouncementsStore = defineStore('announcements', {
         // 如果提供了参数，使用参数，否则使用默认值
         const queryParams = params || {
           page: this.pagination.page,
-          pageSize: this.pagination.pageSize
+          pageSize: this.pagination.pageSize,
         }
 
         const response = await apiClient.get('/announcements', {
-          params: queryParams
+          params: queryParams,
         })
 
         // 处理后端返回的数据结构
-        const responseData = response.data.data;
+        const responseData = response.data.data
 
         // 更新公告列表和分页信息
-        this.announcements = responseData.announcements || [];
-        this.pagination.page = responseData.currentPage || 1;
-        this.pagination.pageSize = responseData.pageSize || 10;
-        this.pagination.total = responseData.totalItems || 0;
+        this.announcements = responseData.announcements || []
+        this.pagination.page = responseData.currentPage || 1
+        this.pagination.pageSize = responseData.pageSize || 10
+        this.pagination.total = responseData.totalItems || 0
 
         return { success: true }
       } catch (error: any) {
@@ -98,10 +94,10 @@ export const useAnnouncementsStore = defineStore('announcements', {
         const response = await apiClient.get(`/announcements/${id}`)
 
         // Handle backend response structure
-        const responseData = response.data.data || response.data;
-        this.currentAnnouncement = responseData.announcement || responseData;
+        const responseData = response.data.data || response.data
+        this.currentAnnouncement = responseData.announcement || responseData
 
-        console.log('Fetched announcement detail:', this.currentAnnouncement);
+        console.log('Fetched announcement detail:', this.currentAnnouncement)
 
         return { success: true, data: this.currentAnnouncement }
       } catch (error: any) {
@@ -113,11 +109,7 @@ export const useAnnouncementsStore = defineStore('announcements', {
     },
 
     // 管理员接口：获取所有公告
-    async fetchAdminAnnouncements(params?: {
-      page?: number;
-      pageSize?: number;
-      keyword?: string;
-    }) {
+    async fetchAdminAnnouncements(params?: { page?: number; pageSize?: number; keyword?: string }) {
       this.loading = true
       this.error = null
 
@@ -125,21 +117,21 @@ export const useAnnouncementsStore = defineStore('announcements', {
         // 如果提供了参数，使用参数，否则使用默认值
         const queryParams = params || {
           page: this.pagination.page,
-          pageSize: this.pagination.pageSize
+          pageSize: this.pagination.pageSize,
         }
 
         const response = await apiClient.get('/announcements/admin', {
-          params: queryParams
+          params: queryParams,
         })
 
         // 处理后端返回的数据结构
-        const responseData = response.data.data;
+        const responseData = response.data.data
 
         // 更新公告列表和分页信息
-        this.announcements = responseData.announcements || [];
-        this.pagination.page = responseData.currentPage || 1;
-        this.pagination.pageSize = responseData.pageSize || 10;
-        this.pagination.total = responseData.totalItems || 0;
+        this.announcements = responseData.announcements || []
+        this.pagination.page = responseData.currentPage || 1
+        this.pagination.pageSize = responseData.pageSize || 10
+        this.pagination.total = responseData.totalItems || 0
 
         return { success: true }
       } catch (error: any) {
@@ -151,11 +143,7 @@ export const useAnnouncementsStore = defineStore('announcements', {
     },
 
     // 管理员接口：获取当前管理员创建的公告
-    async fetchMyAnnouncements(params?: {
-      page?: number;
-      pageSize?: number;
-      keyword?: string;
-    }) {
+    async fetchMyAnnouncements(params?: { page?: number; pageSize?: number; keyword?: string }) {
       this.loading = true
       this.error = null
 
@@ -163,21 +151,21 @@ export const useAnnouncementsStore = defineStore('announcements', {
         // 如果提供了参数，使用参数，否则使用默认值
         const queryParams = params || {
           page: this.pagination.page,
-          pageSize: this.pagination.pageSize
+          pageSize: this.pagination.pageSize,
         }
 
         const response = await apiClient.get('/announcements/admin/mine', {
-          params: queryParams
+          params: queryParams,
         })
 
         // 处理后端返回的数据结构
-        const responseData = response.data.data;
+        const responseData = response.data.data
 
         // 更新公告列表和分页信息
-        this.announcements = responseData.announcements || [];
-        this.pagination.page = responseData.currentPage || 1;
-        this.pagination.pageSize = responseData.pageSize || 10;
-        this.pagination.total = responseData.totalItems || 0;
+        this.announcements = responseData.announcements || []
+        this.pagination.page = responseData.currentPage || 1
+        this.pagination.pageSize = responseData.pageSize || 10
+        this.pagination.total = responseData.totalItems || 0
 
         return { success: true }
       } catch (error: any) {
@@ -226,16 +214,16 @@ export const useAnnouncementsStore = defineStore('announcements', {
         if (this.currentAnnouncement?.id === id) {
           this.currentAnnouncement = response.data.announcement || {
             ...this.currentAnnouncement,
-            ...data
+            ...data,
           }
         }
 
         // 更新列表中的公告
-        const announcementIndex = this.announcements.findIndex(a => a.id === id)
+        const announcementIndex = this.announcements.findIndex((a) => a.id === id)
         if (announcementIndex !== -1) {
           this.announcements[announcementIndex] = response.data.announcement || {
             ...this.announcements[announcementIndex],
-            ...data
+            ...data,
           }
         }
 
@@ -259,7 +247,7 @@ export const useAnnouncementsStore = defineStore('announcements', {
         await apiClient.delete(`/announcements/admin/${id}`)
 
         // 从列表中移除
-        this.announcements = this.announcements.filter(a => a.id !== id)
+        this.announcements = this.announcements.filter((a) => a.id !== id)
 
         // 清除当前公告（如果是同一个）
         if (this.currentAnnouncement?.id === id) {
@@ -273,6 +261,6 @@ export const useAnnouncementsStore = defineStore('announcements', {
       } finally {
         this.loading = false
       }
-    }
-  }
+    },
+  },
 })

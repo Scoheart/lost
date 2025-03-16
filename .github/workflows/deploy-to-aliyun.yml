@@ -118,22 +118,110 @@ jobs:
       run: |
         cd frontend
         echo "开始构建前端应用..."
+        # 检查Vite配置文件
+        if [ -f "vite.config.ts" ]; then
+          echo "检测到Vite配置文件，添加明确的输出目录设置..."
+          # 临时添加输出目录配置
+          sed -i '/build: {/a \    outDir: "dist",' vite.config.ts
+          cat vite.config.ts
+        fi
+        
         NODE_ENV=production pnpm run build:prod
         echo "✅ 前端构建完成"
+        
+        # 检查构建目录结构
+        echo "检查构建输出目录结构..."
+        ls -la
+        if [ -d "dist" ]; then
+          echo "dist目录内容:"
+          ls -la dist
+        else
+          echo "警告: 没有找到dist目录，列出当前目录内容:"
+          ls -la
+          echo "寻找构建产物..."
+          find . -type f -name "*.js" | head -5
+          find . -type f -name "*.css" | head -5
+          find . -type f -name "index.html" | head -1
+        fi
     
     - name: 部署前端文件
       run: |
         cd frontend
-        # 打包dist目录
-        tar -czvf dist.tar.gz -C dist .
-        scp dist.tar.gz ${{ secrets.ALIYUN_USER }}@${{ secrets.ALIYUN_HOST }}:${{ secrets.FRONTEND_DEPLOY_PATH }}/
+        
+        # 检查构建输出目录
+        BUILD_DIR="dist"
+        if [ ! -d "$BUILD_DIR" ]; then
+          echo "警告: 未找到标准dist目录，尝试查找实际的构建输出..."
+          
+          # 首先尝试查找index.html位置
+          INDEX_HTML_PATH=$(find . -type f -name "index.html" | grep -v "node_modules" | head -1)
+          
+          if [ -n "$INDEX_HTML_PATH" ]; then
+            # 提取目录部分 (如果在根目录,则为".")
+            INDEX_DIR=$(dirname "$INDEX_HTML_PATH")
+            echo "找到index.html在: $INDEX_DIR"
+            
+            if [ "$INDEX_DIR" = "." ]; then
+              echo "构建文件在当前目录，创建临时目录来收集文件..."
+              mkdir -p temp-dist
+              # 复制所有可能的构建产物
+              cp -r *.js *.css *.html *.ico assets/ temp-dist/ 2>/dev/null || true
+              BUILD_DIR="temp-dist"
+            else
+              BUILD_DIR="$INDEX_DIR"
+              echo "使用构建目录: $BUILD_DIR"
+            fi
+          else
+            echo "未找到index.html，创建临时目录收集所有可能的构建文件..."
+            mkdir -p temp-dist
+            
+            # 查找并收集所有JS和CSS文件，但排除node_modules
+            find . -type f \( -name "*.js" -o -name "*.css" -o -name "*.html" -o -name "*.ico" \) \
+              -not -path "./node_modules/*" -not -path "./src/*" \
+              -exec cp --parents {} temp-dist/ \; 2>/dev/null || true
+            
+            # 复制assets目录如果存在
+            if [ -d "assets" ]; then
+              cp -r assets temp-dist/
+            fi
+            
+            BUILD_DIR="temp-dist"
+          fi
+        else
+          echo "使用标准dist目录"
+        fi
+        
+        echo "准备打包目录: $BUILD_DIR"
+        # 检查构建目录中是否有文件
+        if [ -z "$(ls -A $BUILD_DIR 2>/dev/null)" ]; then
+          echo "错误: 构建目录为空，无法继续部署"
+          echo "当前工作目录内容:"
+          ls -la
+          exit 1
+        fi
+        
+        # 创建压缩包
+        echo "创建压缩包..."
+        tar -czvf frontend-dist.tar.gz -C $BUILD_DIR .
+        
+        # 上传压缩包
+        echo "上传前端文件到服务器..."
+        scp frontend-dist.tar.gz ${{ secrets.ALIYUN_USER }}@${{ secrets.ALIYUN_HOST }}:${{ secrets.FRONTEND_DEPLOY_PATH }}/
         
         # 在服务器上解压
         ssh ${{ secrets.ALIYUN_USER }}@${{ secrets.ALIYUN_HOST }} '
           cd ${{ secrets.FRONTEND_DEPLOY_PATH }} &&
-          rm -rf * &&
-          tar -xzvf dist.tar.gz &&
-          rm dist.tar.gz &&
+          mkdir -p backup &&
+          if [ -f "index.html" ]; then
+            echo "创建当前文件备份..." &&
+            cp -r * backup/ 2>/dev/null || true
+          fi &&
+          echo "清理目录..." &&
+          rm -rf *.js *.css *.html *.ico assets/ &&
+          echo "解压新文件..." &&
+          tar -xzvf frontend-dist.tar.gz &&
+          rm frontend-dist.tar.gz &&
+          echo "设置权限..." &&
           chmod -R 755 .
         '
     
