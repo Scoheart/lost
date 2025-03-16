@@ -159,7 +159,44 @@ scp devops/scripts/setup-nginx.sh user@your-server-ip:/tmp/
 ssh user@your-server-ip 'chmod +x /tmp/setup-nginx.sh && sudo /tmp/setup-nginx.sh /var/www/html/lostandfound your-server-ip'
 ```
 
-## 故障排除
+## 故障排除指南
+
+### SSH密钥问题
+
+部署过程中最常见的问题是SSH密钥格式错误。如果遇到以下错误：
+
+```
+Error loading key "(stdin)": error in libcrypto
+```
+
+请参考 `SSH_KEY_TROUBLESHOOTING.md` 文档获取详细的解决方案。
+
+也可以使用我们提供的验证工具来检查您的SSH密钥是否格式正确：
+
+```bash
+# 用法
+./scripts/verify-ssh-key.sh <私钥文件路径>
+
+# 例如
+./scripts/verify-ssh-key.sh ~/.ssh/id_ed25519
+```
+
+该工具将执行全面检查并提供具体建议。
+
+### SELinux问题
+
+在CentOS/RHEL/Alibaba Cloud Linux系统上，SELinux可能会导致部署问题。我们的脚本会尝试自动处理SELinux上下文和策略，但如果遇到权限问题，可能需要手动调整SELinux设置：
+
+```bash
+# 检查SELinux状态
+sestatus
+
+# 允许Nginx连接到后端服务
+setsebool -P httpd_can_network_connect 1
+
+# 为Web内容设置正确上下文
+chcon -R -t httpd_sys_content_t /var/www/html/lostandfound
+```
 
 ### 数据库问题
 

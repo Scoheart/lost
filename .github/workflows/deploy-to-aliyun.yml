@@ -7,6 +7,8 @@ on:
       - 'backend/**'
       - 'frontend/**'
       - 'devops/**'
+  # 允许手动触发工作流
+  workflow_dispatch:
 
 jobs:
   prepare:
@@ -21,6 +23,7 @@ jobs:
         FRONTEND_PATH: ${{ secrets.FRONTEND_DEPLOY_PATH }}
         DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
       run: |
+        echo "正在检查必要的Secrets配置..."
         if [ -z "$ALIYUN_SSH_KEY" ]; then
           echo "::error::缺少必要的Secret: ALIYUN_SSH_PRIVATE_KEY"
           exit 1
@@ -54,8 +57,35 @@ jobs:
     - name: 检出代码
       uses: actions/checkout@v3
     
-    # 服务器预检查
-    - name: 设置SSH
+    # 服务器预检查和SSH设置
+    - name: 验证SSH密钥格式
+      run: |
+        echo "检查SSH密钥格式..."
+        # 使用临时文件来存储SSH密钥，避免直接在命令行输出密钥
+        KEY_FILE=$(mktemp)
+        echo "${{ secrets.ALIYUN_SSH_PRIVATE_KEY }}" > $KEY_FILE
+        chmod 600 $KEY_FILE
+        
+        # 验证SSH密钥格式
+        if ! grep -q "BEGIN" $KEY_FILE; then
+          echo "::error::SSH密钥格式错误：缺少BEGIN PRIVATE KEY行"
+          echo "提示: 确保在GitHub Secrets中设置密钥时包含了完整内容，包括BEGIN和END行以及所有换行符"
+          rm $KEY_FILE
+          exit 1
+        fi
+        
+        # 检查OpenSSH密钥格式
+        if ! ssh-keygen -l -f $KEY_FILE &>/dev/null; then
+          echo "::error::SSH密钥无效或格式不正确"
+          echo "提示: 使用 'ssh-keygen -t ed25519' 生成新的密钥，并确保上传到GitHub Secrets的是私钥（通常是没有.pub后缀的文件）"
+          rm $KEY_FILE
+          exit 1
+        fi
+        
+        echo "SSH密钥格式验证通过"
+        rm $KEY_FILE
+
+    - name: 设置SSH Agent
       uses: webfactory/ssh-agent@v0.8.0
       with:
         ssh-private-key: ${{ secrets.ALIYUN_SSH_PRIVATE_KEY }}
@@ -63,7 +93,13 @@ jobs:
     - name: 添加服务器到known_hosts
       run: |
         mkdir -p ~/.ssh
-        ssh-keyscan ${{ secrets.ALIYUN_HOST }} >> ~/.ssh/known_hosts
+        ssh-keyscan -t rsa,dsa,ecdsa,ed25519 ${{ secrets.ALIYUN_HOST }} >> ~/.ssh/known_hosts
+    
+    - name: 测试SSH连接
+      run: |
+        echo "正在测试SSH连接..."
+        # 增加连接超时，并添加详细输出以便调试
+        ssh -v -o ConnectTimeout=10 ${{ secrets.ALIYUN_USER }}@${{ secrets.ALIYUN_HOST }} 'echo "SSH连接成功！" && uname -a'
     
     - name: 检查服务器环境
       id: server-check
@@ -78,9 +114,10 @@ jobs:
             echo "准备就绪"
           fi
         ')
-        echo "检查结果: $RESULT"
+        
+        echo "服务器状态: $RESULT"
         echo "server_status=$RESULT" >> $GITHUB_OUTPUT
-    
+
     # 如果需要初始化，上传并运行初始化脚本
     - name: 初始化服务器
       if: steps.server-check.outputs.server_status == '初始化'
