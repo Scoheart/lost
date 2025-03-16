@@ -5,6 +5,7 @@ on:
     branches: [ main, master ]
     paths:
       - 'backend/**'
+      - 'frontend/**'
 
 jobs:
   build-and-deploy:
@@ -14,6 +15,7 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v3
     
+    # Backend build and deployment
     - name: Set up JDK 17
       uses: actions/setup-java@v3
       with:
@@ -26,6 +28,24 @@ jobs:
         cd backend
         mvn clean package -DskipTests
     
+    # Frontend build
+    - name: Set up Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '18'
+        cache: 'npm'
+    
+    - name: Install frontend dependencies
+      run: |
+        cd frontend
+        npm ci
+    
+    - name: Build frontend for production
+      run: |
+        cd frontend
+        NODE_ENV=production npm run build:prod
+    
+    # Setup SSH for deployment
     - name: Setup SSH
       uses: webfactory/ssh-agent@v0.8.0
       with:
@@ -36,10 +56,12 @@ jobs:
         mkdir -p ~/.ssh
         ssh-keyscan ${{ secrets.ALIYUN_HOST }} >> ~/.ssh/known_hosts
     
-    - name: Ensure deploy directory exists
+    # Ensure deployment directories exist
+    - name: Ensure deploy directories exist
       run: |
-        ssh ${{ secrets.ALIYUN_USER }}@${{ secrets.ALIYUN_HOST }} "mkdir -p ${{ secrets.DEPLOY_PATH }}"
+        ssh ${{ secrets.ALIYUN_USER }}@${{ secrets.ALIYUN_HOST }} "mkdir -p ${{ secrets.DEPLOY_PATH }} ${{ secrets.FRONTEND_DEPLOY_PATH }}"
     
+    # Deploy backend
     - name: Upload JAR to Aliyun ECS
       run: |
         cd backend
@@ -50,10 +72,62 @@ jobs:
         cd backend
         scp deploy.sh ${{ secrets.ALIYUN_USER }}@${{ secrets.ALIYUN_HOST }}:${{ secrets.DEPLOY_PATH }}/deploy.sh
     
-    - name: Deploy and Restart Application
+    - name: Deploy and Restart Backend Application
       run: |
         ssh ${{ secrets.ALIYUN_USER }}@${{ secrets.ALIYUN_HOST }} '
           cd ${{ secrets.DEPLOY_PATH }} && 
           chmod +x deploy.sh && 
           ./deploy.sh
+        '
+    
+    # Deploy frontend
+    - name: Deploy frontend to Nginx
+      run: |
+        cd frontend
+        # Zip the dist directory to make transfer faster
+        tar -czvf dist.tar.gz -C dist .
+        scp dist.tar.gz ${{ secrets.ALIYUN_USER }}@${{ secrets.ALIYUN_HOST }}:${{ secrets.FRONTEND_DEPLOY_PATH }}/
+        
+        # Extract and set permissions on the server
+        ssh ${{ secrets.ALIYUN_USER }}@${{ secrets.ALIYUN_HOST }} '
+          cd ${{ secrets.FRONTEND_DEPLOY_PATH }} &&
+          rm -rf * &&
+          tar -xzvf dist.tar.gz &&
+          rm dist.tar.gz &&
+          # Set proper permissions for Nginx
+          chmod -R 755 .
+        '
+    
+    # Upload and configure Nginx (if needed)
+    - name: Configure Nginx
+      run: |
+        echo '
+        server {
+            listen 80;
+            server_name ${{ secrets.DOMAIN_NAME }};
+            
+            # Frontend - serve static files
+            location / {
+                root ${{ secrets.FRONTEND_DEPLOY_PATH }};
+                index index.html;
+                try_files $uri $uri/ /index.html;
+            }
+            
+            # Backend API proxy
+            location /api {
+                proxy_pass http://localhost:8080;
+                proxy_set_header Host $host;
+                proxy_set_header X-Real-IP $remote_addr;
+                proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+                proxy_set_header X-Forwarded-Proto $scheme;
+            }
+        }
+        ' > nginx.conf
+        
+        # Upload and apply Nginx configuration
+        scp nginx.conf ${{ secrets.ALIYUN_USER }}@${{ secrets.ALIYUN_HOST }}:/tmp/lostandfound.conf
+        ssh ${{ secrets.ALIYUN_USER }}@${{ secrets.ALIYUN_HOST }} '
+          sudo mv /tmp/lostandfound.conf /etc/nginx/conf.d/lostandfound.conf &&
+          sudo nginx -t &&
+          sudo systemctl reload nginx
         ' 
