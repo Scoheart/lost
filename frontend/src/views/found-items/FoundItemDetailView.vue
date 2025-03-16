@@ -69,9 +69,9 @@
           <div class="item-header">
             <h1 class="item-title">
               {{ foundItem.title }}
-              <el-tag type="primary" v-if="foundItem.status === 'pending'">招领中</el-tag>
+              <el-tag type="primary" v-if="foundItem.status === 'pending'">待认领</el-tag>
+              <el-tag type="warning" v-else-if="foundItem.status === 'processing'">认领中</el-tag>
               <el-tag type="success" v-else-if="foundItem.status === 'claimed'">已认领</el-tag>
-              <el-tag type="info" v-else-if="foundItem.status === 'closed'">已关闭</el-tag>
             </h1>
 
             <div class="item-meta">
@@ -146,18 +146,11 @@
 
             <div class="owner-actions" v-if="isOwner">
               <el-button
-                type="primary"
-                @click="markAsClaimed"
+                type="success"
+                @click="confirmMarkAsClaimed"
                 :loading="actionLoading"
               >
                 物品已被认领
-              </el-button>
-              <el-button
-                type="danger"
-                @click="closeItem"
-                :loading="actionLoading"
-              >
-                关闭招领
               </el-button>
               <el-button
                 type="primary"
@@ -201,17 +194,6 @@
               show-icon
             >
               <p><strong>该物品已被认领</strong></p>
-            </el-alert>
-          </div>
-
-          <!-- 已关闭状态 -->
-          <div class="item-actions" v-if="foundItem.status === 'closed'">
-            <el-alert
-              type="info"
-              :closable="false"
-              show-icon
-            >
-              <p><strong>该失物招领已关闭</strong></p>
             </el-alert>
           </div>
         </el-card>
@@ -409,7 +391,8 @@ import MainLayout from '@/components/layout/MainLayout.vue'
 import { useFoundItemsStore } from '@/stores/foundItems'
 import { useUserStore } from '@/stores/user'
 import { useClaimsStore } from '@/stores/claims'
-import type { FoundItem, Comment } from '@/stores/foundItems'
+import type { FoundItem } from '@/stores/foundItems'
+import type { Comment } from '@/stores/lostItems'
 
 const router = useRouter()
 const route = useRoute()
@@ -419,7 +402,7 @@ const claimsStore = useClaimsStore()
 
 // 状态变量
 const loading = ref(false)
-const error = ref(false)
+const error = ref<string | null>(null)
 const commentForm = ref({
   content: ''
 })
@@ -574,9 +557,9 @@ const loadItemDetail = async () => {
 
     // 滚动到顶部
     window.scrollTo(0, 0);
-  } catch (error) {
-    console.error('Error loading found item details:', error);
-    error.value = error.message || '获取失物招领详情时发生错误';
+  } catch (err) {
+    console.error('Error loading found item details:', err);
+    error.value = err instanceof Error ? err.message : '获取失物招领详情时发生错误';
   } finally {
     loading.value = false;
   }
@@ -584,101 +567,71 @@ const loadItemDetail = async () => {
 
 // 提交评论
 const submitComment = async () => {
-  if (!commentForm.value.content.trim()) {
-    ElMessage.warning('评论不能为空');
+  if (!isLoggedIn.value) {
+    ElMessage.warning('请先登录');
     return;
   }
 
-  if (!userStore.isAuthenticated) {
-    ElMessage.warning('请先登录');
+  if (!itemId.value) {
+    ElMessage.error('物品ID无效');
     return;
   }
 
   commentSubmitting.value = true;
   try {
-    const result = await foundItemsStore.addComment(itemId.value, commentForm.value.content);
+    const result = await foundItemsStore.addComment(itemId.value, {
+      content: commentForm.value.content
+    });
 
     if (result.success) {
       commentForm.value.content = ''; // 清空评论内容
       currentPage.value = 1; // 重置到第一页以便查看新评论
 
       // 重新加载评论
-      await foundItemsStore.fetchComments(itemId.value, currentPage.value, pageSize.value);
+      if (itemId.value) {
+        await foundItemsStore.fetchComments(itemId.value, currentPage.value, pageSize.value);
+      }
 
       ElMessage.success('评论成功');
     } else {
-      ElMessage.error(result.message || '评论失败');
+      ElMessage.error(result.message || '评论失败')
     }
   } catch (error) {
-    console.error('Error submitting comment:', error);
-    ElMessage.error('评论提交时发生错误');
+    console.error('Failed to submit comment:', error)
+    ElMessage.error('评论失败，请稍后再试')
   } finally {
-    commentSubmitting.value = false;
+    commentSubmitting.value = false
   }
 }
 
 // 将失物招领标记为"已认领"
-const markAsClaimed = async () => {
-  if (!foundItem.value || !itemId.value) return
+const confirmMarkAsClaimed = () => {
+  if (!itemId.value) {
+    ElMessage.error('物品ID无效');
+    return;
+  }
 
-  ElMessageBox.confirm(
-    '确认此物品已被认领吗？更新后状态将变为"已认领"。',
-    '更新状态',
-    {
-      confirmButtonText: '确认',
-      cancelButtonText: '取消',
-      type: 'success'
-    }
-  ).then(async () => {
+  ElMessageBox.confirm('您确定要将此物品状态更新为"已认领"吗？此操作不可逆', '确认操作', {
+    confirmButtonText: '确认',
+    cancelButtonText: '取消',
+    type: 'warning'
+  }).then(async () => {
     actionLoading.value = true
     try {
       // 使用专用的状态更新函数
-      const result = await foundItemsStore.markAsClaimed(itemId.value)
+      if (itemId.value) {
+        const result = await foundItemsStore.markAsClaimed(itemId.value)
 
-      if (result.success) {
-        ElMessage.success('状态已更新为"已认领"')
-        // 不需要重新获取物品详情，因为markAsClaimed已经更新了本地状态
-      } else {
-        ElMessage.error(result.message || '更新失败')
+        if (result.success) {
+          ElMessage.success('状态已更新为"已认领"')
+          // 不需要重新获取物品详情，因为markAsClaimed已经更新了本地状态
+        } else {
+          ElMessage.error(result.message || '更新失败')
+        }
       }
     } catch (error) {
       console.error('Failed to update item status:', error)
       ElMessage.error('更新失败，请稍后再试')
-    } finally {
-      actionLoading.value = false
-    }
-  }).catch(() => {
-    // 用户取消操作
-  })
-}
-
-// 关闭失物招领
-const closeItem = async () => {
-  if (!foundItem.value || !itemId.value) return
-
-  ElMessageBox.confirm(
-    '确认关闭此失物招领吗？关闭后将不再公开展示。',
-    '关闭失物招领',
-    {
-      confirmButtonText: '确认关闭',
-      cancelButtonText: '取消',
-      type: 'warning'
-    }
-  ).then(async () => {
-    actionLoading.value = true
-    try {
-      // 使用专用的关闭函数
-      const result = await foundItemsStore.closeItem(itemId.value)
-
-      if (result.success) {
-        ElMessage.success('失物招领已关闭')
-        router.push('/found-items')
-      } else {
-        ElMessage.error(result.message || '关闭失败')
-      }
-    } catch (error) {
-      console.error('Failed to close found item:', error)
-      ElMessage.error('关闭失败，请稍后再试')
     } finally {
       actionLoading.value = false
     }

@@ -280,9 +280,10 @@ export const useClaimsStore = defineStore('claims', {
           throw new Error(responseData.message || '提交认领申请失败');
         }
       } catch (error) {
-        const errorMessage = '提交认领申请失败，请稍后重试';
-        handleApiError(error, errorMessage);
-        this.error = errorMessage;
+        // 使用后端返回的具体错误信息，这样用户能更清楚地知道为什么不能重复申请
+        const errorResult = handleApiError(error, '提交认领申请失败，请稍后重试');
+        this.error = errorResult.message;
+        ElMessage.error(errorResult.message);
         throw error;
       } finally {
         this.loading = false;

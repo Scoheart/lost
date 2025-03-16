@@ -8,21 +8,56 @@
       </el-button>
     </div>
 
-    <!-- 搜索栏 -->
-    <div class="search-bar">
-      <el-input
-        v-model="searchQuery"
-        placeholder="搜索居民（用户名、邮箱、手机号）"
-        class="search-input"
-        :prefix-icon="Search"
-        clearable
-        @clear="loadResidents"
-      />
-      <el-button type="primary" @click="loadResidents">
-        <el-icon><Search /></el-icon>
-        搜索
-      </el-button>
-    </div>
+    <!-- 筛选条件 -->
+    <el-card shadow="never" class="filter-card">
+      <el-form :inline="true" :model="filterForm">
+        <el-form-item label="搜索用户">
+          <el-input
+            v-model="filterForm.search"
+            placeholder="用户名、邮箱、手机号"
+            clearable
+            @clear="loadResidents"
+            class="search-input"
+            :prefix-icon="Search"
+          />
+        </el-form-item>
+
+        <el-form-item label="账号状态">
+          <el-select
+            v-model="filterForm.isEnabled"
+            placeholder="选择状态"
+            clearable
+            style="width: 120px"
+          >
+            <el-option label="正常" :value="true" />
+            <el-option label="锁定" :value="false" />
+          </el-select>
+        </el-form-item>
+
+        <el-form-item label="注册日期">
+          <el-date-picker
+            v-model="filterForm.dateRange"
+            type="daterange"
+            range-separator="至"
+            start-placeholder="开始日期"
+            end-placeholder="结束日期"
+            :shortcuts="dateShortcuts"
+            value-format="YYYY-MM-DD"
+            style="width: 260px"
+          />
+        </el-form-item>
+
+        <el-form-item>
+          <el-button type="primary" @click="loadResidents">
+            <el-icon><Search /></el-icon>
+            查询
+          </el-button>
+          <el-button @click="resetFilters">
+            重置
+          </el-button>
+        </el-form-item>
+      </el-form>
+    </el-card>
 
     <!-- 居民列表 -->
     <el-card shadow="never" class="residents-table-card">
@@ -180,10 +215,47 @@ const residents = ref<Resident[]>([])
 const currentPage = ref(1)
 const pageSize = ref(10)
 const total = ref(0)
-const searchQuery = ref('')
 const dialogVisible = ref(false)
 const editingResident = ref<Resident | null>(null)
 const residentFormRef = ref<FormInstance>()
+
+// 筛选表单
+const filterForm = reactive({
+  search: '',
+  isEnabled: null as boolean | null,
+  dateRange: [] as string[]
+})
+
+// 日期快捷选项
+const dateShortcuts = [
+  {
+    text: '最近一周',
+    value: () => {
+      const end = new Date()
+      const start = new Date()
+      start.setTime(start.getTime() - 3600 * 1000 * 24 * 7)
+      return [start, end]
+    }
+  },
+  {
+    text: '最近一个月',
+    value: () => {
+      const end = new Date()
+      const start = new Date()
+      start.setTime(start.getTime() - 3600 * 1000 * 24 * 30)
+      return [start, end]
+    }
+  },
+  {
+    text: '最近三个月',
+    value: () => {
+      const end = new Date()
+      const start = new Date()
+      start.setTime(start.getTime() - 3600 * 1000 * 24 * 90)
+      return [start, end]
+    }
+  }
+]
 
 // 表单数据
 const residentForm = reactive({
@@ -227,10 +299,17 @@ onMounted(() => {
 const loadResidents = async () => {
   loading.value = true
   try {
-    const params = {
+    const params: any = {
       page: currentPage.value,
       size: pageSize.value,
-      search: searchQuery.value || undefined
+      search: filterForm.search || undefined,
+      status: filterForm.isEnabled !== null ? filterForm.isEnabled : undefined
+    }
+
+    // 添加日期范围过滤
+    if (filterForm.dateRange && filterForm.dateRange.length === 2) {
+      params.startDate = filterForm.dateRange[0]
+      params.endDate = filterForm.dateRange[1]
     }
 
     console.log('请求参数:', params)
@@ -249,6 +328,15 @@ const loadResidents = async () => {
   } finally {
     loading.value = false
   }
+}
+
+// 重置筛选条件
+const resetFilters = () => {
+  filterForm.search = ''
+  filterForm.isEnabled = null
+  filterForm.dateRange = []
+  currentPage.value = 1
+  loadResidents()
 }
 
 const formatDateTime = (dateStr: string) => {
@@ -426,14 +514,12 @@ const getStatusLabel = (resident: Resident): string => {
   font-weight: 600;
 }
 
-.search-bar {
-  display: flex;
+.filter-card {
   margin-bottom: 20px;
-  gap: 10px;
 }
 
 .search-input {
-  max-width: 400px;
+  width: 220px;
 }
 
 .residents-table-card {
@@ -469,13 +555,8 @@ const getStatusLabel = (resident: Resident): string => {
     gap: 10px;
   }
 
-  .search-bar {
-    flex-direction: column;
-    width: 100%;
-  }
-
-  .search-input {
-    max-width: 100%;
+  .filter-card :deep(.el-form-item) {
+    margin-bottom: 10px;
   }
 }
 </style>

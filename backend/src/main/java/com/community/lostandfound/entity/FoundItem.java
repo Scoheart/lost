@@ -26,9 +26,11 @@ public class FoundItem {
     private String description;
     private LocalDate foundDate;
     private String foundLocation;
+    private String storageLocation; // Storage location where the item is kept
     private String category;
     private String images; // Stored as JSON string of image URLs
     private String contactInfo;
+    private String claimRequirements; // Requirements for claiming the item
     private String status; // 'pending', 'claimed', 'closed'
     private Long userId;
     private LocalDateTime createdAt;

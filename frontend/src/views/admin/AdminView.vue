@@ -15,12 +15,12 @@
         >
           <!-- 只有小区管理员可见的菜单项 -->
           <el-menu-item v-if="userStore.isCommunityAdmin && !userStore.isSysAdmin" index="/admin/announcements">
-            <el-icon><Notification /></el-icon>
+            <el-icon><Bell /></el-icon>
             <span>公告管理</span>
           </el-menu-item>
 
           <el-menu-item v-if="userStore.isCommunityAdmin && !userStore.isSysAdmin" index="/admin/claims">
-            <el-icon><Connection /></el-icon>
+            <el-icon><Document /></el-icon>
             <span>认领记录</span>
           </el-menu-item>
 
@@ -92,8 +92,8 @@
 import { computed, ref } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import {
-  Notification,
-  Connection,
+  Bell,
+  Document,
   User,
   Setting,
   SwitchButton,

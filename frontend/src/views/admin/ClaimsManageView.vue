@@ -6,20 +6,47 @@
       <div class="filter-row">
         <el-form :inline="true" :model="filterForm">
           <el-form-item label="认领状态">
-            <el-select v-model="filterForm.status" placeholder="选择状态" clearable>
+            <el-select v-model="filterForm.status" placeholder="选择状态" clearable style="width: 120px">
               <el-option label="待审核" value="pending" />
               <el-option label="已批准" value="approved" />
               <el-option label="已拒绝" value="rejected" />
               <el-option label="已完成" value="completed" />
             </el-select>
           </el-form-item>
-          <el-form-item label="物品类型">
-            <el-select v-model="filterForm.itemType" placeholder="选择类型" clearable>
-              <el-option label="失物招领" value="found" />
-            </el-select>
+
+          <el-form-item label="申请日期">
+            <el-date-picker
+              v-model="filterForm.dateRange"
+              type="daterange"
+              range-separator="至"
+              start-placeholder="开始日期"
+              end-placeholder="结束日期"
+              :shortcuts="dateShortcuts"
+              value-format="YYYY-MM-DD"
+              style="width: 260px"
+            />
           </el-form-item>
+
+          <el-form-item label="物品名称">
+            <el-input
+              v-model="filterForm.itemTitle"
+              placeholder="输入物品名称关键词"
+              clearable
+              style="width: 160px"
+            />
+          </el-form-item>
+
+          <el-form-item label="申请人">
+            <el-input
+              v-model="filterForm.applicantName"
+              placeholder="输入申请人姓名"
+              clearable
+              style="width: 140px"
+            />
+          </el-form-item>
+
           <el-form-item>
-            <el-button type="primary" @click="handleSearch">查询</el-button>
+            <el-button type="primary" @click="handleSearch" :icon="Search">查询</el-button>
             <el-button @click="resetFilter">重置</el-button>
           </el-form-item>
         </el-form>
@@ -38,19 +65,19 @@
         v-loading="tableLoading"
       >
         <el-table-column prop="id" label="ID" width="80" />
-        <el-table-column prop="itemTitle" label="物品名称" min-width="180">
+        <el-table-column prop="foundItemTitle" label="物品名称" min-width="180">
           <template #default="scope">
-            <el-link @click="viewItemDetail(scope.row)">{{ scope.row.itemTitle }}</el-link>
+            <el-link @click="viewItemDetail(scope.row)">{{ scope.row.foundItemTitle }}</el-link>
           </template>
         </el-table-column>
-        <el-table-column prop="claimDescription" label="认领说明" min-width="220" show-overflow-tooltip />
-        <el-table-column prop="userName" label="申请人" width="120" />
+        <el-table-column prop="description" label="认领说明" min-width="220" show-overflow-tooltip />
+        <el-table-column prop="applicantName" label="认领申请人" width="120" />
         <el-table-column label="申请时间" width="160">
           <template #default="scope">
             {{ formatDate(scope.row.createdAt) }}
           </template>
         </el-table-column>
-        <el-table-column prop="itemOwner" label="物品发布者" width="120" />
+        <el-table-column prop="ownerName" label="招领发布者" width="120" />
         <el-table-column label="状态" width="100">
           <template #default="scope">
             <el-tag :type="getStatusTagType(scope.row.status)">
@@ -58,21 +85,20 @@
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="200">
+        <el-table-column label="操作" width="150">
           <template #default="scope">
             <div class="operation-buttons">
-              <el-button v-if="scope.row.status === 'pending'" type="success" size="small" @click="approveClaim(scope.row)" text>
-                批准
-              </el-button>
-              <el-button v-if="scope.row.status === 'pending'" type="danger" size="small" @click="rejectClaim(scope.row)" text>
-                拒绝
-              </el-button>
-              <el-button v-if="scope.row.status === 'approved'" type="primary" size="small" @click="completeClaim(scope.row)" text>
-                完成交接
-              </el-button>
               <el-button type="info" size="small" @click="viewDetail(scope.row)" text>
                 详情
               </el-button>
+              <el-popconfirm
+                title="确定要删除这条认领记录吗？"
+                @confirm="deleteClaim(scope.row.id)"
+              >
+                <template #reference>
+                  <el-button type="danger" size="small" text>删除</el-button>
+                </template>
+              </el-popconfirm>
             </div>
           </template>
         </el-table-column>
@@ -92,32 +118,6 @@
       </div>
     </el-card>
 
-    <!-- 处理认领对话框 -->
-    <el-dialog
-      v-model="processingDialogVisible"
-      :title="dialogTitle"
-      width="500px"
-    >
-      <el-form ref="processFormRef" :model="processForm" label-width="100px">
-        <el-form-item label="处理说明">
-          <el-input
-            v-model="processForm.comment"
-            type="textarea"
-            :rows="3"
-            :placeholder="actionPlaceholder"
-          />
-        </el-form-item>
-      </el-form>
-      <template #footer>
-        <span class="dialog-footer">
-          <el-button @click="processingDialogVisible = false">取消</el-button>
-          <el-button type="primary" @click="confirmProcess" :loading="submitting">
-            确认
-          </el-button>
-        </span>
-      </template>
-    </el-dialog>
-
     <!-- 详情对话框 -->
     <el-dialog
       v-model="detailDialogVisible"
@@ -127,19 +127,17 @@
       <div v-if="selectedClaim" class="claim-detail">
         <div class="detail-section">
           <h3>物品信息</h3>
-          <p><strong>物品名称：</strong>{{ selectedClaim.itemTitle }}</p>
-          <p><strong>物品类型：</strong>{{ selectedClaim.itemType === 'found' ? '失物招领' : '其他' }}</p>
-          <p><strong>发布者：</strong>{{ selectedClaim.itemOwner }}</p>
-          <p><strong>物品描述：</strong>{{ selectedClaim.itemDescription }}</p>
+          <p><strong>物品名称：</strong>{{ selectedClaim.foundItemTitle }}</p>
+          <p><strong>招领发布者：</strong>{{ selectedClaim.ownerName }}</p>
         </div>
 
         <el-divider />
 
         <div class="detail-section">
           <h3>认领信息</h3>
-          <p><strong>认领人：</strong>{{ selectedClaim.userName }}</p>
-          <p><strong>认领说明：</strong>{{ selectedClaim.claimDescription }}</p>
-          <p><strong>联系方式：</strong>{{ selectedClaim.contactInfo }}</p>
+          <p><strong>认领申请人：</strong>{{ selectedClaim.applicantName }}</p>
+          <p><strong>认领说明：</strong>{{ selectedClaim.description }}</p>
+          <p><strong>联系方式：</strong>{{ selectedClaim.applicantContact || '未提供' }}</p>
           <p><strong>申请时间：</strong>{{ formatDate(selectedClaim.createdAt) }}</p>
           <p><strong>状态：</strong>
             <el-tag :type="getStatusTagType(selectedClaim.status)">
@@ -150,9 +148,10 @@
 
         <div v-if="selectedClaim.status !== 'pending'" class="detail-section">
           <h3>处理结果</h3>
-          <p><strong>处理人：</strong>{{ selectedClaim.processedBy || '系统' }}</p>
-          <p><strong>处理时间：</strong>{{ formatDate(selectedClaim.processedAt) }}</p>
-          <p><strong>处理说明：</strong>{{ selectedClaim.processComment || '无' }}</p>
+          <p><strong>处理时间：</strong>{{ formatDate(selectedClaim.processedAt) || '未处理' }}</p>
+          <p v-if="selectedClaim.status === 'approved'"><strong>结果：</strong>申请已被批准</p>
+          <p v-if="selectedClaim.status === 'rejected'"><strong>结果：</strong>申请已被拒绝</p>
+          <p v-if="selectedClaim.status === 'completed'"><strong>结果：</strong>物品已完成交接</p>
         </div>
       </div>
       <template #footer>
@@ -165,35 +164,76 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, computed, onMounted } from 'vue'
+import { ref, reactive, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { format } from 'date-fns'
+import apiClient from '@/utils/api'
+import { handleApiError } from '@/utils/apiHelpers'
+import { Search } from '@element-plus/icons-vue'
 
-// 模拟数据 - 实际开发时会从API获取数据
-interface Claim {
+// 认领申请接口
+interface ClaimApplication {
   id: number
-  itemId: number
-  itemTitle: string
-  itemType: 'found'
-  itemDescription: string
-  itemOwner: string
-  userId: number
-  userName: string
-  claimDescription: string
-  contactInfo: string
+  foundItemId: number
+  foundItemTitle: string
+  foundItemImage: string | null
+  applicantId: number
+  applicantName: string
+  applicantContact: string | null
+  ownerId: number
+  ownerName: string
+  description: string
   status: 'pending' | 'approved' | 'rejected' | 'completed'
   createdAt: string
   updatedAt: string
-  processedBy?: string
-  processedAt?: string
-  processComment?: string
+  processedAt: string | null
 }
+
+// 分页数据接口
+interface ClaimsPagination {
+  applications: ClaimApplication[]
+  currentPage: number
+  pageSize: number
+  totalPages: number
+  totalItems: number
+}
+
+// 日期快捷选项
+const dateShortcuts = [
+  {
+    text: '最近一周',
+    value: () => {
+      const end = new Date()
+      const start = new Date()
+      start.setTime(start.getTime() - 3600 * 1000 * 24 * 7)
+      return [start, end]
+    },
+  },
+  {
+    text: '最近一个月',
+    value: () => {
+      const end = new Date()
+      const start = new Date()
+      start.setTime(start.getTime() - 3600 * 1000 * 24 * 30)
+      return [start, end]
+    },
+  },
+  {
+    text: '最近三个月',
+    value: () => {
+      const end = new Date()
+      const start = new Date()
+      start.setTime(start.getTime() - 3600 * 1000 * 24 * 90)
+      return [start, end]
+    },
+  },
+]
 
 // 状态
 const loading = ref(true)
 const tableLoading = ref(false)
 const submitting = ref(false)
-const claimsList = ref<Claim[]>([])
+const claimsList = ref<ClaimApplication[]>([])
 const currentPage = ref(1)
 const pageSize = ref(10)
 const total = ref(0)
@@ -201,44 +241,14 @@ const total = ref(0)
 // 过滤表单
 const filterForm = reactive({
   status: '',
-  itemType: ''
+  dateRange: [],
+  itemTitle: '',
+  applicantName: ''
 })
 
-// 处理对话框
-const processingDialogVisible = ref(false)
+// 详情对话框
 const detailDialogVisible = ref(false)
-const selectedClaim = ref<Claim | null>(null)
-const processForm = reactive({
-  action: '',
-  comment: ''
-})
-
-// 计算属性
-const dialogTitle = computed(() => {
-  switch (processForm.action) {
-    case 'approve':
-      return '批准认领'
-    case 'reject':
-      return '拒绝认领'
-    case 'complete':
-      return '完成交接'
-    default:
-      return '处理认领'
-  }
-})
-
-const actionPlaceholder = computed(() => {
-  switch (processForm.action) {
-    case 'approve':
-      return '请输入批准认领的说明，如物品交接地点、时间等'
-    case 'reject':
-      return '请输入拒绝认领的原因'
-    case 'complete':
-      return '请输入完成交接的备注信息'
-    default:
-      return '请输入处理说明'
-  }
-})
+const selectedClaim = ref<ClaimApplication | null>(null)
 
 // 获取认领申请列表
 const fetchClaims = async () => {
@@ -246,89 +256,68 @@ const fetchClaims = async () => {
   tableLoading.value = true
 
   try {
-    // 这里实际开发时会调用API
-    // const response = await api.get('/admin/claims', {
-    //   params: {
-    //     page: currentPage.value,
-    //     pageSize: pageSize.value,
-    //     status: filterForm.status || undefined,
-    //     itemType: filterForm.itemType || undefined
-    //   }
-    // })
-
-    // 模拟数据
-    await new Promise(resolve => setTimeout(resolve, 800))
-
-    const mockData = {
-      items: [
-        {
-          id: 1,
-          itemId: 201,
-          itemTitle: '校园内捡到一部银色手机',
-          itemType: 'found',
-          itemDescription: '在教学楼门口找到的，是一部银色的iPhone 13',
-          itemOwner: '张三',
-          userId: 301,
-          userName: '李四',
-          claimDescription: '这是我的手机，丢失在教学楼附近，可以提供开机密码',
-          contactInfo: '13800138000',
-          status: 'pending',
-          createdAt: '2023-11-10T08:30:00Z',
-          updatedAt: '2023-11-10T08:30:00Z'
-        },
-        {
-          id: 2,
-          itemId: 202,
-          itemTitle: '食堂捡到一串钥匙',
-          itemType: 'found',
-          itemDescription: '中午在食堂二楼捡到的钥匙，有校园卡和宿舍钥匙',
-          itemOwner: '王五',
-          userId: 302,
-          userName: '赵六',
-          claimDescription: '这是我的钥匙，丢失在食堂，钥匙上有一个小熊挂饰',
-          contactInfo: '13900139000',
-          status: 'approved',
-          createdAt: '2023-11-09T14:20:00Z',
-          updatedAt: '2023-11-09T16:45:00Z',
-          processedBy: '管理员A',
-          processedAt: '2023-11-09T16:45:00Z',
-          processComment: '已通知双方在物业办公室交接'
-        },
-        {
-          id: 3,
-          itemId: 203,
-          itemTitle: '篮球场旁捡到学生证',
-          itemType: 'found',
-          itemDescription: '下午在篮球场边的长椅上发现的学生证',
-          itemOwner: '小明',
-          userId: 303,
-          userName: '小红',
-          claimDescription: '这是我的学生证，上面的照片和信息都是我的',
-          contactInfo: '13600136000',
-          status: 'completed',
-          createdAt: '2023-11-08T09:15:00Z',
-          updatedAt: '2023-11-09T10:30:00Z',
-          processedBy: '管理员B',
-          processedAt: '2023-11-09T10:30:00Z',
-          processComment: '双方已完成交接，物品已归还'
-        }
-      ],
-      total: 3
+    // 构建URL和查询参数
+    const params = new URLSearchParams()
+    params.append('page', currentPage.value.toString())
+    params.append('size', pageSize.value.toString())
+    if (filterForm.status) {
+      params.append('status', filterForm.status)
+    }
+    if (filterForm.dateRange && filterForm.dateRange.length === 2) {
+      params.append('startDate', filterForm.dateRange[0])
+      params.append('endDate', filterForm.dateRange[1])
+    }
+    if (filterForm.itemTitle) {
+      params.append('itemTitle', filterForm.itemTitle)
+    }
+    if (filterForm.applicantName) {
+      params.append('applicantName', filterForm.applicantName)
     }
 
-    claimsList.value = mockData.items as Claim[]
-    total.value = mockData.total
+    const response = await apiClient.get(`/claims/admin/all?${params.toString()}`)
+    const responseData = response.data
+
+    if (responseData.success) {
+      const data = responseData.data as ClaimsPagination
+      claimsList.value = data.applications
+      total.value = data.totalItems
+    } else {
+      throw new Error(responseData.message || '获取认领申请列表失败')
+    }
   } catch (error) {
-    console.error('Failed to fetch claims:', error)
-    ElMessage.error('获取认领申请列表失败')
+    const errorResult = handleApiError(error, '获取认领申请列表失败')
+    ElMessage.error(errorResult.message)
   } finally {
     loading.value = false
     tableLoading.value = false
   }
 }
 
+// 删除认领记录
+const deleteClaim = async (claimId: number) => {
+  tableLoading.value = true
+
+  try {
+    const response = await apiClient.delete(`/claims/admin/${claimId}`)
+    const responseData = response.data
+
+    if (responseData.success) {
+      ElMessage.success('认领记录已删除')
+      // 刷新列表
+      fetchClaims()
+    } else {
+      throw new Error(responseData.message || '删除认领记录失败')
+    }
+  } catch (error) {
+    const errorResult = handleApiError(error, '删除认领记录失败')
+    ElMessage.error(errorResult.message)
+  } finally {
+    tableLoading.value = false
+  }
+}
+
 // 格式化日期
-const formatDate = (dateString: string) => {
+const formatDate = (dateString: string | null) => {
   if (!dateString) return '未知'
   try {
     return format(new Date(dateString), 'yyyy-MM-dd HH:mm')
@@ -360,101 +349,14 @@ const getStatusLabel = (status: string) => {
 }
 
 // 查看物品详情
-const viewItemDetail = (claim: Claim) => {
-  // 根据物品类型和ID跳转到对应详情页面
-  if (claim.itemType === 'found') {
-    window.open(`/found-items/${claim.itemId}`, '_blank')
-  }
+const viewItemDetail = (claim: ClaimApplication) => {
+  window.open(`/found-items/${claim.foundItemId}`, '_blank')
 }
 
 // 查看详情
-const viewDetail = (claim: Claim) => {
+const viewDetail = (claim: ClaimApplication) => {
   selectedClaim.value = claim
   detailDialogVisible.value = true
-}
-
-// 批准认领
-const approveClaim = (claim: Claim) => {
-  selectedClaim.value = claim
-  processForm.action = 'approve'
-  processForm.comment = ''
-  processingDialogVisible.value = true
-}
-
-// 拒绝认领
-const rejectClaim = (claim: Claim) => {
-  selectedClaim.value = claim
-  processForm.action = 'reject'
-  processForm.comment = ''
-  processingDialogVisible.value = true
-}
-
-// 完成交接
-const completeClaim = (claim: Claim) => {
-  selectedClaim.value = claim
-  processForm.action = 'complete'
-  processForm.comment = ''
-  processingDialogVisible.value = true
-}
-
-// 确认处理
-const confirmProcess = async () => {
-  if (!selectedClaim.value) return
-
-  submitting.value = true
-  try {
-    // 这里实际开发时会调用API
-    // const endpoint =
-    //   processForm.action === 'approve' ? '/admin/claims/${selectedClaim.value.id}/approve' :
-    //   processForm.action === 'reject' ? '/admin/claims/${selectedClaim.value.id}/reject' :
-    //   '/admin/claims/${selectedClaim.value.id}/complete'
-    //
-    // const response = await api.put(endpoint, {
-    //   comment: processForm.comment
-    // })
-
-    // 模拟处理
-    await new Promise(resolve => setTimeout(resolve, 800))
-
-    // 更新本地数据
-    const index = claimsList.value.findIndex(c => c.id === selectedClaim.value?.id)
-    if (index !== -1) {
-      let newStatus = 'pending'
-      switch (processForm.action) {
-        case 'approve':
-          newStatus = 'approved'
-          break
-        case 'reject':
-          newStatus = 'rejected'
-          break
-        case 'complete':
-          newStatus = 'completed'
-          break
-      }
-
-      claimsList.value[index] = {
-        ...claimsList.value[index],
-        status: newStatus as 'pending' | 'approved' | 'rejected' | 'completed',
-        processedBy: '当前管理员',
-        processedAt: new Date().toISOString(),
-        processComment: processForm.comment,
-        updatedAt: new Date().toISOString()
-      }
-    }
-
-    const actionText =
-      processForm.action === 'approve' ? '批准' :
-      processForm.action === 'reject' ? '拒绝' :
-      '完成'
-
-    ElMessage.success(`认领申请${actionText}成功`)
-    processingDialogVisible.value = false
-  } catch (error) {
-    console.error('Failed to process claim:', error)
-    ElMessage.error('处理认领申请失败')
-  } finally {
-    submitting.value = false
-  }
 }
 
 // 搜索
@@ -466,7 +368,9 @@ const handleSearch = () => {
 // 重置过滤条件
 const resetFilter = () => {
   filterForm.status = ''
-  filterForm.itemType = ''
+  filterForm.dateRange = []
+  filterForm.itemTitle = ''
+  filterForm.applicantName = ''
   handleSearch()
 }
 

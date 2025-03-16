@@ -11,6 +11,7 @@ import org.apache.ibatis.annotations.Results;
 import org.apache.ibatis.annotations.Result;
 import org.apache.ibatis.annotations.Options;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -106,6 +107,8 @@ public interface UserRepository {
      * @param search 搜索词（匹配用户名、邮箱或电话）
      * @param role 用户角色
      * @param isEnabled 账号状态
+     * @param startDate 注册开始日期
+     * @param endDate 注册结束日期
      * @param offset 偏移量
      * @param limit 每页数量
      * @return 用户列表
@@ -123,6 +126,12 @@ public interface UserRepository {
             "</if>",
             "<if test='isEnabled != null'>",
             "  AND is_enabled = #{isEnabled}",
+            "</if>",
+            "<if test='startDate != null'>",
+            "  AND created_at >= #{startDate}",
+            "</if>",
+            "<if test='endDate != null'>",
+            "  AND created_at &lt;= #{endDate}",
             "</if>",
             "ORDER BY id DESC",
             "LIMIT #{offset}, #{limit}",
@@ -144,6 +153,8 @@ public interface UserRepository {
             @Param("search") String search,
             @Param("role") String role,
             @Param("isEnabled") Boolean isEnabled,
+            @Param("startDate") LocalDateTime startDate,
+            @Param("endDate") LocalDateTime endDate,
             @Param("offset") int offset,
             @Param("limit") int limit);
     
@@ -152,6 +163,8 @@ public interface UserRepository {
      * @param search 搜索词（匹配用户名、邮箱或电话）
      * @param role 用户角色
      * @param isEnabled 账号状态
+     * @param startDate 注册开始日期
+     * @param endDate 注册结束日期
      * @return 用户总数
      */
     @Select({"<script>",
@@ -168,9 +181,17 @@ public interface UserRepository {
             "<if test='isEnabled != null'>",
             "  AND is_enabled = #{isEnabled}",
             "</if>",
+            "<if test='startDate != null'>",
+            "  AND created_at >= #{startDate}",
+            "</if>",
+            "<if test='endDate != null'>",
+            "  AND created_at &lt;= #{endDate}",
+            "</if>",
             "</script>"})
     int countWithFilters(
             @Param("search") String search,
             @Param("role") String role,
-            @Param("isEnabled") Boolean isEnabled);
+            @Param("isEnabled") Boolean isEnabled,
+            @Param("startDate") LocalDateTime startDate,
+            @Param("endDate") LocalDateTime endDate);
 } 

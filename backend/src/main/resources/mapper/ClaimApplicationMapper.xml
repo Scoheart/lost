@@ -72,6 +72,59 @@
         LIMIT #{pageSize} OFFSET #{offset}
     </select>
     
+    <!-- 查询所有认领申请带过滤条件（分页） -->
+    <select id="findAllWithFilters" resultMap="ClaimApplicationResultMap">
+        SELECT <include refid="Full_Column_List" />
+        FROM claim_applications ca
+        LEFT JOIN found_items fi ON ca.found_item_id = fi.id
+        LEFT JOIN users a ON ca.applicant_id = a.id
+        LEFT JOIN users o ON fi.user_id = o.id
+        <where>
+            <if test="status != null and status != ''">
+                AND ca.status = #{status}
+            </if>
+            <if test="startDateTime != null">
+                AND ca.created_at >= #{startDateTime}
+            </if>
+            <if test="endDateTime != null">
+                AND ca.created_at &lt;= #{endDateTime}
+            </if>
+            <if test="itemTitle != null and itemTitle != ''">
+                AND fi.title LIKE CONCAT('%', #{itemTitle}, '%')
+            </if>
+            <if test="applicantName != null and applicantName != ''">
+                AND a.username LIKE CONCAT('%', #{applicantName}, '%')
+            </if>
+        </where>
+        ORDER BY ca.created_at DESC
+        LIMIT #{pageSize} OFFSET #{offset}
+    </select>
+    
+    <!-- 根据过滤条件统计认领申请总数 -->
+    <select id="countWithFilters" resultType="long">
+        SELECT COUNT(*)
+        FROM claim_applications ca
+        LEFT JOIN found_items fi ON ca.found_item_id = fi.id
+        LEFT JOIN users a ON ca.applicant_id = a.id
+        <where>
+            <if test="status != null and status != ''">
+                AND ca.status = #{status}
+            </if>
+            <if test="startDateTime != null">
+                AND ca.created_at >= #{startDateTime}
+            </if>
+            <if test="endDateTime != null">
+                AND ca.created_at &lt;= #{endDateTime}
+            </if>
+            <if test="itemTitle != null and itemTitle != ''">
+                AND fi.title LIKE CONCAT('%', #{itemTitle}, '%')
+            </if>
+            <if test="applicantName != null and applicantName != ''">
+                AND a.username LIKE CONCAT('%', #{applicantName}, '%')
+            </if>
+        </where>
+    </select>
+    
     <!-- 根据ID查询认领申请 -->
     <select id="findById" resultMap="ClaimApplicationResultMap">
         SELECT <include refid="Full_Column_List" />
@@ -165,6 +218,19 @@
         SELECT EXISTS(
             SELECT 1 FROM claim_applications
             WHERE found_item_id = #{foundItemId} AND applicant_id = #{applicantId}
+        )
+    </select>
+    
+    <!-- 检查用户是否有指定状态的认领申请 -->
+    <select id="existsByFoundItemIdAndApplicantIdAndStatusIn" resultType="boolean">
+        SELECT EXISTS(
+            SELECT 1 FROM claim_applications
+            WHERE found_item_id = #{foundItemId} 
+            AND applicant_id = #{applicantId}
+            AND status IN 
+            <foreach item="status" collection="statusList" open="(" separator="," close=")">
+                #{status}
+            </foreach>
         )
     </select>
     

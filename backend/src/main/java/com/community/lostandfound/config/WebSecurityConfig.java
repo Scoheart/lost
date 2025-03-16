@@ -5,6 +5,7 @@ import com.community.lostandfound.security.AuthTokenFilter;
 import com.community.lostandfound.security.CustomAuthenticationProvider;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -39,6 +40,9 @@ public class WebSecurityConfig {
     
     private final CustomAuthenticationProvider customAuthenticationProvider;
 
+    @Value("${file.upload.dir:uploads}")
+    private String uploadDir;
+
     @Autowired
     public WebSecurityConfig(@Lazy CustomAuthenticationProvider customAuthenticationProvider) {
         this.customAuthenticationProvider = customAuthenticationProvider;
@@ -68,6 +72,10 @@ public class WebSecurityConfig {
                 .requestMatchers("/actuator/**").permitAll()
                 .requestMatchers("/system/**").permitAll()
                 .requestMatchers("/comments/**").permitAll()
+                // Allow access to uploads directory
+                .requestMatchers("/" + uploadDir + "/**").permitAll()
+                // Allow access to upload endpoints without authentication
+                .requestMatchers("/upload/**").permitAll()
                 // Protected endpoints
                 .requestMatchers("/users/**").authenticated()
                 .requestMatchers("/admin/**").hasAnyRole("ADMIN", "SYSADMIN")

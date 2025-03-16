@@ -186,14 +186,20 @@
                       :on-success="handleUploadSuccess"
                       :on-error="handleUploadError"
                       :on-remove="handleRemove"
+                      :headers="{ Authorization: `Bearer ${userStore.token}` }"
                     >
                       <el-icon><Plus /></el-icon>
                       <template #tip>
                         <div class="upload-tip">
-                          支持JPG、PNG格式，单张不超过5MB，最多5张
+                          支持JPG、PNG格式，单张不超过5MB，最多5张<br>
+                          点击下方图片可以预览，鼠标悬停可以删除
                         </div>
                       </template>
                     </el-upload>
+
+                    <div v-if="formData.images.length > 0" class="uploaded-images-info">
+                      已上传 {{ formData.images.length }} 张图片
+                    </div>
                   </el-form-item>
                 </el-card>
 
@@ -236,12 +242,13 @@
 import { ref, computed, reactive, onMounted, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { Plus } from '@element-plus/icons-vue'
-import { ElMessage, ElMessageBox } from 'element-plus'
+import { ElMessage, ElMessageBox, ElLoading } from 'element-plus'
 import type { FormInstance, UploadFile, UploadUserFile } from 'element-plus'
 import MainLayout from '@/components/layout/MainLayout.vue'
 import { useLostItemsStore } from '@/stores/lostItems'
 import { useUserStore } from '@/stores/user'
 import { ITEM_CATEGORIES } from '@/constants/categories'
+import fileUploadService from '@/services/fileUploadService'
 
 const router = useRouter()
 const route = useRoute()
@@ -320,27 +327,21 @@ const handleExceed = () => {
 
 // Before upload hook
 const beforeUpload = (file: File) => {
-  const isJPG = file.type === 'image/jpeg'
-  const isPNG = file.type === 'image/png'
-  const isLt5M = file.size / 1024 / 1024 < 5
-
-  if (!isJPG && !isPNG) {
-    ElMessage.error('上传图片只能是JPG或PNG格式!')
-    return false
-  }
-
-  if (!isLt5M) {
-    ElMessage.error('上传图片大小不能超过5MB!')
-    return false
-  }
-
-  return true
+  return fileUploadService.validateFile(file, {
+    allowedTypes: ['image/jpeg', 'image/png'],
+    maxSize: 5,
+    showMessage: true
+  })
 }
 
 // Handle upload success
 const handleUploadSuccess = (response: any, uploadFile: UploadFile) => {
-  if (response && response.url) {
-    formData.images.push(response.url)
+  if (response.success && response.data && response.data.url) {
+    formData.images.push(response.data.url)
+    console.log('Image uploaded successfully:', response.data.url)
+  } else {
+    console.error('Image upload response missing data:', response)
+    ElMessage.error('图片上传成功，但返回数据异常')
   }
 }
 
@@ -414,6 +415,13 @@ const submitForm = async () => {
     if (valid) {
       submitting.value = true
 
+      // 显示加载指示器
+      const loadingInstance = ElLoading.service({
+        lock: true,
+        text: '正在处理中...',
+        background: 'rgba(0, 0, 0, 0.7)'
+      })
+
       try {
         let result
 
@@ -445,6 +453,8 @@ const submitForm = async () => {
         console.error('Failed to submit:', error)
         ElMessage.error('提交失败，请稍后再试')
       } finally {
+        // 关闭加载指示器
+        loadingInstance.close()
         submitting.value = false
       }
     } else {
@@ -574,11 +584,17 @@ onMounted(() => {
   line-height: 1.4;
 }
 
+.uploaded-images-info {
+  font-size: 13px;
+  color: #409EFF;
+  margin-top: 10px;
+  text-align: center;
+}
+
 .form-actions {
   display: flex;
-  flex-direction: column;
-  align-items: center;
-  width: 100%;
+  justify-content: center;
+  margin-top: 20px;
 }
 
 .form-actions .el-button {

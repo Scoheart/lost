@@ -50,6 +50,7 @@ public class FoundItemController {
             @CurrentUser UserDetailsImpl currentUser) {
         
         log.info("发布失物招领: {}", foundItem.getTitle());
+        log.debug("完整数据: {}", foundItem);
         
         if (currentUser == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
@@ -79,6 +80,10 @@ public class FoundItemController {
         } else {
             log.debug("未接收到图片或图片列表为空");
         }
+        
+        // 记录额外字段信息
+        log.debug("存放位置: {}", foundItem.getStorageLocation());
+        log.debug("认领要求: {}", foundItem.getClaimRequirements());
         
         foundItem.setUserId(currentUser.getId());
         foundItem.setStatus("pending");
@@ -169,6 +174,7 @@ public class FoundItemController {
             @CurrentUser UserDetailsImpl currentUser) {
         
         log.info("更新失物招领, ID: {}", id);
+        log.debug("更新数据: {}", foundItem);
         
         if (currentUser == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
@@ -199,6 +205,10 @@ public class FoundItemController {
             log.debug("未接收到图片或图片列表为空");
         }
         
+        // 记录额外字段信息
+        log.debug("存放位置: {}", foundItem.getStorageLocation());
+        log.debug("认领要求: {}", foundItem.getClaimRequirements());
+        
         // 记录状态信息，帮助诊断问题
         log.debug("更新请求中的状态值: {}", foundItem.getStatus());
         
@@ -208,6 +218,7 @@ public class FoundItemController {
             
             FoundItem updatedItem = foundItemService.updateFoundItem(foundItem, currentUser.getId());
             log.debug("更新成功，最终状态值: {}", updatedItem.getStatus());
+            log.debug("更新后的完整数据: {}", updatedItem);
             
             return ResponseEntity.ok(ApiResponse.success("失物招领更新成功", updatedItem));
         } catch (ResourceNotFoundException e) {

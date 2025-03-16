@@ -271,10 +271,11 @@
 import { ref, reactive, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { Search, Picture, Map, Calendar, UserFilled, Plus } from '@element-plus/icons-vue'
-import { ElMessage, FormInstance, FormRules } from 'element-plus'
+import { ElMessage, FormInstance, FormRules, ElLoading } from 'element-plus'
 import { useFoundItemsStore } from '@/stores/foundItems'
 import { useUserStore } from '@/stores/user'
 import type { UploadUserFile } from 'element-plus'
+import fileUploadService from '@/services/fileUploadService'
 
 const router = useRouter()
 const foundItemsStore = useFoundItemsStore()
@@ -465,12 +466,19 @@ const handleAddFoundItem = () => {
 }
 
 // 文件上传处理
-const handleFileChange = (uploadFile: any) => {
-  if (fileList.value.length > 5) {
-    ElMessage.warning('最多只能上传5张图片')
-    const index = fileList.value.indexOf(uploadFile)
-    if (index !== -1) {
-      fileList.value.splice(index, 1)
+const handleFileChange = (uploadFile: UploadUserFile) => {
+  if (uploadFile.raw) {
+    const isValid = fileUploadService.validateFile(uploadFile.raw, {
+      allowedTypes: ['image/jpeg', 'image/png', 'image/gif'],
+      maxSize: 5,
+      showMessage: true
+    })
+
+    if (!isValid) {
+      const index = fileList.value.findIndex(item => item.uid === uploadFile.uid)
+      if (index !== -1) {
+        fileList.value.splice(index, 1)
+      }
     }
   }
 }
@@ -498,15 +506,41 @@ const submitFoundItem = async () => {
     if (valid) {
       submitting.value = true
 
+      // 显示加载指示器
+      const loadingInstance = ElLoading.service({
+        lock: true,
+        text: '正在上传图片和提交数据...',
+        background: 'rgba(0, 0, 0, 0.7)'
+      })
+
       try {
-        // 模拟图片上传
-        const uploadedImages = fileList.value.map(file => URL.createObjectURL(file.raw as Blob))
+        // 上传图片
+        const uploadPromises = fileList.value.map(async (file) => {
+          if (file.raw) {
+            try {
+              const result = await fileUploadService.uploadFile(file.raw, 'item-image');
+              if (result.success && result.data && result.data.url) {
+                return result.data.url;
+              } else {
+                console.error('图片上传失败:', result);
+                throw new Error(result.message || '图片上传失败');
+              }
+            } catch (error) {
+              console.error('图片上传错误:', error);
+              throw error;
+            }
+          }
+          return null;
+        });
+
+        // 等待所有图片上传完成
+        const uploadedImages = (await Promise.all(uploadPromises)).filter(url => url !== null) as string[];
 
         // 准备要提交的数据
         const foundItemData = {
           ...foundItemForm,
           images: uploadedImages,
-          status: 'unclaimed',
+          status: 'pending',
           contact: {
             name: foundItemForm.contactName,
             phone: foundItemForm.contactPhone
@@ -519,6 +553,7 @@ const submitFoundItem = async () => {
         if (result.success) {
           ElMessage.success('拾物公告发布成功')
           dialogVisible.value = false
+          resetForm();
           // 重新加载数据
           handleSearch()
         } else {
@@ -528,6 +563,8 @@ const submitFoundItem = async () => {
         console.error('Failed to submit found item:', error)
         ElMessage.error('发布失败，请稍后再试')
       } finally {
+        // 关闭加载指示器
+        loadingInstance.close()
         submitting.value = false
       }
     }

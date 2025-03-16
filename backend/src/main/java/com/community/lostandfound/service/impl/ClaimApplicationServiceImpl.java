@@ -17,6 +17,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -54,9 +55,13 @@ public class ClaimApplicationServiceImpl implements ClaimApplicationService {
             throw new BadRequestException("不能认领自己发布的失物招领");
         }
         
-        // 检查用户是否已经申请过该失物招领
-        if (claimApplicationRepository.existsByFoundItemIdAndApplicantId(foundItemId, applicantId)) {
-            throw new BadRequestException("您已经申请过该失物招领，请勿重复申请");
+        // 检查用户是否有未处理或已批准的认领申请
+        // 只有当用户没有未处理或已批准的认领申请时，才允许再次申请
+        // 这样，用户的申请被拒绝后可以再次申请
+        boolean hasActiveApplication = claimApplicationRepository.existsByFoundItemIdAndApplicantIdAndStatusIn(
+                foundItemId, applicantId, List.of("pending", "approved"));
+        if (hasActiveApplication) {
+            throw new BadRequestException("您已有未处理或已批准的认领申请，请勿重复申请");
         }
         
         // 创建认领申请对象
@@ -278,18 +283,47 @@ public class ClaimApplicationServiceImpl implements ClaimApplicationService {
     }
 
     @Override
-    public ClaimPageDto getAllApplications(String status, int page, int size) {
+    public ClaimPageDto getAllApplications(
+            String status, 
+            String startDate, 
+            String endDate, 
+            String itemTitle, 
+            String applicantName, 
+            int page, 
+            int size) {
         // 验证分页参数
         validatePaginationParams(page, size);
         
         // 计算偏移量
         int offset = (page - 1) * size;
         
+        // 处理日期过滤
+        LocalDateTime startDateTime = null;
+        LocalDateTime endDateTime = null;
+        
+        if (startDate != null && !startDate.isEmpty()) {
+            try {
+                startDateTime = LocalDate.parse(startDate).atStartOfDay();
+            } catch (Exception e) {
+                log.warn("解析开始日期失败: {}", startDate, e);
+            }
+        }
+        
+        if (endDate != null && !endDate.isEmpty()) {
+            try {
+                endDateTime = LocalDate.parse(endDate).atTime(23, 59, 59);
+            } catch (Exception e) {
+                log.warn("解析结束日期失败: {}", endDate, e);
+            }
+        }
+        
         // 查询所有认领申请
-        List<ClaimApplication> applications = claimApplicationRepository.findAll(offset, size, status);
+        List<ClaimApplication> applications = claimApplicationRepository.findAllWithFilters(
+                status, startDateTime, endDateTime, itemTitle, applicantName, offset, size);
         
         // 统计总数
-        long totalCount = claimApplicationRepository.count(status);
+        long totalCount = claimApplicationRepository.countWithFilters(
+                status, startDateTime, endDateTime, itemTitle, applicantName);
         
         // 转换为DTO
         List<ClaimApplicationDto> applicationDtos = applications.stream()
@@ -301,6 +335,36 @@ public class ClaimApplicationServiceImpl implements ClaimApplicationService {
         
         // 构建分页DTO
         return buildPageDto(applicationDtos, page, size, totalPages, totalCount);
+    }
+    
+    @Override
+    @Transactional
+    public void deleteClaimApplication(Long applicationId) {
+        // 查询认领申请是否存在
+        ClaimApplication application = getApplicationById(applicationId);
+        
+        // 如果认领申请状态为"已批准"并且对应的失物招领状态为"已认领"，需要将失物招领状态改回"待认领"
+        if ("approved".equals(application.getStatus())) {
+            Optional<FoundItem> foundItemOptional = foundItemService.getFoundItemById(application.getFoundItemId());
+            if (foundItemOptional.isPresent()) {
+                FoundItem foundItem = foundItemOptional.get();
+                if ("claimed".equals(foundItem.getStatus())) {
+                    foundItem.setStatus("pending");
+                    foundItem.setUpdatedAt(LocalDateTime.now());
+                    foundItemRepository.update(foundItem);
+                    
+                    log.info("删除已批准的认领申请，失物招领状态已更新为'待认领': 失物招领ID = {}", foundItem.getId());
+                }
+            }
+        }
+        
+        // 删除认领申请
+        int rows = claimApplicationRepository.deleteById(applicationId);
+        if (rows <= 0) {
+            throw new RuntimeException("删除认领申请失败: ID = " + applicationId);
+        }
+        
+        log.info("认领申请已删除: ID = {}", applicationId);
     }
     
     /**

@@ -194,33 +194,37 @@ export const useFoundItemsStore = defineStore('foundItems', {
 
     // GET /found-items/{id} - 查询单个失物招领
     async fetchFoundItemById(id: number) {
-      this.loading = true
-      this.error = null
+      if (!id) return { success: false, message: '无效的ID' }
 
       try {
+        this.loading = true
+        this.error = null
+
         const response = await apiClient.get(`/found-items/${id}`)
+        console.log('Fetched found item details:', response.data)
 
-        // 确保我们有有效的响应数据
-        if (response.data) {
-          // 支持多种响应格式
-          if (response.data.data && (typeof response.data.data === 'object')) {
-            this.currentItem = response.data.data;
-          } else {
-            this.currentItem = response.data;
+        if (response.data.success) {
+          this.currentItem = response.data.data
+          return {
+            success: true,
+            data: this.currentItem
           }
-
-          return { success: true, data: this.currentItem };
         } else {
-          this.error = '获取失物招领详情失败，数据格式有误';
-          return { success: false, message: this.error };
+          this.error = response.data.message || '获取物品详情失败'
+          return {
+            success: false,
+            message: this.error
+          }
         }
       } catch (error: any) {
-        console.error('Failed to fetch found item:', error);
-        this.error = error.response?.data?.message || '获取失物招领详情失败';
-        this.currentItem = null; // 确保清除当前物品
-        return { success: false, message: this.error };
+        console.error('Failed to fetch found item:', error)
+        this.error = error.response?.data?.message || '获取物品详情失败'
+        return {
+          success: false,
+          message: this.error
+        }
       } finally {
-        this.loading = false;
+        this.loading = false
       }
     },
 
@@ -361,26 +365,33 @@ export const useFoundItemsStore = defineStore('foundItems', {
         'id' | 'userId' | 'username' | 'status' | 'createdAt' | 'updatedAt'
       >,
     ) {
-      this.loading = true
-      this.error = null
-
       try {
+        this.loading = true
+        this.error = null
+        console.log('Creating found item with data:', itemData)
+
         const response = await apiClient.post('/found-items', itemData)
-        const newItem = response.data.item || response.data.data || response.data
 
-        // 更新列表（可选，取决于后端返回格式）
-        if (newItem) {
-          this.items.unshift(newItem)
-        }
-
-        return {
-          success: true,
-          id: newItem.id || response.data.id,
-          data: newItem
+        if (response.data.success) {
+          const createdItem = response.data.data
+          this.items.unshift(createdItem)
+          return {
+            success: true,
+            message: '发布成功',
+            data: createdItem
+          }
+        } else {
+          return {
+            success: false,
+            message: response.data.message || '发布失败，请稍后再试'
+          }
         }
       } catch (error: any) {
-        this.error = error.response?.data?.message || '发布失物招领失败'
-        return { success: false, message: this.error }
+        console.error('Failed to create found item:', error)
+        return {
+          success: false,
+          message: error.response?.data?.message || '发布失败，请稍后再试'
+        }
       } finally {
         this.loading = false
       }
@@ -388,39 +399,44 @@ export const useFoundItemsStore = defineStore('foundItems', {
 
     // PUT /found-items/{id} - 更新失物招领
     async updateFoundItem(id: number, itemData: Partial<FoundItem>) {
-      if (!id) return { success: false, message: '无效的ID' }
-
-      this.loading = true
-      this.error = null
-
       try {
-        // 使用专门的状态更新端点
-        let endpoint = `/found-items/${id}`;
+        this.loading = true
+        this.error = null
+        console.log('Updating found item with data:', itemData)
 
-        // 如果仅更新状态，使用专门的状态更新端点
-        if (itemData && Object.keys(itemData).length === 1 && 'status' in itemData) {
-          endpoint = `/found-items/${id}/status`;
-          console.log('使用状态更新API端点:', endpoint);
+        const response = await apiClient.put(`/found-items/${id}`, itemData)
+
+        if (response.data.success) {
+          const updatedItem = response.data.data
+
+          // 更新当前项
+          if (this.currentItem && this.currentItem.id === id) {
+            this.currentItem = updatedItem
+          }
+
+          // 更新列表中的项
+          const index = this.items.findIndex(item => item.id === id)
+          if (index !== -1) {
+            this.items[index] = updatedItem
+          }
+
+          return {
+            success: true,
+            message: '更新成功',
+            data: updatedItem
+          }
+        } else {
+          return {
+            success: false,
+            message: response.data.message || '更新失败，请稍后再试'
+          }
         }
-
-        const response = await apiClient.put(endpoint, itemData)
-        const updatedItem = response.data.item || response.data.data || response.data
-
-        // 更新当前查看的物品（如果是同一个）
-        if (this.currentItem?.id === id) {
-          this.currentItem = updatedItem || { ...this.currentItem, ...itemData }
-        }
-
-        // 更新列表中的物品
-        const itemIndex = this.items.findIndex(item => item.id === id)
-        if (itemIndex !== -1) {
-          this.items[itemIndex] = updatedItem || { ...this.items[itemIndex], ...itemData }
-        }
-
-        return { success: true, data: updatedItem }
       } catch (error: any) {
-        this.error = error.response?.data?.message || '更新失物招领失败'
-        return { success: false, message: this.error }
+        console.error('Failed to update found item:', error)
+        return {
+          success: false,
+          message: error.response?.data?.message || '更新失败，请稍后再试'
+        }
       } finally {
         this.loading = false
       }
@@ -512,14 +528,14 @@ export const useFoundItemsStore = defineStore('foundItems', {
     },
 
     /**
-     * 将失物招领标记为"已认领"
+     * 将物品标记为已认领
      * @param id 失物招领ID
      * @returns 操作结果
      */
     async markAsClaimed(id: number) {
       if (!id) return { success: false, message: '无效的ID' }
 
-      console.log(`将失物招领 #${id} 标记为已认领`)
+      console.log(`标记失物招领为已认领 #${id}`)
 
       try {
         // 使用专用的状态更新端点
@@ -539,47 +555,11 @@ export const useFoundItemsStore = defineStore('foundItems', {
 
         return {
           success: true,
-          message: '失物招领已标记为已认领',
+          message: getFoundStatusChangeMessage('claimed'),
           data: response.data
         }
       } catch (error: any) {
-        return handleApiError(error, '更新失物招领状态失败')
-      }
-    },
-
-    /**
-     * 关闭失物招领
-     * @param id 失物招领ID
-     * @returns 操作结果
-     */
-    async closeItem(id: number) {
-      if (!id) return { success: false, message: '无效的ID' }
-
-      console.log(`关闭失物招领 #${id}`)
-
-      try {
-        // 使用专用的状态更新端点
-        const endpoint = `/found-items/${id}/status`
-        const response = await apiClient.put(endpoint, { status: 'closed' })
-
-        // 更新本地状态
-        if (this.currentItem?.id === id) {
-          this.currentItem.status = 'closed'
-        }
-
-        // 更新列表中的状态
-        const itemIndex = this.items.findIndex(item => item.id === id)
-        if (itemIndex !== -1) {
-          this.items[itemIndex].status = 'closed'
-        }
-
-        return {
-          success: true,
-          message: '失物招领已关闭',
-          data: response.data
-        }
-      } catch (error: any) {
-        return handleApiError(error, '关闭失物招领失败')
+        return handleApiError(error, '标记物品为已认领失败')
       }
     },
 
@@ -631,7 +611,7 @@ export const useFoundItemsStore = defineStore('foundItems', {
      * @param status 新状态
      * @returns 操作结果
      */
-    async updateStatus(id: number, status: 'pending' | 'processing' | 'claimed' | 'closed') {
+    async updateStatus(id: number, status: 'pending' | 'processing' | 'claimed') {
       if (!id) return { success: false, message: '无效的ID' }
 
       try {

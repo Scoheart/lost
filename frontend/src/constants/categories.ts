@@ -21,8 +21,7 @@ export const LOST_ITEM_STATUS = [
 export const FOUND_ITEM_STATUS = [
   { value: 'pending', label: '待认领' },
   { value: 'processing', label: '认领中' },
-  { value: 'claimed', label: '已认领' },
-  { value: 'closed', label: '已关闭' }
+  { value: 'claimed', label: '已认领' }
 ]
 
 // 通用方法，根据值获取标签

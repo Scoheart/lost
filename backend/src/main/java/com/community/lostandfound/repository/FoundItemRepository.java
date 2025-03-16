@@ -9,10 +9,10 @@ import java.util.Optional;
 @Mapper
 public interface FoundItemRepository {
     
-    @Insert("INSERT INTO found_items(title, description, found_date, found_location, category, images, " +
-            "contact_info, status, user_id, created_at, updated_at) " +
-            "VALUES(#{title}, #{description}, #{foundDate}, #{foundLocation}, #{category}, #{images}, " +
-            "#{contactInfo}, #{status}, #{userId}, #{createdAt}, #{updatedAt})")
+    @Insert("INSERT INTO found_items(title, description, found_date, found_location, storage_location, category, images, " +
+            "contact_info, claim_requirements, status, user_id, created_at, updated_at) " +
+            "VALUES(#{title}, #{description}, #{foundDate}, #{foundLocation}, #{storageLocation}, #{category}, #{images}, " +
+            "#{contactInfo}, #{claimRequirements}, #{status}, #{userId}, #{createdAt}, #{updatedAt})")
     @Options(useGeneratedKeys = true, keyProperty = "id")
     void save(FoundItem foundItem);
     
@@ -26,9 +26,11 @@ public interface FoundItemRepository {
         @Result(property = "description", column = "description"),
         @Result(property = "foundDate", column = "found_date"),
         @Result(property = "foundLocation", column = "found_location"),
+        @Result(property = "storageLocation", column = "storage_location"),
         @Result(property = "category", column = "category"),
         @Result(property = "images", column = "images"),
         @Result(property = "contactInfo", column = "contact_info"),
+        @Result(property = "claimRequirements", column = "claim_requirements"),
         @Result(property = "status", column = "status"),
         @Result(property = "userId", column = "user_id"),
         @Result(property = "createdAt", column = "created_at"),
@@ -64,9 +66,11 @@ public interface FoundItemRepository {
         @Result(property = "description", column = "description"),
         @Result(property = "foundDate", column = "found_date"),
         @Result(property = "foundLocation", column = "found_location"),
+        @Result(property = "storageLocation", column = "storage_location"),
         @Result(property = "category", column = "category"),
         @Result(property = "images", column = "images"),
         @Result(property = "contactInfo", column = "contact_info"),
+        @Result(property = "claimRequirements", column = "claim_requirements"),
         @Result(property = "status", column = "status"),
         @Result(property = "userId", column = "user_id"),
         @Result(property = "createdAt", column = "created_at"),
@@ -114,9 +118,11 @@ public interface FoundItemRepository {
         @Result(property = "description", column = "description"),
         @Result(property = "foundDate", column = "found_date"),
         @Result(property = "foundLocation", column = "found_location"),
+        @Result(property = "storageLocation", column = "storage_location"),
         @Result(property = "category", column = "category"),
         @Result(property = "images", column = "images"),
         @Result(property = "contactInfo", column = "contact_info"),
+        @Result(property = "claimRequirements", column = "claim_requirements"),
         @Result(property = "status", column = "status"),
         @Result(property = "userId", column = "user_id"),
         @Result(property = "createdAt", column = "created_at"),
@@ -126,8 +132,8 @@ public interface FoundItemRepository {
     List<FoundItem> findByUserId(@Param("userId") Long userId);
     
     @Update("UPDATE found_items SET title = #{title}, description = #{description}, " +
-            "found_date = #{foundDate}, found_location = #{foundLocation}, category = #{category}, " +
-            "images = #{images}, contact_info = #{contactInfo}, " +
+            "found_date = #{foundDate}, found_location = #{foundLocation}, storage_location = #{storageLocation}, category = #{category}, " +
+            "images = #{images}, contact_info = #{contactInfo}, claim_requirements = #{claimRequirements}, " +
             "status = #{status}, updated_at = #{updatedAt} " +
             "WHERE id = #{id}")
     void update(FoundItem foundItem);

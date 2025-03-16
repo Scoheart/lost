@@ -320,30 +320,71 @@ public class ClaimApplicationController {
     /**
      * 获取所有认领申请列表（管理员用）
      *
-     * @param status 申请状态，可选（不传则查询所有状态）
-     * @param page   页码，默认1
-     * @param size   每页条数，默认10
+     * @param status         申请状态，可选（不传则查询所有状态）
+     * @param startDate      申请开始日期，可选，格式yyyy-MM-dd
+     * @param endDate        申请结束日期，可选，格式yyyy-MM-dd
+     * @param itemTitle      物品名称关键词，可选
+     * @param applicantName  申请人姓名关键词，可选
+     * @param page           页码，默认1
+     * @param size           每页条数，默认10
      * @return 认领申请分页列表
      */
     @GetMapping("/admin/all")
     @PreAuthorize("hasAnyRole('ADMIN', 'SYSADMIN')")
     public ResponseEntity<ApiResponse<ClaimPageDto>> getAllApplications(
             @RequestParam(required = false) String status,
+            @RequestParam(required = false) String startDate,
+            @RequestParam(required = false) String endDate,
+            @RequestParam(required = false) String itemTitle,
+            @RequestParam(required = false) String applicantName,
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "10") int size) {
         
-        log.info("管理员获取所有认领申请列表, 状态: {}, 页码: {}, 每页条数: {}", status, page, size);
+        log.info("管理员获取认领申请列表, 状态: {}, 日期范围: {} 至 {}, 物品名称: {}, 申请人: {}, 页码: {}, 每页条数: {}", 
+                status, startDate, endDate, itemTitle, applicantName, page, size);
         
         try {
-            ClaimPageDto pageDto = claimApplicationService.getAllApplications(status, page, size);
+            ClaimPageDto pageDto = claimApplicationService.getAllApplications(
+                    status, startDate, endDate, itemTitle, applicantName, page, size);
             
-            log.debug("获取所有认领申请列表成功, 总条数: {}", pageDto.getTotalItems());
+            log.debug("获取认领申请列表成功, 总条数: {}", pageDto.getTotalItems());
             
-            return ResponseEntity.ok(ApiResponse.success("获取所有认领申请列表成功", pageDto));
+            return ResponseEntity.ok(ApiResponse.success("获取认领申请列表成功", pageDto));
         } catch (Exception e) {
-            log.error("获取所有认领申请列表时发生错误", e);
+            log.error("获取认领申请列表时发生错误", e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(ApiResponse.fail("获取所有认领申请列表失败：" + e.getMessage()));
+                    .body(ApiResponse.fail("获取认领申请列表失败：" + e.getMessage()));
+        }
+    }
+
+    /**
+     * 删除认领申请（管理员用）
+     * 
+     * @param applicationId 认领申请ID
+     * @return 操作结果
+     */
+    @DeleteMapping("/admin/{applicationId}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'SYSADMIN')")
+    public ResponseEntity<ApiResponse<Void>> deleteApplication(
+            @PathVariable Long applicationId,
+            @CurrentUser UserDetailsImpl currentUser) {
+        
+        log.info("管理员删除认领申请, 管理员ID: {}, 申请ID: {}", currentUser.getId(), applicationId);
+        
+        try {
+            claimApplicationService.deleteClaimApplication(applicationId);
+            
+            log.debug("删除认领申请成功, 申请ID: {}", applicationId);
+            
+            return ResponseEntity.ok(ApiResponse.success("删除认领申请成功"));
+        } catch (ResourceNotFoundException e) {
+            log.warn("删除认领申请失败, 找不到对应的申请: {}", applicationId);
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(ApiResponse.fail(e.getMessage()));
+        } catch (Exception e) {
+            log.error("删除认领申请时发生错误", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(ApiResponse.fail("删除认领申请失败：" + e.getMessage()));
         }
     }
 } 

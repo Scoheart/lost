@@ -90,7 +90,7 @@
             类别: {{ getCategoryLabel(filters.category) }}
           </el-tag>
           <el-tag v-if="filters.status" closable @close="clearStatus" class="filter-tag">
-            状态: {{ getStatusLabel(filters.status) }}
+            状态: {{ getStatusText(filters.status) }}
           </el-tag>
         </div>
       </div>
@@ -144,7 +144,7 @@
                     <el-icon><Picture /></el-icon>
                   </div>
                   <el-tag class="item-status-tag" :type="getStatusType(item.status)">
-                    {{ getStatusLabel(item.status) }}
+                    {{ getStatusText(item.status) }}
                   </el-tag>
                 </div>
                 <div class="item-content">
@@ -357,8 +357,17 @@ const formatDate = (dateString: string) => {
   }
 }
 
-const getStatusLabel = (status: string) => {
-  return getFoundItemStatusLabel(status)
+const getStatusText = (status: string) => {
+  switch (status) {
+    case 'pending':
+      return '待认领'
+    case 'processing':
+      return '认领中'
+    case 'claimed':
+      return '已认领'
+    default:
+      return '未知'
+  }
 }
 
 const getStatusType = (status: string) => {
@@ -369,8 +378,6 @@ const getStatusType = (status: string) => {
       return 'warning'
     case 'claimed':
       return 'success'
-    case 'closed':
-      return 'info'
     default:
       return 'info'
   }

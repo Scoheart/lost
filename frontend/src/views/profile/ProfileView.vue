@@ -6,21 +6,24 @@
         <el-col :xs="24" :sm="6" :md="5" :lg="4">
           <el-card class="profile-sidebar" shadow="never">
             <div class="user-info">
-              <el-upload
-                class="avatar-uploader"
-                action="/api/users/avatar"
-                :headers="uploadHeaders"
-                :show-file-list="false"
-                :on-success="handleAvatarSuccess"
-                :before-upload="beforeAvatarUpload"
-              >
+              <!-- 隐藏的文件输入框 -->
+              <input
+                type="file"
+                ref="fileInputRef"
+                accept="image/jpeg,image/png,image/gif"
+                @change="handleFileSelect"
+                style="display: none"
+              />
+
+              <!-- 点击此区域触发文件选择 -->
+              <div class="avatar-uploader" @click="triggerFileInput">
                 <el-avatar :size="100" :src="userAvatar" class="avatar-image" :shape="'square'">
                   <el-icon v-if="!userAvatar"><UserIcon /></el-icon>
                 </el-avatar>
                 <div class="avatar-overlay">
                   <el-icon><Upload /></el-icon>
                 </div>
-              </el-upload>
+              </div>
               <div class="upload-hint">点击更换头像</div>
             </div>
 
@@ -83,7 +86,8 @@ import {
 } from '@element-plus/icons-vue'
 import MainLayout from '@/components/layout/MainLayout.vue'
 import { useUserStore, type User } from '@/stores/user'
-import { ElMessage } from 'element-plus'
+import { ElMessage, ElLoading } from 'element-plus'
+import fileUploadService from '@/services/fileUploadService'
 
 const route = useRoute()
 const userStore = useUserStore()
@@ -98,9 +102,71 @@ const uploadHeaders = computed(() => ({
   Authorization: `Bearer ${userStore.token}`
 }))
 
+// 手动处理头像上传
+const fileInputRef = ref<HTMLInputElement | null>(null)
+
+// 触发文件选择对话框
+const triggerFileInput = () => {
+  if (fileInputRef.value) {
+    fileInputRef.value.click()
+  }
+}
+
+// 处理文件选择
+const handleFileSelect = async (event: Event) => {
+  const input = event.target as HTMLInputElement
+  if (input.files && input.files.length > 0) {
+    const file = input.files[0]
+
+    // 验证文件
+    if (!fileUploadService.validateFile(file, {
+      allowedTypes: ['image/jpeg', 'image/png', 'image/gif'],
+      maxSize: 2,
+      showMessage: true
+    })) {
+      return
+    }
+
+    let loadingInstance: ReturnType<typeof ElLoading.service> | null = null
+
+    try {
+      // 显示上传中提示
+      loadingInstance = ElLoading.service({
+        lock: true,
+        text: '头像上传中...',
+        background: 'rgba(0, 0, 0, 0.7)'
+      })
+
+      // 上传头像
+      const result = await fileUploadService.uploadAvatar(file)
+
+      if (result.success && result.data && result.data.url) {
+        ElMessage.success('头像上传成功')
+        userStore.setUser({
+          ...currentUser.value,
+          avatar: result.data.url
+        })
+      } else {
+        ElMessage.error(result.message || '头像上传失败')
+      }
+    } catch (error) {
+      console.error('头像上传失败:', error)
+      ElMessage.error(`头像上传失败: ${error}`)
+    } finally {
+      // 关闭上传提示
+      if (loadingInstance) {
+        loadingInstance.close()
+      }
+
+      // 清空文件输入框，以便可以重新选择同一文件
+      input.value = ''
+    }
+  }
+}
+
 // 头像上传处理
 const handleAvatarSuccess = (response: any) => {
-  if (response.success) {
+  if (response.success && response.data && response.data.url) {
     ElMessage.success('头像上传成功')
     userStore.setUser({
       ...currentUser.value,
@@ -113,19 +179,11 @@ const handleAvatarSuccess = (response: any) => {
 
 // 上传前验证
 const beforeAvatarUpload = (file: File) => {
-  const isJPG = file.type === 'image/jpeg'
-  const isPNG = file.type === 'image/png'
-  const isLt2M = file.size / 1024 / 1024 < 2
-
-  if (!isJPG && !isPNG) {
-    ElMessage.error('头像只能是 JPG 或 PNG 格式!')
-    return false
-  }
-  if (!isLt2M) {
-    ElMessage.error('头像大小不能超过 2MB!')
-    return false
-  }
-  return true
+  return fileUploadService.validateFile(file, {
+    allowedTypes: ['image/jpeg', 'image/png', 'image/gif'],
+    maxSize: 2,
+    showMessage: true
+  })
 }
 
 // 加载用户资料

@@ -81,10 +81,28 @@ public interface ClaimApplicationService {
     /**
      * 查询所有认领申请（管理员接口）
      *
-     * @param status 状态（可选）
-     * @param page   页码
-     * @param size   每页条数
+     * @param status         状态（可选）
+     * @param startDate      申请开始日期（可选）
+     * @param endDate        申请结束日期（可选）
+     * @param itemTitle      物品名称关键词（可选）
+     * @param applicantName  申请人姓名关键词（可选）
+     * @param page           页码
+     * @param size           每页条数
      * @return 分页认领申请列表
      */
-    ClaimPageDto getAllApplications(String status, int page, int size);
+    ClaimPageDto getAllApplications(
+            String status, 
+            String startDate, 
+            String endDate, 
+            String itemTitle, 
+            String applicantName, 
+            int page, 
+            int size);
+    
+    /**
+     * 删除认领申请（管理员接口）
+     * 
+     * @param applicationId 认领申请ID
+     */
+    void deleteClaimApplication(Long applicationId);
 } 

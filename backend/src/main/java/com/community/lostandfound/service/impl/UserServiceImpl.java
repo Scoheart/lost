@@ -199,13 +199,15 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public List<User> getFilteredUsers(String search, String role, Boolean isEnabled, int page, int size) {
+    public List<User> getFilteredUsers(String search, String role, Boolean isEnabled, 
+            LocalDateTime startDate, LocalDateTime endDate, int page, int size) {
         int offset = page * size;
-        return userRepository.findWithFilters(search, role, isEnabled, offset, size);
+        return userRepository.findWithFilters(search, role, isEnabled, startDate, endDate, offset, size);
     }
     
     @Override
-    public int countFilteredUsers(String search, String role, Boolean isEnabled) {
-        return userRepository.countWithFilters(search, role, isEnabled);
+    public int countFilteredUsers(String search, String role, Boolean isEnabled,
+            LocalDateTime startDate, LocalDateTime endDate) {
+        return userRepository.countWithFilters(search, role, isEnabled, startDate, endDate);
     }
 } 

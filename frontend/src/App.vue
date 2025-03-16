@@ -5,6 +5,10 @@ import { useUserStore } from './stores/user'
 
 const userStore = useUserStore()
 
+const isDev = import.meta.env.DEV
+const envName = import.meta.env.MODE
+const apiBaseUrl = import.meta.env.VITE_API_BASE_URL
+
 onMounted(async () => {
   // 如果有token，尝试获取用户信息
   if (userStore.token) {
@@ -14,6 +18,13 @@ onMounted(async () => {
 </script>
 
 <template>
+  <!-- Debug information - only visible in development -->
+  <div v-if="isDev" class="env-debug">
+    <p>Environment: {{ envName }}</p>
+    <p>API URL: {{ apiBaseUrl }}</p>
+  </div>
+
+  <!-- Rest of your app -->
   <RouterView />
 </template>
 
@@ -74,5 +85,18 @@ html, body {
 .fade-enter-from,
 .fade-leave-to {
   opacity: 0;
+}
+
+.env-debug {
+  position: fixed;
+  bottom: 0;
+  right: 0;
+  background: rgba(0, 0, 0, 0.75);
+  color: lime;
+  font-family: monospace;
+  padding: 8px;
+  font-size: 12px;
+  z-index: 9999;
+  border-top-left-radius: 4px;
 }
 </style>

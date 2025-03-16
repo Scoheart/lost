@@ -18,7 +18,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeParseException;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -113,41 +115,64 @@ public class ResidentController {
      * Get all resident users with pagination
      * @param page the page number (1-indexed)
      * @param pageSize the number of items per page
+     * @param search optional search query for username, email, or phone
+     * @param status optional filter for user status (enabled/disabled)
+     * @param startDate optional filter for user creation date (start)
+     * @param endDate optional filter for user creation date (end)
      * @return the paginated list of resident users
      */
     @GetMapping
     @PreAuthorize("hasAnyRole('ADMIN', 'SYSADMIN')")
     public ResponseEntity<ApiResponse<AdminUserPageDto>> getAllResidents(
             @RequestParam(value = "page", defaultValue = "1") int page,
-            @RequestParam(value = "pageSize", defaultValue = "10") int pageSize) {
+            @RequestParam(value = "size", defaultValue = "10") int pageSize,
+            @RequestParam(value = "search", required = false) String search,
+            @RequestParam(value = "status", required = false) Boolean status,
+            @RequestParam(value = "startDate", required = false) String startDate,
+            @RequestParam(value = "endDate", required = false) String endDate) {
         
-        log.debug("Fetching all resident users: page={}, pageSize={}", page, pageSize);
+        log.debug("Fetching resident users with filters: page={}, pageSize={}, search={}, status={}, dateRange={} to {}", 
+                page, pageSize, search, status, startDate, endDate);
         
-        // Get all users
-        List<User> allUsers = userService.getAllUsers();
-        
-        // Filter resident users
-        List<User> residentUsers = allUsers.stream()
-                .filter(user -> "resident".equals(user.getRole()))
-                .collect(Collectors.toList());
-        
-        // Calculate pagination
+        // Convert pagination (1-indexed to 0-indexed for service)
         page = Math.max(1, page);
+        int effectivePage = page - 1;
         pageSize = Math.max(1, Math.min(100, pageSize));
         
-        int totalItems = residentUsers.size();
+        // Parse date parameters
+        LocalDateTime startDateTime = null;
+        LocalDateTime endDateTime = null;
+        
+        if (startDate != null && !startDate.isEmpty()) {
+            try {
+                startDateTime = LocalDate.parse(startDate).atStartOfDay();
+            } catch (DateTimeParseException e) {
+                log.warn("Invalid startDate format: {}", startDate);
+                // Continue with null startDateTime
+            }
+        }
+        
+        if (endDate != null && !endDate.isEmpty()) {
+            try {
+                endDateTime = LocalDate.parse(endDate).atTime(23, 59, 59);
+            } catch (DateTimeParseException e) {
+                log.warn("Invalid endDate format: {}", endDate);
+                // Continue with null endDateTime
+            }
+        }
+        
+        // Get filtered resident users
+        List<User> filteredUsers = userService.getFilteredUsers(
+                search, "resident", status, startDateTime, endDateTime, effectivePage, pageSize);
+        
+        // Get count of filtered resident users
+        int totalItems = userService.countFilteredUsers(
+                search, "resident", status, startDateTime, endDateTime);
+        
         int totalPages = (int) Math.ceil((double) totalItems / pageSize);
         
-        int fromIndex = (page - 1) * pageSize;
-        int toIndex = Math.min(fromIndex + pageSize, totalItems);
-        
-        // If fromIndex is out of bounds, return empty list
-        List<User> pagedUsers = fromIndex < totalItems 
-                ? residentUsers.subList(fromIndex, toIndex) 
-                : List.of();
-        
         // Convert to DTOs
-        List<AdminUserDto> residentDtos = pagedUsers.stream()
+        List<AdminUserDto> residentDtos = filteredUsers.stream()
                 .map(this::convertToUserDto)
                 .collect(Collectors.toList());
         
