@@ -67,4 +67,56 @@ public class User {
      * 账号是否启用
      */
     private Boolean isEnabled;
+    
+    /**
+     * 账号是否被封禁
+     */
+    private Boolean isBanned;
+    
+    /**
+     * 封禁结束时间
+     */
+    private LocalDateTime banEndTime;
+    
+    /**
+     * 封禁原因
+     */
+    private String banReason;
+    
+    /**
+     * 账号是否被锁定
+     */
+    private Boolean isLocked;
+    
+    /**
+     * 锁定结束时间
+     */
+    private LocalDateTime lockEndTime;
+    
+    /**
+     * 锁定原因
+     */
+    private String lockReason;
+    
+    /**
+     * 判断用户是否被封禁
+     * @return 如果用户被封禁且封禁期未结束，返回true
+     */
+    public boolean isBanned() {
+        if (Boolean.TRUE.equals(isBanned) && banEndTime != null) {
+            return banEndTime.isAfter(LocalDateTime.now());
+        }
+        return Boolean.TRUE.equals(isBanned);
+    }
+    
+    /**
+     * 判断用户是否被锁定
+     * @return 如果用户被锁定且锁定期未结束，返回true
+     */
+    public boolean isLocked() {
+        if (Boolean.TRUE.equals(isLocked) && lockEndTime != null) {
+            return lockEndTime.isAfter(LocalDateTime.now());
+        }
+        return Boolean.TRUE.equals(isLocked);
+    }
 } 

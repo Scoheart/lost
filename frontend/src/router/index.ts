@@ -164,6 +164,16 @@ const router = createRouter({
             requiresSysAdmin: true,
           },
         },
+        {
+          path: 'reports',
+          name: 'admin-reports',
+          component: () => import('../views/admin/ReportsManagementView.vue'),
+          meta: {
+            title: '举报管理',
+            requiresAuth: true,
+            requiresAdmin: true,
+          },
+        },
       ],
     },
     // 认领交流路由

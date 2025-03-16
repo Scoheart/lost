@@ -4,17 +4,27 @@ import com.community.lostandfound.dto.admin.AdminUserDto;
 import com.community.lostandfound.dto.admin.AdminUserPageDto;
 import com.community.lostandfound.dto.admin.RegisterAdminRequest;
 import com.community.lostandfound.dto.admin.UpdateAdminStatusRequest;
+import com.community.lostandfound.dto.user.UpdateUserAdminRequest;
 import com.community.lostandfound.dto.common.ApiResponse;
+import com.community.lostandfound.dto.report.ReportDto;
+import com.community.lostandfound.dto.report.ReportPageDto;
+import com.community.lostandfound.dto.report.ReportResolutionRequest;
 import com.community.lostandfound.dto.user.UpdateProfileRequest;
+import com.community.lostandfound.entity.Report;
 import com.community.lostandfound.entity.User;
 import com.community.lostandfound.exception.BadRequestException;
 import com.community.lostandfound.exception.ResourceNotFoundException;
+import com.community.lostandfound.security.UserDetailsImpl;
+import com.community.lostandfound.service.ReportService;
 import com.community.lostandfound.service.UserService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 import org.springframework.boot.ApplicationArguments;
@@ -22,7 +32,9 @@ import org.springframework.boot.ApplicationRunner;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
@@ -36,6 +48,7 @@ public class AdminController {
 
     private final UserService userService;
     private final PasswordEncoder passwordEncoder;
+    private final ReportService reportService;
 
     /**
      * Register a new system administrator (only accessible by system admins)
@@ -189,18 +202,17 @@ public class AdminController {
     @GetMapping("/admins/{id}")
     @PreAuthorize("hasRole('SYSADMIN')")
     public ResponseEntity<ApiResponse<AdminUserDto>> getAdminById(@PathVariable Long id) {
-        log.debug("Fetching administrator with ID: {}", id);
-        
         User user = userService.getUserById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Administrator", "id", id));
+                .orElseThrow(() -> new ResourceNotFoundException("管理员不存在"));
         
-        // Verify that the user is an admin
+        // 验证用户是否为管理员
         if (!("admin".equals(user.getRole()) || "sysadmin".equals(user.getRole()))) {
-            throw new BadRequestException("指定用户不是管理员");
+            return ResponseEntity.badRequest().body(
+                ApiResponse.fail("用户不是管理员")
+            );
         }
         
         AdminUserDto adminDto = convertToAdminDto(user);
-        
         return ResponseEntity.ok(ApiResponse.success("获取管理员信息成功", adminDto));
     }
     
@@ -216,26 +228,28 @@ public class AdminController {
             @PathVariable Long id,
             @Valid @RequestBody UpdateAdminStatusRequest request) {
         
-        log.debug("Updating administrator status for ID {}: enabled={}", 
-                id, request.getIsEnabled());
-        
         User user = userService.getUserById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Administrator", "id", id));
+                .orElseThrow(() -> new ResourceNotFoundException("管理员不存在"));
         
-        // Verify that the user is an admin
+        // 验证用户是否为管理员
         if (!("admin".equals(user.getRole()) || "sysadmin".equals(user.getRole()))) {
-            throw new BadRequestException("指定用户不是管理员");
+            return ResponseEntity.badRequest().body(
+                ApiResponse.fail("用户不是管理员")
+            );
         }
         
-        // Update user status
-        user.setIsEnabled(request.getIsEnabled());
-        user.setUpdatedAt(LocalDateTime.now());
+        // 系统管理员不能被禁用
+        if ("sysadmin".equals(user.getRole()) && Boolean.FALSE.equals(request.getIsEnabled())) {
+            return ResponseEntity.badRequest().body(
+                ApiResponse.fail("不能禁用系统管理员账号")
+            );
+        }
         
+        user.setIsEnabled(request.getIsEnabled());
         User updatedUser = userService.updateUser(user);
         
         AdminUserDto adminDto = convertToAdminDto(updatedUser);
-        
-        return ResponseEntity.ok(ApiResponse.success("管理员状态更新成功", adminDto));
+        return ResponseEntity.ok(ApiResponse.success("更新管理员状态成功", adminDto));
     }
     
     /**
@@ -246,19 +260,19 @@ public class AdminController {
     @DeleteMapping("/admins/{id}")
     @PreAuthorize("hasRole('SYSADMIN')")
     public ResponseEntity<ApiResponse<String>> deleteAdmin(@PathVariable Long id) {
-        log.debug("Deleting administrator with ID: {}", id);
-        
         User user = userService.getUserById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Administrator", "id", id));
+                .orElseThrow(() -> new ResourceNotFoundException("管理员不存在"));
         
-        // Verify that the user is a community admin (not a system admin)
-        if (!"admin".equals(user.getRole())) {
-            throw new BadRequestException("只能删除小区管理员，系统管理员不能被删除");
+        // 验证用户是否为管理员
+        if (!("admin".equals(user.getRole()))) {
+            return ResponseEntity.badRequest().body(
+                ApiResponse.fail("只能删除小区管理员账号")
+            );
         }
         
         userService.deleteUser(id);
         
-        return ResponseEntity.ok(ApiResponse.success("管理员删除成功", null));
+        return ResponseEntity.ok(ApiResponse.success("删除管理员成功", null));
     }
     
     /**
@@ -320,14 +334,11 @@ public class AdminController {
     @GetMapping("/users/{id}")
     @PreAuthorize("hasRole('SYSADMIN')")
     public ResponseEntity<ApiResponse<AdminUserDto>> getUserById(@PathVariable Long id) {
-        log.debug("系统管理员请求获取用户详情: id={}", id);
-        
         User user = userService.getUserById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("User", "id", id));
+                .orElseThrow(() -> new ResourceNotFoundException("用户不存在"));
         
         AdminUserDto userDto = convertToAdminDto(user);
-        
-        return ResponseEntity.ok(ApiResponse.success("获取用户详情成功", userDto));
+        return ResponseEntity.ok(ApiResponse.success("获取用户信息成功", userDto));
     }
     
     /**
@@ -389,41 +400,73 @@ public class AdminController {
     @PreAuthorize("hasRole('SYSADMIN')")
     public ResponseEntity<ApiResponse<AdminUserDto>> updateUser(
             @PathVariable Long id,
-            @Valid @RequestBody UpdateProfileRequest request) {
-        
-        log.debug("系统管理员更新用户信息: id={}", id);
+            @Valid @RequestBody UpdateUserAdminRequest request) {
         
         User user = userService.getUserById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("User", "id", id));
-        
-        // 检查邮箱是否与其他用户冲突
-        if (request.getEmail() != null && !request.getEmail().equals(user.getEmail()) && 
-                userService.existsByEmail(request.getEmail())) {
-            throw new BadRequestException("该邮箱已被其他用户使用");
-        }
+                .orElseThrow(() -> new ResourceNotFoundException("用户不存在"));
         
         // 更新用户信息
-        if (request.getEmail() != null) {
+        if (request.getEmail() != null && !request.getEmail().equals(user.getEmail())) {
+            if (userService.existsByEmail(request.getEmail())) {
+                return ResponseEntity.badRequest().body(
+                    ApiResponse.fail("邮箱已被使用")
+                );
+            }
             user.setEmail(request.getEmail());
         }
+        
         if (request.getPhone() != null) {
             user.setPhone(request.getPhone());
         }
+        
         if (request.getRealName() != null) {
             user.setRealName(request.getRealName());
         }
+
         if (request.getAvatar() != null) {
             user.setAvatar(request.getAvatar());
         }
         
-        user.setUpdatedAt(LocalDateTime.now());
+        // 处理角色更新
+        if (request.getRole() != null && !request.getRole().equals(user.getRole())) {
+            // 只有系统管理员可以更改角色
+            if ("sysadmin".equals(user.getRole()) && !"sysadmin".equals(request.getRole())) {
+                return ResponseEntity.badRequest().body(
+                    ApiResponse.fail("不能降级系统管理员角色")
+                );
+            }
+            
+            // 验证角色有效性
+            if (!"resident".equals(request.getRole()) && 
+                !"admin".equals(request.getRole()) && 
+                !"sysadmin".equals(request.getRole())) {
+                return ResponseEntity.badRequest().body(
+                    ApiResponse.fail("无效的角色，可选值: resident, admin, sysadmin")
+                );
+            }
+            
+            user.setRole(request.getRole());
+            log.info("用户角色已更新: {} -> {}", user.getUsername(), request.getRole());
+        }
         
+        // 处理启用状态
+        if (request.getIsEnabled() != null && request.getIsEnabled() != user.getIsEnabled()) {
+            // 管理员账号不能被禁用
+            if (("admin".equals(user.getRole()) || "sysadmin".equals(user.getRole())) 
+                    && Boolean.FALSE.equals(request.getIsEnabled())) {
+                return ResponseEntity.badRequest().body(
+                    ApiResponse.fail("不能禁用管理员账号")
+                );
+            }
+            
+            user.setIsEnabled(request.getIsEnabled());
+        }
+        
+        user.setUpdatedAt(LocalDateTime.now());
         User updatedUser = userService.updateUser(user);
-        log.debug("用户信息更新成功: id={}", updatedUser.getId());
         
         AdminUserDto userDto = convertToAdminDto(updatedUser);
-        
-        return ResponseEntity.ok(ApiResponse.success("用户信息更新成功", userDto));
+        return ResponseEntity.ok(ApiResponse.success("更新用户信息成功", userDto));
     }
     
     /**
@@ -439,22 +482,22 @@ public class AdminController {
             @PathVariable Long id,
             @Valid @RequestBody UpdateAdminStatusRequest request) {
         
-        log.debug("系统管理员更新用户状态: id={}, 启用={}", 
-                id, request.getIsEnabled());
-        
         User user = userService.getUserById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("User", "id", id));
+                .orElseThrow(() -> new ResourceNotFoundException("用户不存在"));
         
-        // 更新用户状态
+        // 管理员账号不能被禁用
+        if (("admin".equals(user.getRole()) || "sysadmin".equals(user.getRole())) 
+                && Boolean.FALSE.equals(request.getIsEnabled())) {
+            return ResponseEntity.badRequest().body(
+                ApiResponse.fail("不能禁用管理员账号")
+            );
+        }
+        
         user.setIsEnabled(request.getIsEnabled());
-        user.setUpdatedAt(LocalDateTime.now());
-        
         User updatedUser = userService.updateUser(user);
-        log.debug("用户状态更新成功: id={}", updatedUser.getId());
         
         AdminUserDto userDto = convertToAdminDto(updatedUser);
-        
-        return ResponseEntity.ok(ApiResponse.success("用户状态更新成功", userDto));
+        return ResponseEntity.ok(ApiResponse.success("更新用户状态成功", userDto));
     }
     
     /**
@@ -466,16 +509,19 @@ public class AdminController {
     @DeleteMapping("/users/{id}")
     @PreAuthorize("hasRole('SYSADMIN')")
     public ResponseEntity<ApiResponse<String>> deleteUser(@PathVariable Long id) {
-        log.debug("系统管理员删除用户: id={}", id);
-        
         User user = userService.getUserById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("User", "id", id));
+                .orElseThrow(() -> new ResourceNotFoundException("用户不存在"));
         
-        // 执行删除
+        // 管理员账号不能被删除
+        if ("admin".equals(user.getRole()) || "sysadmin".equals(user.getRole())) {
+            return ResponseEntity.badRequest().body(
+                ApiResponse.fail("不能删除管理员账号")
+            );
+        }
+        
         userService.deleteUser(id);
-        log.debug("用户删除成功: id={}, username={}", id, user.getUsername());
         
-        return ResponseEntity.ok(ApiResponse.success("用户删除成功", null));
+        return ResponseEntity.ok(ApiResponse.success("删除用户成功", null));
     }
 
     /**
@@ -491,23 +537,26 @@ public class AdminController {
             @PathVariable Long id,
             @RequestParam String newPassword) {
         
-        log.debug("系统管理员重置用户密码: id={}", id);
+        User user = userService.getUserById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("用户不存在"));
         
-        if (newPassword == null || newPassword.length() < 6) {
-            throw new BadRequestException("密码长度必须至少为6个字符");
+        // 密码长度验证
+        if (newPassword.length() < 6) {
+            return ResponseEntity.badRequest().body(
+                ApiResponse.fail("密码长度不能小于6个字符")
+            );
         }
         
-        User user = userService.getUserById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("User", "id", id));
+        // 更新用户密码
+        String encodedPassword = passwordEncoder.encode(newPassword);
+        boolean success = userService.updatePasswordDirectly(id, encodedPassword);
         
-        // 设置新密码
-        user.setPassword(newPassword); // 服务层会加密密码
-        user.setUpdatedAt(LocalDateTime.now());
-        
-        userService.updateUser(user);
-        log.debug("用户密码重置成功: id={}", id);
-        
-        return ResponseEntity.ok(ApiResponse.success("用户密码重置成功", null));
+        if (success) {
+            return ResponseEntity.ok(ApiResponse.success("密码重置成功", null));
+        } else {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(ApiResponse.fail("密码重置失败，请重试"));
+        }
     }
 
     /**
@@ -516,6 +565,10 @@ public class AdminController {
      * @return the admin user DTO
      */
     private AdminUserDto convertToAdminDto(User user) {
+        if (user == null) {
+            return null;
+        }
+        
         return new AdminUserDto(
                 user.getId(),
                 user.getUsername(),
@@ -528,5 +581,220 @@ public class AdminController {
                 user.getCreatedAt(),
                 user.getUpdatedAt()
         );
+    }
+
+    /**
+     * 获取举报列表
+     */
+    @GetMapping("/reports")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('SYSADMIN')")
+    public ResponseEntity<ApiResponse<ReportPageDto>> getReports(
+            @RequestParam(value = "page", defaultValue = "1") Integer page,
+            @RequestParam(value = "size", defaultValue = "10") Integer size,
+            @RequestParam(value = "status", required = false) String status,
+            @RequestParam(value = "type", required = false) String type) {
+        
+        Report.ReportStatus reportStatus = null;
+        Report.ReportType reportType = null;
+        
+        if (status != null) {
+            try {
+                reportStatus = Report.ReportStatus.valueOf(status.toUpperCase());
+            } catch (IllegalArgumentException e) {
+                return ResponseEntity.badRequest().body(
+                    ApiResponse.fail("无效的状态值，有效值: PENDING, RESOLVED, REJECTED")
+                );
+            }
+        }
+        
+        if (type != null) {
+            try {
+                reportType = Report.ReportType.valueOf(type.toUpperCase());
+            } catch (IllegalArgumentException e) {
+                return ResponseEntity.badRequest().body(
+                    ApiResponse.fail("无效的举报类型，有效值: LOST_ITEM, FOUND_ITEM, COMMENT")
+                );
+            }
+        }
+        
+        ReportPageDto reports = reportService.getReports(page, size, reportStatus, reportType);
+        return ResponseEntity.ok(ApiResponse.success("获取举报列表成功", reports));
+    }
+    
+    /**
+     * 获取举报详情
+     */
+    @GetMapping("/reports/{id}")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('SYSADMIN')")
+    public ResponseEntity<ApiResponse<ReportDto>> getReportById(@PathVariable Long id) {
+        ReportDto report = reportService.getReportById(id);
+        return ResponseEntity.ok(ApiResponse.success("获取举报详情成功", report));
+    }
+    
+    /**
+     * 处理举报
+     */
+    @PutMapping("/reports/{id}/resolve")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('SYSADMIN')")
+    public ResponseEntity<ApiResponse<ReportDto>> resolveReport(
+            @PathVariable Long id,
+            @Valid @RequestBody ReportResolutionRequest request) {
+        
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        Long adminId = getCurrentUserId(auth);
+        
+        if (adminId == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(ApiResponse.fail("未授权操作，请重新登录"));
+        }
+        
+        log.info("管理员 {} 处理举报 {}: {}", adminId, id, request);
+        ReportDto resolvedReport = reportService.resolveReport(id, request, adminId);
+        
+        return ResponseEntity.ok(ApiResponse.success("处理举报成功", resolvedReport));
+    }
+    
+    /**
+     * 获取未处理举报数量
+     */
+    @GetMapping("/reports/count")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('SYSADMIN')")
+    public ResponseEntity<ApiResponse<Map<String, Long>>> getPendingReportsCount() {
+        long count = reportService.getPendingReportsCount();
+        Map<String, Long> response = new HashMap<>();
+        response.put("pendingCount", count);
+        
+        return ResponseEntity.ok(ApiResponse.success("获取未处理举报数量成功", response));
+    }
+    
+    /**
+     * 封禁用户
+     */
+    @PutMapping("/users/{id}/ban")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('SYSADMIN')")
+    public ResponseEntity<ApiResponse<AdminUserDto>> banUser(
+            @PathVariable Long id,
+            @RequestParam(value = "days", defaultValue = "7") Integer days,
+            @RequestParam(value = "reason", required = false) String reason) {
+        
+        if (days <= 0) {
+            return ResponseEntity.badRequest().body(
+                ApiResponse.fail("封禁天数必须大于0")
+            );
+        }
+        
+        User user = userService.getUserById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("用户不存在"));
+        
+        // 不能封禁管理员和系统管理员
+        if ("admin".equals(user.getRole()) || "sysadmin".equals(user.getRole())) {
+            return ResponseEntity.badRequest().body(
+                ApiResponse.fail("不能封禁管理员账号")
+            );
+        }
+        
+        user.setIsBanned(true);
+        user.setBanEndTime(LocalDateTime.now().plusDays(days));
+        user.setBanReason(reason != null ? reason : "违反平台规则");
+        
+        User updatedUser = userService.updateUser(user);
+        
+        log.info("用户 {} 被封禁 {} 天，原因: {}", updatedUser.getUsername(), days, reason);
+        
+        AdminUserDto adminUserDto = convertToAdminDto(updatedUser);
+        return ResponseEntity.ok(ApiResponse.success("用户封禁成功", adminUserDto));
+    }
+    
+    /**
+     * 解除用户封禁
+     */
+    @PutMapping("/users/{id}/unban")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('SYSADMIN')")
+    public ResponseEntity<ApiResponse<AdminUserDto>> unbanUser(@PathVariable Long id) {
+        User user = userService.getUserById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("用户不存在"));
+        
+        user.setIsBanned(false);
+        user.setBanEndTime(null);
+        user.setBanReason(null);
+        
+        User updatedUser = userService.updateUser(user);
+        
+        log.info("用户 {} 的封禁已解除", updatedUser.getUsername());
+        
+        AdminUserDto adminUserDto = convertToAdminDto(updatedUser);
+        return ResponseEntity.ok(ApiResponse.success("解除用户封禁成功", adminUserDto));
+    }
+    
+    /**
+     * 锁定用户
+     */
+    @PutMapping("/users/{id}/lock")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('SYSADMIN')")
+    public ResponseEntity<ApiResponse<AdminUserDto>> lockUser(
+            @PathVariable Long id,
+            @RequestParam(value = "days", defaultValue = "7") Integer days,
+            @RequestParam(value = "reason", required = false) String reason) {
+        
+        if (days <= 0) {
+            return ResponseEntity.badRequest().body(
+                ApiResponse.fail("锁定天数必须大于0")
+            );
+        }
+        
+        User user = userService.getUserById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("用户不存在"));
+        
+        // 不能锁定管理员和系统管理员
+        if ("admin".equals(user.getRole()) || "sysadmin".equals(user.getRole())) {
+            return ResponseEntity.badRequest().body(
+                ApiResponse.fail("不能锁定管理员账号")
+            );
+        }
+        
+        user.setIsLocked(true);
+        user.setLockEndTime(LocalDateTime.now().plusDays(days));
+        user.setLockReason(reason != null ? reason : "违反平台规则");
+        
+        User updatedUser = userService.updateUser(user);
+        
+        log.info("用户 {} 被锁定 {} 天，原因: {}", updatedUser.getUsername(), days, reason);
+        
+        AdminUserDto adminUserDto = convertToAdminDto(updatedUser);
+        return ResponseEntity.ok(ApiResponse.success("用户锁定成功", adminUserDto));
+    }
+    
+    /**
+     * 解除用户锁定
+     */
+    @PutMapping("/users/{id}/unlock")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('SYSADMIN')")
+    public ResponseEntity<ApiResponse<AdminUserDto>> unlockUser(@PathVariable Long id) {
+        User user = userService.getUserById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("用户不存在"));
+        
+        user.setIsLocked(false);
+        user.setLockEndTime(null);
+        user.setLockReason(null);
+        
+        User updatedUser = userService.updateUser(user);
+        
+        log.info("用户 {} 的锁定已解除", updatedUser.getUsername());
+        
+        AdminUserDto adminUserDto = convertToAdminDto(updatedUser);
+        return ResponseEntity.ok(ApiResponse.success("解除用户锁定成功", adminUserDto));
+    }
+
+    /**
+     * 从Authentication对象中获取当前用户ID
+     * @param auth 认证对象
+     * @return 用户ID，如果无法获取则返回null
+     */
+    private Long getCurrentUserId(Authentication auth) {
+        if (auth != null && auth.getPrincipal() instanceof UserDetailsImpl) {
+            UserDetailsImpl userDetails = (UserDetailsImpl) auth.getPrincipal();
+            return userDetails.getId();
+        }
+        return null;
     }
 } 

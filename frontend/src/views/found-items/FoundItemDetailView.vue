@@ -83,6 +83,16 @@
                 <el-icon><Calendar /></el-icon>
                 发布于{{ formatDate(foundItem.createdAt) }}
               </span>
+              <span class="meta-item">
+                <el-button
+                  type="text"
+                  size="small"
+                  @click="reportItem"
+                  v-if="isLoggedIn && !isOwner"
+                >
+                  <el-icon><Warning /></el-icon> 举报
+                </el-button>
+              </span>
             </div>
           </div>
 
@@ -196,7 +206,7 @@
               <p><strong>该物品已被认领</strong></p>
             </el-alert>
           </div>
-        </el-card>
+        </div>
 
         <!-- 评论区 -->
         <div class="comments-section">
@@ -215,6 +225,16 @@
                   <div class="comment-author">
                     <el-avatar :size="32" :src="comment.userAvatar || ''">{{ getInitials(comment.username) }}</el-avatar>
                     <span class="author-name">{{ comment.username }}</span>
+                    <span class="comment-actions" v-if="isLoggedIn && userStore.user.id !== comment.userId">
+                      <el-button
+                        type="text"
+                        size="small"
+                        @click="reportComment(comment)"
+                        title="举报此评论"
+                      >
+                        <el-icon><Warning /></el-icon>
+                      </el-button>
+                    </span>
                   </div>
                   <div class="comment-content">
                     {{ comment.content }}
@@ -376,6 +396,15 @@
           </div>
         </template>
       </el-dialog>
+
+      <!-- 举报对话框 -->
+      <report-dialog
+        v-model="reportDialogVisible"
+        :item-type="reportItemType"
+        :item-id="reportItemId"
+        :item-title="reportItemTitle"
+        @submitted="handleReportSubmitted"
+      />
     </div>
   </main-layout>
 </template>
@@ -383,7 +412,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, watch, nextTick } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
-import { User, Calendar, Picture } from '@element-plus/icons-vue'
+import { User, Calendar, Picture, Warning } from '@element-plus/icons-vue'
 import { format } from 'date-fns'
 import { zhCN } from 'date-fns/locale'
 import { ElMessage, ElMessageBox, ElImage } from 'element-plus'
@@ -393,6 +422,7 @@ import { useUserStore } from '@/stores/user'
 import { useClaimsStore } from '@/stores/claims'
 import type { FoundItem } from '@/stores/foundItems'
 import type { Comment } from '@/stores/lostItems'
+import ReportDialog from '@/components/ReportDialog.vue'
 
 const router = useRouter()
 const route = useRoute()
@@ -416,6 +446,10 @@ const claimFormRef = ref<any>(null)
 const actionLoading = ref(false)
 const currentPage = ref(1)
 const pageSize = ref(10)
+const reportDialogVisible = ref(false)
+const reportItemType = ref('')
+const reportItemId = ref(null)
+const reportItemTitle = ref('')
 
 // 计算属性
 const itemId = computed(() => {
@@ -727,6 +761,37 @@ const submitClaimApplication = async () => {
     claimSubmitting.value = false
   }
 }
+
+// 举报物品
+function reportItem() {
+  if (!isLoggedIn.value) {
+    ElMessage.warning('请先登录')
+    return
+  }
+
+  reportItemType.value = 'FOUND_ITEM'
+  reportItemId.value = foundItem.value.id
+  reportItemTitle.value = foundItem.value.title
+  reportDialogVisible.value = true
+}
+
+// 举报评论
+function reportComment(comment) {
+  if (!isLoggedIn.value) {
+    ElMessage.warning('请先登录')
+    return
+  }
+
+  reportItemType.value = 'COMMENT'
+  reportItemId.value = comment.id
+  reportItemTitle.value = `评论: ${comment.content.substring(0, 20)}${comment.content.length > 20 ? '...' : ''}`
+  reportDialogVisible.value = true
+}
+
+// 处理举报提交后的操作
+function handleReportSubmitted(report) {
+  console.log('举报已提交:', report)
+}
 </script>
 
 <style scoped>
@@ -850,12 +915,13 @@ const submitClaimApplication = async () => {
 .comment-author {
   display: flex;
   align-items: center;
-  margin-bottom: 10px;
+  margin-bottom: 8px;
 }
 
 .author-name {
-  margin-left: 10px;
+  margin-left: 8px;
   font-weight: 500;
+  flex-grow: 1;
 }
 
 .comment-content {
@@ -955,6 +1021,19 @@ const submitClaimApplication = async () => {
 .pagination-container {
   margin-top: 20px;
   text-align: center;
+}
+
+.comment-actions {
+  margin-left: auto;
+}
+
+.comment-actions .el-button {
+  padding: 2px 5px;
+  color: #909399;
+}
+
+.comment-actions .el-button:hover {
+  color: #f56c6c;
 }
 
 @media (max-width: 768px) {

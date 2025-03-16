@@ -29,6 +29,12 @@
             <span>居民管理</span>
           </el-menu-item>
 
+          <!-- 添加举报管理菜单，小区管理员可见 -->
+          <el-menu-item v-if="userStore.isCommunityAdmin && !userStore.isSysAdmin" index="/admin/reports">
+            <el-icon><ChatDotRound /></el-icon>
+            <span>举报管理</span>
+          </el-menu-item>
+
           <!-- 只有系统管理员可见 -->
           <el-menu-item v-if="userStore.isSysAdmin" index="/admin/users">
             <el-icon><Setting /></el-icon>
@@ -97,7 +103,8 @@ import {
   User,
   Setting,
   SwitchButton,
-  HomeFilled
+  HomeFilled,
+  ChatDotRound
 } from '@element-plus/icons-vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { useUserStore } from '@/stores/user'

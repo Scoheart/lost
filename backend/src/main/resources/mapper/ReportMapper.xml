@@ -1,0 +1,181 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.community.lostandfound.repository.ReportRepository">
+    <!-- 结果映射集 -->
+    <resultMap id="ReportResultMap" type="com.community.lostandfound.entity.Report">
+        <id column="id" property="id" />
+        <result column="report_type" property="reportType" typeHandler="org.apache.ibatis.type.EnumTypeHandler" />
+        <result column="reported_item_id" property="reportedItemId" />
+        <result column="reporter_id" property="reporterId" />
+        <result column="reported_user_id" property="reportedUserId" />
+        <result column="reason" property="reason" />
+        <result column="status" property="status" typeHandler="org.apache.ibatis.type.EnumTypeHandler" />
+        <result column="resolution_notes" property="resolutionNotes" />
+        <result column="resolved_by_admin_id" property="resolvedByAdminId" />
+        <result column="created_at" property="createdAt" />
+        <result column="resolved_at" property="resolvedAt" />
+    </resultMap>
+    
+    <!-- 基础查询字段 -->
+    <sql id="Base_Column_List">
+        id, report_type, reported_item_id, reporter_id, reported_user_id, reason, 
+        status, resolution_notes, resolved_by_admin_id, created_at, resolved_at
+    </sql>
+    
+    <!-- 插入新举报 -->
+    <insert id="insert" parameterType="com.community.lostandfound.entity.Report" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO reports (
+            report_type, reported_item_id, reporter_id, reported_user_id, reason, 
+            status, resolution_notes, resolved_by_admin_id, created_at, resolved_at
+        ) VALUES (
+            #{reportType, typeHandler=org.apache.ibatis.type.EnumTypeHandler}, 
+            #{reportedItemId}, 
+            #{reporterId}, 
+            #{reportedUserId}, 
+            #{reason}, 
+            #{status, typeHandler=org.apache.ibatis.type.EnumTypeHandler}, 
+            #{resolutionNotes}, 
+            #{resolvedByAdminId}, 
+            #{createdAt}, 
+            #{resolvedAt}
+        )
+    </insert>
+    
+    <!-- 更新举报 -->
+    <update id="update" parameterType="com.community.lostandfound.entity.Report">
+        UPDATE reports 
+        SET 
+            status = #{status, typeHandler=org.apache.ibatis.type.EnumTypeHandler}, 
+            resolution_notes = #{resolutionNotes}, 
+            resolved_by_admin_id = #{resolvedByAdminId}, 
+            resolved_at = #{resolvedAt}
+        WHERE id = #{id}
+    </update>
+    
+    <!-- 根据ID查询举报 -->
+    <select id="findById" resultMap="ReportResultMap">
+        SELECT <include refid="Base_Column_List" />
+        FROM reports 
+        WHERE id = #{id}
+    </select>
+    
+    <!-- 按状态和类型查找举报（分页） -->
+    <select id="findByStatusAndReportType" resultMap="ReportResultMap">
+        SELECT <include refid="Base_Column_List" />
+        FROM reports 
+        WHERE status = #{status, typeHandler=org.apache.ibatis.type.EnumTypeHandler}
+        AND report_type = #{reportType, typeHandler=org.apache.ibatis.type.EnumTypeHandler}
+        ORDER BY created_at DESC
+        LIMIT #{offset}, #{limit}
+    </select>
+    
+    <!-- 按状态和类型查找举报总数 -->
+    <select id="countByStatusAndReportType" resultType="long">
+        SELECT COUNT(*)
+        FROM reports 
+        WHERE status = #{status, typeHandler=org.apache.ibatis.type.EnumTypeHandler}
+        AND report_type = #{reportType, typeHandler=org.apache.ibatis.type.EnumTypeHandler}
+    </select>
+    
+    <!-- 按状态查找举报（分页） -->
+    <select id="findByStatus" resultMap="ReportResultMap">
+        SELECT <include refid="Base_Column_List" />
+        FROM reports 
+        WHERE status = #{status, typeHandler=org.apache.ibatis.type.EnumTypeHandler}
+        ORDER BY created_at DESC
+        LIMIT #{offset}, #{limit}
+    </select>
+    
+    <!-- 按状态查找举报总数 -->
+    <select id="countByStatus" resultType="long">
+        SELECT COUNT(*)
+        FROM reports 
+        WHERE status = #{status, typeHandler=org.apache.ibatis.type.EnumTypeHandler}
+    </select>
+    
+    <!-- 按类型查找举报（分页） -->
+    <select id="findByReportType" resultMap="ReportResultMap">
+        SELECT <include refid="Base_Column_List" />
+        FROM reports 
+        WHERE report_type = #{reportType, typeHandler=org.apache.ibatis.type.EnumTypeHandler}
+        ORDER BY created_at DESC
+        LIMIT #{offset}, #{limit}
+    </select>
+    
+    <!-- 按类型查找举报总数 -->
+    <select id="countByReportType" resultType="long">
+        SELECT COUNT(*)
+        FROM reports 
+        WHERE report_type = #{reportType, typeHandler=org.apache.ibatis.type.EnumTypeHandler}
+    </select>
+    
+    <!-- 查找所有举报（分页） -->
+    <select id="findAll" resultMap="ReportResultMap">
+        SELECT <include refid="Base_Column_List" />
+        FROM reports 
+        ORDER BY created_at DESC
+        LIMIT #{offset}, #{limit}
+    </select>
+    
+    <!-- 查找举报总数 -->
+    <select id="count" resultType="long">
+        SELECT COUNT(*)
+        FROM reports
+    </select>
+    
+    <!-- 查找特定用户的举报（作为举报者） -->
+    <select id="findByReporterId" resultMap="ReportResultMap">
+        SELECT <include refid="Base_Column_List" />
+        FROM reports 
+        WHERE reporter_id = #{reporterId}
+        ORDER BY created_at DESC
+        LIMIT #{offset}, #{limit}
+    </select>
+    
+    <!-- 查找特定用户举报总数（作为举报者） -->
+    <select id="countByReporterId" resultType="long">
+        SELECT COUNT(*)
+        FROM reports 
+        WHERE reporter_id = #{reporterId}
+    </select>
+    
+    <!-- 查找针对特定用户的举报（作为被举报者） -->
+    <select id="findByReportedUserId" resultMap="ReportResultMap">
+        SELECT <include refid="Base_Column_List" />
+        FROM reports 
+        WHERE reported_user_id = #{reportedUserId}
+        ORDER BY created_at DESC
+        LIMIT #{offset}, #{limit}
+    </select>
+    
+    <!-- 查找针对特定用户的举报总数（作为被举报者） -->
+    <select id="countByReportedUserId" resultType="long">
+        SELECT COUNT(*)
+        FROM reports 
+        WHERE reported_user_id = #{reportedUserId}
+    </select>
+    
+    <!-- 查找特定内容的举报 -->
+    <select id="findByReportTypeAndReportedItemId" resultMap="ReportResultMap">
+        SELECT <include refid="Base_Column_List" />
+        FROM reports 
+        WHERE report_type = #{reportType, typeHandler=org.apache.ibatis.type.EnumTypeHandler}
+        AND reported_item_id = #{reportedItemId}
+        ORDER BY created_at DESC
+    </select>
+    
+    <!-- 删除举报 -->
+    <delete id="deleteById">
+        DELETE FROM reports WHERE id = #{id}
+    </delete>
+    
+    <!-- 删除用户相关的举报 -->
+    <delete id="deleteByReporterId">
+        DELETE FROM reports WHERE reporter_id = #{reporterId}
+    </delete>
+    
+    <!-- 删除针对用户的举报 -->
+    <delete id="deleteByReportedUserId">
+        DELETE FROM reports WHERE reported_user_id = #{reportedUserId}
+    </delete>
+</mapper> 

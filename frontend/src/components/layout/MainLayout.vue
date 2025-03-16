@@ -82,11 +82,6 @@
               校园失物招领系统旨在帮助校园内丢失物品的同学快速找回物品，也为拾到物品的同学提供一个归还途径。
             </p>
           </div>
-          <div class="footer-section contact">
-            <h3>联系我们</h3>
-            <p><i class="el-icon-message"></i> 邮箱: support@campus-lost.com</p>
-            <p><i class="el-icon-phone"></i> 电话: 123-456-7890</p>
-          </div>
           <div class="footer-section links">
             <h3>快速链接</h3>
             <p><router-link to="/lost-items">寻物启事</router-link></p>

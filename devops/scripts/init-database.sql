@@ -27,6 +27,12 @@ CREATE TABLE IF NOT EXISTS `users` (
   `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
   `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   `is_enabled` boolean DEFAULT TRUE,
+  `is_banned` boolean DEFAULT FALSE,
+  `ban_end_time` timestamp NULL DEFAULT NULL,
+  `ban_reason` varchar(255) DEFAULT NULL,
+  `is_locked` boolean DEFAULT FALSE,
+  `lock_end_time` timestamp NULL DEFAULT NULL,
+  `lock_reason` varchar(255) DEFAULT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `UK_username` (`username`),
   UNIQUE KEY `UK_email` (`email`)
@@ -50,7 +56,10 @@ CREATE TABLE IF NOT EXISTS `lost_items` (
   `user_id` bigint DEFAULT NULL,
   `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
   `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  PRIMARY KEY (`id`)
+  PRIMARY KEY (`id`),
+  KEY `idx_user_id` (`user_id`),
+  KEY `idx_status` (`status`),
+  KEY `idx_category` (`category`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ----------------------------
@@ -72,7 +81,10 @@ CREATE TABLE IF NOT EXISTS `found_items` (
   `user_id` bigint DEFAULT NULL,
   `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
   `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  PRIMARY KEY (`id`)
+  PRIMARY KEY (`id`),
+  KEY `idx_user_id` (`user_id`),
+  KEY `idx_status` (`status`),
+  KEY `idx_category` (`category`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ----------------------------
@@ -88,7 +100,10 @@ CREATE TABLE IF NOT EXISTS `claim_applications` (
   `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
   `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   `processed_at` timestamp NULL DEFAULT NULL,
-  PRIMARY KEY (`id`)
+  PRIMARY KEY (`id`),
+  KEY `idx_found_item_id` (`found_item_id`),
+  KEY `idx_applicant_id` (`applicant_id`),
+  KEY `idx_status` (`status`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ----------------------------
@@ -103,7 +118,9 @@ CREATE TABLE IF NOT EXISTS `comments` (
   `user_id` bigint NOT NULL,
   `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
   `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  PRIMARY KEY (`id`)
+  PRIMARY KEY (`id`),
+  KEY `idx_item_id_type` (`item_id`, `item_type`),
+  KEY `idx_user_id` (`user_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ----------------------------
@@ -118,7 +135,9 @@ CREATE TABLE IF NOT EXISTS `announcements` (
   `status` varchar(20) DEFAULT 'published',
   `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
   `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  PRIMARY KEY (`id`)
+  PRIMARY KEY (`id`),
+  KEY `idx_admin_id` (`admin_id`),
+  KEY `idx_status` (`status`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ----------------------------
@@ -133,7 +152,8 @@ CREATE TABLE IF NOT EXISTS `forum_posts` (
   `user_id` bigint NOT NULL,
   `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
   `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  PRIMARY KEY (`id`)
+  PRIMARY KEY (`id`),
+  KEY `idx_user_id` (`user_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ----------------------------
@@ -142,17 +162,21 @@ CREATE TABLE IF NOT EXISTS `forum_posts` (
 DROP TABLE IF EXISTS `reports`;
 CREATE TABLE IF NOT EXISTS `reports` (
   `id` bigint NOT NULL AUTO_INCREMENT,
-  `report_type` varchar(20) NOT NULL,
-  `reported_item_id` bigint NOT NULL,
-  `reported_user_id` bigint DEFAULT NULL,
-  `reporter_user_id` bigint NOT NULL,
-  `reason` text NOT NULL,
-  `status` varchar(20) DEFAULT 'pending',
-  `admin_note` text DEFAULT NULL,
-  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
-  `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  `processed_at` timestamp NULL DEFAULT NULL,
-  PRIMARY KEY (`id`)
+  `report_type` varchar(20) NOT NULL COMMENT '举报类型: LOST_ITEM, FOUND_ITEM, COMMENT',
+  `reported_item_id` bigint NOT NULL COMMENT '被举报的内容ID',
+  `reporter_id` bigint NOT NULL COMMENT '举报人ID',
+  `reported_user_id` bigint NOT NULL COMMENT '被举报人ID',
+  `reason` text NOT NULL COMMENT '举报原因',
+  `status` varchar(20) DEFAULT 'PENDING' COMMENT '状态: PENDING, RESOLVED, REJECTED',
+  `resolution_notes` text DEFAULT NULL COMMENT '处理说明',
+  `resolved_by_admin_id` bigint DEFAULT NULL COMMENT '处理管理员ID',
+  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `resolved_at` timestamp NULL DEFAULT NULL COMMENT '处理时间',
+  PRIMARY KEY (`id`),
+  KEY `idx_report_type_item` (`report_type`, `reported_item_id`),
+  KEY `idx_reporter_id` (`reporter_id`),
+  KEY `idx_reported_user_id` (`reported_user_id`),
+  KEY `idx_status` (`status`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- 恢复外键检查

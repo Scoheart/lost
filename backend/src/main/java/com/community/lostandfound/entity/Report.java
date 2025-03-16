@@ -1,6 +1,7 @@
 package com.community.lostandfound.entity;
 
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
@@ -10,33 +11,31 @@ import java.time.LocalDateTime;
  * 举报实体类
  */
 @Data
+@Builder
 @NoArgsConstructor
 @AllArgsConstructor
 public class Report {
-    /**
-     * 举报ID
-     */
     private Long id;
     
     /**
-     * 举报类型: 'user', 'lost_item', 'found_item', 'forum_post', 'comment'
+     * 举报类型: LOST_ITEM(寻物启事), FOUND_ITEM(失物招领), COMMENT(留言)
      */
-    private String reportType;
+    private ReportType reportType;
     
     /**
-     * 被举报项目ID
+     * 被举报内容的ID (根据reportType可能是寻物启事ID、失物招领ID或留言ID)
      */
     private Long reportedItemId;
     
     /**
-     * 被举报用户ID（当举报类型为'user'时使用）
+     * 举报者ID（用户ID）
      */
-    private Long reportedUserId;
+    private Long reporterId;
     
     /**
-     * 举报者ID
+     * 被举报者ID（用户ID）
      */
-    private Long reporterUserId;
+    private Long reportedUserId;
     
     /**
      * 举报原因
@@ -44,39 +43,45 @@ public class Report {
     private String reason;
     
     /**
-     * 举报状态: 'pending', 'approved', 'rejected'
+     * 举报状态: PENDING(待处理), RESOLVED(已处理), REJECTED(已驳回)
      */
-    private String status;
+    private ReportStatus status;
     
     /**
-     * 管理员备注
+     * 管理员处理结果说明
      */
-    private String adminNote;
+    private String resolutionNotes;
     
     /**
-     * 创建时间
+     * 处理该举报的管理员ID
+     */
+    private Long resolvedByAdminId;
+    
+    /**
+     * 举报创建时间
      */
     private LocalDateTime createdAt;
     
     /**
-     * 更新时间
+     * 举报处理时间
      */
-    private LocalDateTime updatedAt;
+    private LocalDateTime resolvedAt;
     
     /**
-     * 处理时间
+     * 举报类型枚举
      */
-    private LocalDateTime processedAt;
-    
-    // 以下字段为辅助展示字段，不存储在数据库中
-    
-    /**
-     * 举报者用户名
-     */
-    private String reporterUsername;
+    public enum ReportType {
+        LOST_ITEM,    // 寻物启事
+        FOUND_ITEM,   // 失物招领
+        COMMENT       // 留言
+    }
     
     /**
-     * 被举报者用户名
+     * 举报状态枚举
      */
-    private String reportedUsername;
+    public enum ReportStatus {
+        PENDING,     // 待处理
+        RESOLVED,    // 已处理
+        REJECTED     // 已驳回
+    }
 } 

@@ -62,6 +62,18 @@
                                 <span>发布者: {{ item.ownerName }}</span>
                               </p>
                               <p class="item-description">{{ item.description }}</p>
+
+                              <!-- 添加举报按钮 -->
+                              <div class="report-action" v-if="item.ownerId !== userStore.user?.id">
+                                <el-button
+                                  type="text"
+                                  size="small"
+                                  @click="reportApplication(item)"
+                                  title="举报申请"
+                                >
+                                  <el-icon><Warning /></el-icon> 举报
+                                </el-button>
+                              </div>
                             </div>
                             <div class="item-status">
                               <el-tag :type="getStatusType(item.status)" effect="light">
@@ -153,6 +165,18 @@
                                 <span>申请时间: {{ formatDate(item.createdAt) }}</span>
                               </p>
                               <p class="item-description">{{ item.description }}</p>
+
+                              <!-- 添加举报按钮 -->
+                              <div class="report-action" v-if="item.applicantId !== userStore.user?.id">
+                                <el-button
+                                  type="text"
+                                  size="small"
+                                  @click="reportApplication(item)"
+                                  title="举报申请"
+                                >
+                                  <el-icon><Warning /></el-icon> 举报
+                                </el-button>
+                              </div>
                             </div>
                             <div class="item-status">
                               <div v-if="item.status === 'pending'" class="action-buttons">
@@ -212,22 +236,34 @@
           </el-tabs>
         </el-card>
       </div>
+
+      <!-- 举报对话框 -->
+      <report-dialog
+        v-model="reportDialogVisible"
+        :item-type="reportItemType"
+        :item-id="reportItemId"
+        :item-title="reportItemTitle"
+        @submitted="handleReportSubmitted"
+      />
     </div>
   </main-layout>
 </template>
 
 <script setup lang="ts">
 import { ref, onMounted, watch, computed, reactive } from 'vue'
-import { Picture } from '@element-plus/icons-vue'
+import { Picture, Warning } from '@element-plus/icons-vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { useRouter, useRoute } from 'vue-router'
 import { useClaimsStore } from '@/stores/claims'
+import { useUserStore } from '@/stores/user'
 import { format } from 'date-fns'
 import MainLayout from '@/components/layout/MainLayout.vue'
+import ReportDialog from '@/components/ReportDialog.vue'
 
 const router = useRouter()
 const route = useRoute()
 const claimsStore = useClaimsStore()
+const userStore = useUserStore()
 
 // 标签页控制
 const activeTab = ref('myApplications')
@@ -255,6 +291,12 @@ const processingApplicationsLoading = computed(() => claimsStore.processingAppli
 
 // 加载状态跟踪 - 使用 reactive Map
 const loadingStates = reactive(new Map<string, boolean>())
+
+// 添加举报相关变量
+const reportDialogVisible = ref(false)
+const reportItemType = ref('')
+const reportItemId = ref(null)
+const reportItemTitle = ref('')
 
 // 监听标签页切换
 watch(activeTab, (newTab) => {
@@ -444,6 +486,43 @@ const rejectApplication = async (applicationId: number): Promise<void> => {
   } catch (error) {
     console.error('Error showing confirmation dialog:', error)
   }
+}
+
+/**
+ * 举报认领申请
+ */
+const reportApplication = (application) => {
+  if (!userStore.isAuthenticated) {
+    ElMessage.warning('请先登录')
+    return
+  }
+
+  reportItemType.value = 'COMMENT'  // 使用COMMENT类型，因为后端API支持的类型有限
+  reportItemId.value = application.id
+
+  // 提供更详细的举报描述
+  let itemType = '未知物品'
+  let itemTitle = ''
+
+  if (application.foundItemTitle) {
+    itemType = '失物招领'
+    itemTitle = application.foundItemTitle
+  } else if (application.lostItemTitle) {
+    itemType = '寻物启事'
+    itemTitle = application.lostItemTitle
+  }
+
+  const username = application.applicantName || application.ownerName || '用户'
+  reportItemTitle.value = `认领申请 - ${itemType}「${itemTitle}」- ${username}`
+  reportDialogVisible.value = true
+}
+
+/**
+ * 处理举报提交
+ */
+const handleReportSubmitted = (report) => {
+  ElMessage.success('举报已提交，感谢您的反馈')
+  console.log('举报已提交:', report)
 }
 </script>
 
@@ -636,5 +715,45 @@ const rejectApplication = async (applicationId: number): Promise<void> => {
     width: 100%;
     margin-bottom: 10px;
   }
+}
+
+.message-author {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.author-name {
+  font-weight: 500;
+  flex-grow: 1;
+}
+
+/* 添加留言操作按钮样式 */
+.message-actions {
+  margin-left: auto;
+}
+
+.message-actions .el-button {
+  padding: 2px 5px;
+  color: #909399;
+}
+
+.message-actions .el-button:hover {
+  color: #f56c6c;
+}
+
+.report-action {
+  margin-top: 8px;
+  text-align: right;
+}
+
+.report-action .el-button {
+  color: #909399;
+  padding: 2px 5px;
+}
+
+.report-action .el-button:hover {
+  color: #f56c6c;
 }
 </style>
