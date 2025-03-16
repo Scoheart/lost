@@ -1,0 +1,57 @@
+# 生产环境配置 (application-prod.yml)
+
+# 生产环境服务器配置
+server:
+  port: 8080
+  servlet:
+    context-path: /api
+  address: 0.0.0.0
+
+# 生产环境文件上传配置
+file:
+  upload:
+    # 生产环境可以使用绝对路径
+    dir: ${FILE_UPLOAD_DIR:uploads}
+    # 生产环境必须设置基础URL，用于构建完整的文件访问路径
+    base-url: ${FILE_BASE_URL:http://121.40.52.9/api}
+
+# 生产环境数据库配置
+spring:
+  datasource:
+    url: jdbc:mysql://39.101.76.177:3306/lost_and_found?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
+    username: root
+    # 使用环境变量处理敏感信息
+    password: ${DB_PASSWORD:shuhao201028}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    # 生产环境数据库连接池优化
+    hikari:
+      connection-timeout: 30000
+      maximum-pool-size: 10
+      minimum-idle: 5
+      idle-timeout: 600000
+      max-lifetime: 1800000
+  
+  # Redis配置
+  redis:
+    host: localhost
+    port: 6379
+    password: ${REDIS_PASSWORD:}
+    database: 0
+    timeout: 10000
+    # Redis连接失败时不要让应用启动失败
+    lettuce:
+      shutdown-timeout: 0ms
+
+# 生产环境日志配置 - 更简洁的日志记录
+logging:
+  level:
+    com.community.lostandfound: INFO
+    org.springframework.web: WARN
+    org.springframework.security: WARN
+    org.mybatis: WARN
+    root: WARN
+  file:
+    name: ./logs/lost_and_found.log
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
+    file: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"

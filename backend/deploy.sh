@@ -7,7 +7,11 @@
 APP_NAME="lostandfound-backend"
 LOG_FILE="app.log"
 JVM_OPTS="-Xms512m -Xmx1024m"
-JAVA_OPTS=""
+
+# 环境变量配置
+SPRING_PROFILES_ACTIVE="prod"
+FILE_BASE_URL="http://121.40.52.9/api"
+FILE_UPLOAD_DIR="$(pwd)/uploads"
 
 # 端口和PID文件
 SERVER_PORT=8080
@@ -20,6 +24,8 @@ JAR_FILE="$DEPLOY_DIR/app.jar"
 # 确保目录存在
 mkdir -p "$DEPLOY_DIR/logs"
 mkdir -p "$DEPLOY_DIR/uploads"  # 确保上传目录存在
+mkdir -p "$DEPLOY_DIR/uploads/avatars"
+mkdir -p "$DEPLOY_DIR/uploads/item-images"
 
 # 检查应用是否正在运行
 if [ -f "$PID_FILE" ]; then
@@ -39,10 +45,18 @@ fi
 
 echo "[$APP_NAME] 开始部署应用..."
 
+# 设置环境变量
+export SPRING_PROFILES_ACTIVE="$SPRING_PROFILES_ACTIVE"
+export FILE_BASE_URL="$FILE_BASE_URL"
+export FILE_UPLOAD_DIR="$FILE_UPLOAD_DIR"
+
 # 启动应用
-nohup java $JVM_OPTS $JAVA_OPTS -jar "$JAR_FILE" \
+nohup java $JVM_OPTS \
+    -Dspring.profiles.active=$SPRING_PROFILES_ACTIVE \
+    -Dfile.base.url=$FILE_BASE_URL \
+    -Dfile.upload.dir=$FILE_UPLOAD_DIR \
+    -jar "$JAR_FILE" \
     --server.port=$SERVER_PORT \
-    --spring.profiles.active=prod \
     > "$DEPLOY_DIR/logs/$LOG_FILE" 2>&1 &
 
 # 保存PID到文件
