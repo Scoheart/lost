@@ -3,6 +3,10 @@ import { defineStore } from 'pinia'
 import apiClient from '@/utils/api'
 import { getUpdateEndpoint, handleApiError, processCommentsResponse } from '@/utils/apiHelpers'
 import type { Comment, CommentPagination } from '@/stores/lostItems'
+import type { Ref } from 'vue'
+import { addSearchParams } from '@/utils/urlHelpers'
+import { getFoundStatusChangeMessage } from '@/utils/statusHelpers'
+import type { FoundItemComment } from '@/types/comment'
 
 export interface FoundItem {
   id: number
@@ -13,11 +17,19 @@ export interface FoundItem {
   category: string
   images: string[]
   contactInfo: string
-  status: 'pending' | 'claimed' | 'closed'
+  claimRequirements?: string
+  status: 'pending' | 'processing' | 'claimed' | 'closed'
   userId: number
   username: string
   createdAt: string
   updatedAt: string
+  // 认领信息
+  claimInfo?: {
+    userId: number
+    username: string
+    contactInfo?: string
+    applyTime: string
+  }
 }
 
 export interface FoundItemsState {
@@ -419,35 +431,30 @@ export const useFoundItemsStore = defineStore('foundItems', {
       }
     },
 
-    async addComment(itemId: number, content: string) {
+    /**
+     * 添加评论
+     * @param itemId 失物招领ID
+     * @param commentData 评论内容
+     * @returns 操作结果
+     */
+    async addComment(itemId: number, commentData: { content: string, type?: string }) {
       try {
-        const response = await apiClient.post('/comments', {
-          itemId,
-          itemType: 'found',
-          content
-        })
+        const endpoint = `/found-items/${itemId}/comments`
+        const response = await apiClient.post(endpoint, commentData)
 
-        console.log('Add comment API response:', response.data);
+        // 获取最新的评论列表
+        await this.fetchComments(itemId)
 
-        // 评论添加成功后，重新获取评论列表
-        if (response.data && response.data.success) {
-          return {
-            success: true,
-            message: '评论添加成功',
-            data: response.data.data
-          };
-        } else {
-          return {
-            success: false,
-            message: response.data?.message || '评论添加失败'
-          };
+        return {
+          success: true,
+          message: '评论已添加',
+          data: response.data
         }
       } catch (error: any) {
-        console.error('Failed to add comment:', error);
         return {
           success: false,
-          message: error.response?.data?.message || '评论添加失败'
-        };
+          message: error.response?.data?.message || '添加评论失败'
+        }
       }
     },
 
@@ -551,6 +558,83 @@ export const useFoundItemsStore = defineStore('foundItems', {
         }
       } catch (error: any) {
         return handleApiError(error, '关闭失物招领失败')
+      }
+    },
+
+    /**
+     * 申请认领失物
+     * @param id 失物招领ID
+     * @param claimData 认领申请数据，包含申请说明
+     * @returns 操作结果
+     */
+    async applyToClaim(id: number, claimData: { description: string }) {
+      this.loading = true
+      this.error = null
+
+      try {
+        const endpoint = `/found-items/${id}/apply-claim`
+        const response = await apiClient.post(endpoint, claimData)
+        const updatedItem = response.data.item || response.data.data || response.data
+
+        // 更新状态为"认领中"
+        if (this.currentItem?.id === id) {
+          this.currentItem = updatedItem || {
+            ...this.currentItem,
+            status: 'processing'
+          }
+        }
+
+        // 更新列表中的物品
+        const itemIndex = this.items.findIndex(item => item.id === id)
+        if (itemIndex !== -1) {
+          this.items[itemIndex] = updatedItem || { ...this.items[itemIndex], status: 'processing' }
+        }
+
+        return {
+          success: true,
+          message: '已提交认领申请，请等待物品拥有者确认',
+          data: updatedItem
+        }
+      } catch (error: any) {
+        this.error = error.response?.data?.message || '申请认领失败'
+        return { success: false, message: this.error }
+      } finally {
+        this.loading = false
+      }
+    },
+
+    /**
+     * 更新失物招领状态
+     * @param id 失物招领ID
+     * @param status 新状态
+     * @returns 操作结果
+     */
+    async updateStatus(id: number, status: string) {
+      if (!id) return { success: false, message: '无效的ID' }
+
+      try {
+        // 使用专用的状态更新端点
+        const endpoint = `/found-items/${id}/status`
+        const response = await apiClient.put(endpoint, { status })
+
+        // 更新本地状态
+        if (this.currentItem?.id === id) {
+          this.currentItem.status = status
+        }
+
+        // 更新列表中的状态
+        const itemIndex = this.items.findIndex(item => item.id === id)
+        if (itemIndex !== -1) {
+          this.items[itemIndex].status = status
+        }
+
+        return {
+          success: true,
+          message: getFoundStatusChangeMessage(status),
+          data: response.data
+        }
+      } catch (error: any) {
+        return handleApiError(error, '更新失物招领状态失败')
       }
     }
   },

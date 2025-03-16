@@ -33,11 +33,13 @@
 
       <!-- 公告内容 -->
       <template v-else>
-        <div class="announcement-header">
-          <el-page-header
-            @back="$router.push('/announcements')"
-            :title="announcement.title"
-          />
+        <!-- 添加面包屑导航 -->
+        <div class="navigation">
+          <el-breadcrumb separator="/">
+            <el-breadcrumb-item :to="{ path: '/' }">首页</el-breadcrumb-item>
+            <el-breadcrumb-item :to="{ path: '/announcements' }">社区公告</el-breadcrumb-item>
+            <el-breadcrumb-item>详情页</el-breadcrumb-item>
+          </el-breadcrumb>
         </div>
 
         <div class="announcement-content">
@@ -48,9 +50,15 @@
               <el-icon><User /></el-icon>
               <span>{{ announcement.adminName }}</span>
             </div>
+            <div class="meta-divider">|</div>
             <div class="meta-item">
               <el-icon><Calendar /></el-icon>
-              <span>{{ formatDateTime(announcement.publishDate) }}</span>
+              <span>发布于: {{ formatDateTime(announcement.createdAt) }}</span>
+            </div>
+            <div class="meta-divider">|</div>
+            <div class="meta-item">
+              <el-icon><Timer /></el-icon>
+              <span>更新于: {{ formatDateTime(announcement.updatedAt) }}</span>
             </div>
           </div>
 
@@ -69,29 +77,6 @@
             返回公告列表
           </el-button>
         </div>
-
-        <!-- 相关公告 -->
-        <div class="related-announcements" v-if="relatedAnnouncements.length > 0">
-          <h3 class="section-title">相关公告</h3>
-          <el-row :gutter="20">
-            <el-col
-              v-for="relatedAnnouncement in relatedAnnouncements"
-              :key="relatedAnnouncement.id"
-              :xs="24"
-              :sm="12"
-              :md="8"
-            >
-              <el-card
-                shadow="hover"
-                class="related-card"
-                @click="viewAnnouncementDetail(relatedAnnouncement.id)"
-              >
-                <h4>{{ relatedAnnouncement.title }}</h4>
-                <p class="related-date">{{ formatDate(relatedAnnouncement.publishDate) }}</p>
-              </el-card>
-            </el-col>
-          </el-row>
-        </div>
       </template>
     </div>
   </main-layout>
@@ -106,7 +91,7 @@ import { format } from 'date-fns'
 import { ElMessage } from 'element-plus'
 import MainLayout from '@/components/layout/MainLayout.vue'
 // Import icons
-import { User, Calendar } from '@element-plus/icons-vue'
+import { User, Calendar, Timer } from '@element-plus/icons-vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -122,7 +107,6 @@ const announcement = ref<Partial<Announcement>>({
   adminName: '',
   publishDate: ''
 })
-const relatedAnnouncements = ref<Partial<Announcement>[]>([])
 
 // 计算属性
 const contentParagraphs = computed(() => {
@@ -141,7 +125,6 @@ const fetchAnnouncementDetail = async (id: number) => {
     if (response.success && response.data) {
       announcement.value = response.data
       document.title = `${announcement.value.title || ''} - 社区公告`
-      fetchRelatedAnnouncements()
     } else {
       error.value = true
       ElMessage.error(response.message || '获取公告详情失败')
@@ -155,48 +138,12 @@ const fetchAnnouncementDetail = async (id: number) => {
   }
 }
 
-const fetchRelatedAnnouncements = async () => {
-  try {
-    // 在实际应用中，这里会根据当前公告的标签或者分类来获取相关公告
-    // 这里简化为获取最新的3条公告，排除当前公告
-    await announcementsStore.fetchAnnouncements({
-      page: 1,
-      pageSize: 5
-    })
-
-    console.log('All announcements for related selection:', announcementsStore.announcements);
-
-    relatedAnnouncements.value = announcementsStore.announcements
-      .filter(item => item.id !== announcement.value.id)
-      .slice(0, 3)
-
-    console.log('Related announcements selected:', relatedAnnouncements.value);
-  } catch (error) {
-    console.error('Failed to fetch related announcements:', error)
-  }
-}
-
 const formatDateTime = (dateString: string | undefined) => {
   if (!dateString) return '未知日期'
   try {
     return format(new Date(dateString), 'yyyy-MM-dd HH:mm:ss')
   } catch (error) {
     return dateString
-  }
-}
-
-const formatDate = (dateString: string | undefined) => {
-  if (!dateString) return '未知日期'
-  try {
-    return format(new Date(dateString), 'yyyy-MM-dd')
-  } catch (error) {
-    return dateString
-  }
-}
-
-const viewAnnouncementDetail = (id: number | undefined) => {
-  if (id) {
-    router.push(`/announcements/${id}`)
   }
 }
 
@@ -235,11 +182,9 @@ onMounted(async () => {
   margin: 20px 0;
 }
 
-.announcement-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 30px;
+/* 添加面包屑导航样式 */
+.navigation {
+  margin-bottom: 20px;
 }
 
 .announcement-content {
@@ -261,18 +206,21 @@ onMounted(async () => {
   display: flex;
   margin-bottom: 20px;
   flex-wrap: wrap;
+  align-items: center;
 }
 
 .meta-item {
   display: flex;
   align-items: center;
-  margin-right: 20px;
+  margin-right: 0;
   color: #909399;
   font-size: 14px;
 }
 
-.meta-item .el-icon {
-  margin-right: 6px;
+.meta-divider {
+  margin: 0 10px;
+  color: #DCDFE6;
+  font-size: 14px;
 }
 
 .content-divider {
@@ -297,48 +245,8 @@ onMounted(async () => {
   justify-content: center;
 }
 
-.related-announcements {
-  margin-top: 40px;
-}
-
-.section-title {
-  font-size: 18px;
-  font-weight: 600;
-  margin-bottom: 20px;
-  position: relative;
-  padding-left: 12px;
-}
-
-.section-title::before {
-  content: '';
-  position: absolute;
-  left: 0;
-  top: 4px;
-  height: 16px;
-  width: 4px;
-  background: #409EFF;
-  border-radius: 2px;
-}
-
-.related-card {
-  height: 100%;
-  margin-bottom: 20px;
-  cursor: pointer;
-  transition: all 0.3s ease;
-}
-
-.related-card h4 {
-  margin: 0 0 10px;
-  font-size: 16px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.related-date {
-  color: #909399;
-  font-size: 13px;
-  margin: 0;
+.meta-item .el-icon {
+  margin-right: 6px;
 }
 
 @media (max-width: 768px) {
@@ -348,6 +256,19 @@ onMounted(async () => {
 
   .announcement-content {
     padding: 20px;
+  }
+
+  .announcement-meta {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .meta-item {
+    margin-bottom: 8px;
+  }
+
+  .meta-divider {
+    display: none;
   }
 }
 </style>

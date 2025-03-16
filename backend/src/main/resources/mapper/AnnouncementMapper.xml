@@ -51,7 +51,7 @@
                 AND u.username LIKE CONCAT('%', #{adminName}, '%')
             </if>
         </where>
-        ORDER BY a.created_at DESC
+        ORDER BY a.updated_at DESC
         LIMIT #{pageSize} OFFSET #{offset}
     </select>
     
@@ -84,7 +84,7 @@
         FROM announcements a
         LEFT JOIN users u ON a.admin_id = u.id
         WHERE a.status = 'published'
-        ORDER BY a.created_at DESC
+        ORDER BY a.updated_at DESC
         LIMIT #{pageSize} OFFSET #{offset}
     </select>
     
@@ -99,13 +99,32 @@
         FROM announcements a
         LEFT JOIN users u ON a.admin_id = u.id
         WHERE a.admin_id = #{adminId}
-        ORDER BY a.created_at DESC
+        ORDER BY a.updated_at DESC
         LIMIT #{pageSize} OFFSET #{offset}
     </select>
     
     <!-- 查询指定管理员的公告总数 -->
     <select id="countByAdminId" resultType="long">
         SELECT COUNT(*) FROM announcements WHERE admin_id = #{adminId}
+    </select>
+    
+    <!-- 根据关键词查询已发布公告（分页） -->
+    <select id="findPublishedByKeyword" resultMap="AnnouncementResultMap">
+        SELECT a.*, u.username 
+        FROM announcements a
+        LEFT JOIN users u ON a.admin_id = u.id
+        WHERE a.status = 'published'
+        AND (a.title LIKE CONCAT('%', #{keyword}, '%') OR a.content LIKE CONCAT('%', #{keyword}, '%'))
+        ORDER BY a.updated_at DESC
+        LIMIT #{pageSize} OFFSET #{offset}
+    </select>
+    
+    <!-- 统计匹配关键词的已发布公告总数 -->
+    <select id="countPublishedByKeyword" resultType="long">
+        SELECT COUNT(*) 
+        FROM announcements 
+        WHERE status = 'published'
+        AND (title LIKE CONCAT('%', #{keyword}, '%') OR content LIKE CONCAT('%', #{keyword}, '%'))
     </select>
     
 </mapper> 

@@ -54,18 +54,25 @@ public class AnnouncementServiceImpl implements AnnouncementService {
     }
 
     @Override
-    public AnnouncementPageDto getPublishedAnnouncements(int page, int pageSize) {
+    public AnnouncementPageDto getPublishedAnnouncements(int page, int pageSize, String keyword) {
         // 验证分页参数
         validatePaginationParams(page, pageSize);
         
         // 计算偏移量
         int offset = (page - 1) * pageSize;
         
-        // 查询已发布公告
-        List<Announcement> announcements = announcementRepository.findPublished(offset, pageSize);
+        // 查询已发布公告，支持关键词搜索
+        List<Announcement> announcements;
+        long totalCount;
         
-        // 统计总数
-        long totalCount = announcementRepository.countPublished();
+        if (keyword != null && !keyword.trim().isEmpty()) {
+            log.debug("按关键词搜索已发布公告, 关键词: {}", keyword);
+            announcements = announcementRepository.findPublishedByKeyword(offset, pageSize, keyword);
+            totalCount = announcementRepository.countPublishedByKeyword(keyword);
+        } else {
+            announcements = announcementRepository.findPublished(offset, pageSize);
+            totalCount = announcementRepository.countPublished();
+        }
         
         // 转换为DTO
         List<AnnouncementDto> announcementDtos = announcements.stream()

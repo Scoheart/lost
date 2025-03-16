@@ -25,6 +25,8 @@ export function getFoundStatusLabel(status: string): string {
   switch (status) {
     case 'pending':
       return '招领中'
+    case 'processing':
+      return '认领中'
     case 'claimed':
       return '已认领'
     case 'closed':
@@ -59,6 +61,8 @@ export function getFoundStatusType(status: string): string {
   switch (status) {
     case 'pending':
       return 'warning'
+    case 'processing':
+      return 'info'
     case 'claimed':
       return 'success'
     case 'closed':
@@ -89,6 +93,8 @@ export function getLostStatusChangeMessage(newStatus: string): string {
  */
 export function getFoundStatusChangeMessage(newStatus: string): string {
   switch (newStatus) {
+    case 'processing':
+      return '物品已有居民申请认领，等待确认'
     case 'claimed':
       return '物品已标记为已认领'
     case 'closed':

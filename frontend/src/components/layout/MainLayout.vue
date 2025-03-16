@@ -21,6 +21,7 @@
               <el-menu-item index="/announcements">社区公告</el-menu-item>
               <el-menu-item index="/lost-items">寻物启事</el-menu-item>
               <el-menu-item index="/found-items">失物招领</el-menu-item>
+              <el-menu-item index="/claim-communications" v-if="isLoggedIn">认领交流</el-menu-item>
             </el-menu>
           </div>
 

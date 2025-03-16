@@ -250,6 +250,7 @@ import type { FormInstance, UploadFile, UploadUserFile } from 'element-plus'
 import MainLayout from '@/components/layout/MainLayout.vue'
 import { useFoundItemsStore } from '@/stores/foundItems'
 import { useUserStore } from '@/stores/user'
+import { ITEM_CATEGORIES } from '@/constants/categories'
 
 const router = useRouter()
 const route = useRoute()
@@ -272,17 +273,10 @@ const itemId = computed(() => {
   return isNaN(id) ? null : id
 })
 
-// Category options
-const categoryOptions = {
-  'electronics': '电子设备',
-  'documents': '证件/文件',
-  'clothing': '衣物/包包',
-  'keys': '钥匙/门禁卡',
-  'jewelry': '首饰/配饰',
-  'books': '书籍/教材',
-  'pets': '宠物',
-  'other': '其他物品'
-}
+// Category options - 将对象转换为期望的格式
+const categoryOptions = Object.fromEntries(
+  ITEM_CATEGORIES.map(cat => [cat.value, cat.label])
+)
 
 // Form data
 const formData = reactive({

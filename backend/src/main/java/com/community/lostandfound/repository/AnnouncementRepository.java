@@ -152,4 +152,25 @@ public interface AnnouncementRepository {
      * @return 已发布公告总数
      */
     long countByCommunityId(@Param("communityId") Long communityId);
+    
+    /**
+     * 根据关键词搜索已发布公告（分页）
+     *
+     * @param offset   偏移量
+     * @param pageSize 每页条数
+     * @param keyword  搜索关键词
+     * @return 公告列表
+     */
+    List<Announcement> findPublishedByKeyword(
+            @Param("offset") int offset, 
+            @Param("pageSize") int pageSize, 
+            @Param("keyword") String keyword);
+    
+    /**
+     * 统计符合关键词的已发布公告总数
+     *
+     * @param keyword 搜索关键词
+     * @return 已发布公告总数
+     */
+    long countPublishedByKeyword(@Param("keyword") String keyword);
 } 

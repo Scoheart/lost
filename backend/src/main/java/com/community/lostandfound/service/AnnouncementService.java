@@ -26,9 +26,10 @@ public interface AnnouncementService {
      *
      * @param page     页码
      * @param pageSize 每页条数
+     * @param keyword  搜索关键词（标题或内容，可选）
      * @return 分页公告列表
      */
-    AnnouncementPageDto getPublishedAnnouncements(int page, int pageSize);
+    AnnouncementPageDto getPublishedAnnouncements(int page, int pageSize, String keyword);
     
     /**
      * 根据ID获取公告

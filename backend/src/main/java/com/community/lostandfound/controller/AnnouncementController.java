@@ -66,15 +66,17 @@ public class AnnouncementController {
      *
      * @param page     页码（从1开始）
      * @param pageSize 每页条数
+     * @param keyword  搜索关键词（模糊匹配标题或内容，可选）
      * @return 分页公告列表
      */
     @GetMapping
     public ResponseEntity<ApiResponse<AnnouncementPageDto>> getPublishedAnnouncements(
             @RequestParam(defaultValue = "1") int page,
-            @RequestParam(defaultValue = "10") int pageSize) {
+            @RequestParam(defaultValue = "10") int pageSize,
+            @RequestParam(required = false) String keyword) {
 
-        log.info("获取已发布公告列表, 页码: {}, 每页条数: {}", page, pageSize);
-        AnnouncementPageDto result = announcementService.getPublishedAnnouncements(page, pageSize);
+        log.info("获取已发布公告列表, 页码: {}, 每页条数: {}, 关键词: {}", page, pageSize, keyword);
+        AnnouncementPageDto result = announcementService.getPublishedAnnouncements(page, pageSize, keyword);
         return ResponseEntity.ok(ApiResponse.success("获取已发布公告成功", result));
     }
 

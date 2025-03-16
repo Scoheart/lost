@@ -9,8 +9,6 @@
       <!-- 公告列表 -->
       <div class="announcements-section">
         <div class="list-header">
-          <h2 class="section-title">社区公告</h2>
-
           <div class="list-actions">
             <el-input
               v-model="searchQuery"
@@ -33,25 +31,35 @@
 
         <!-- 公告列表 -->
         <div v-else class="announcements-list">
-          <el-timeline>
-            <el-timeline-item
-              v-for="announcement in announcements"
-              :key="announcement.id"
-              :timestamp="formatDate(announcement.publishDate)"
-              placement="top"
-            >
-              <el-card shadow="hover" @click="viewAnnouncementDetail(announcement.id)">
-                <h3 class="announcement-title">{{ announcement.title }}</h3>
-                <p class="announcement-excerpt">{{ truncateContent(announcement.content) }}</p>
-                <div class="announcement-footer">
-                  <span class="announcement-author">
-                    <el-icon><User /></el-icon> {{ announcement.adminName }}
-                  </span>
-                  <el-button type="primary" text size="small">阅读全文</el-button>
-                </div>
-              </el-card>
-            </el-timeline-item>
-          </el-timeline>
+          <el-card
+            v-for="announcement in announcements"
+            :key="announcement.id"
+            class="announcement-card"
+            shadow="hover"
+            @click="viewAnnouncementDetail(announcement.id)"
+          >
+            <h3 class="announcement-title">{{ announcement.title }}</h3>
+            <p class="announcement-excerpt">{{ truncateContent(announcement.content) }}</p>
+            <div class="announcement-footer">
+              <div class="announcement-info">
+                <span class="info-item">
+                  <el-icon><User /></el-icon>
+                  <span>{{ announcement.adminName }}</span>
+                </span>
+                <span class="info-divider">|</span>
+                <span class="info-item">
+                  <el-icon><Calendar /></el-icon>
+                  <span>发布于: {{ formatDate(announcement.createdAt) }}</span>
+                </span>
+                <span class="info-divider">|</span>
+                <span class="info-item">
+                  <el-icon><Timer /></el-icon>
+                  <span>更新于: {{ formatDate(announcement.updatedAt) }}</span>
+                </span>
+              </div>
+              <el-button type="primary" text size="small">阅读全文</el-button>
+            </div>
+          </el-card>
 
           <!-- 分页器 -->
           <div v-if="totalCount > 0" class="pagination-container">
@@ -79,7 +87,7 @@ import type { Announcement } from '@/stores/announcements'
 import { useAnnouncementsStore } from '@/stores/announcements'
 import { format } from 'date-fns'
 import MainLayout from '@/components/layout/MainLayout.vue'
-import { Search, Calendar, User } from '@element-plus/icons-vue'
+import { Search, Calendar, User, Timer } from '@element-plus/icons-vue'
 
 const router = useRouter()
 const announcementsStore = useAnnouncementsStore()
@@ -184,32 +192,6 @@ onMounted(() => {
   font-size: 16px;
 }
 
-.section-title {
-  font-size: 20px;
-  font-weight: 600;
-  margin-bottom: 20px;
-  position: relative;
-  padding-left: 12px;
-  display: flex;
-  align-items: center;
-}
-
-.section-title::before {
-  content: '';
-  position: absolute;
-  left: 0;
-  top: 50%;
-  transform: translateY(-50%);
-  height: 16px;
-  width: 4px;
-  background: #409EFF;
-  border-radius: 2px;
-}
-
-.section-title .el-icon {
-  margin-right: 5px;
-}
-
 .announcements-section {
   margin-bottom: 50px;
   background: #fff;
@@ -220,7 +202,7 @@ onMounted(() => {
 
 .list-header {
   display: flex;
-  justify-content: space-between;
+  justify-content: flex-start;
   align-items: center;
   margin-bottom: 20px;
   flex-wrap: wrap;
@@ -241,17 +223,20 @@ onMounted(() => {
 
 .announcements-list {
   margin-top: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px; /* 卡片之间的间距 */
 }
 
 .announcement-card {
-  margin-bottom: 20px;
-  position: relative;
-  height: 100%;
-  transition: transform 0.3s;
+  margin-bottom: 0;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  cursor: pointer;
 }
 
-.card-hover:hover {
-  transform: translateY(-5px);
+.announcement-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
 .announcement-title {
@@ -262,23 +247,6 @@ onMounted(() => {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-}
-
-.announcement-meta {
-  display: flex;
-  justify-content: space-between;
-  margin-bottom: 10px;
-  font-size: 14px;
-  color: #909399;
-}
-
-.announcement-meta div {
-  display: flex;
-  align-items: center;
-}
-
-.announcement-meta .el-icon {
-  margin-right: 4px;
 }
 
 .announcement-excerpt {
@@ -298,15 +266,26 @@ onMounted(() => {
   margin-top: 10px;
 }
 
-.announcement-author {
+.announcement-info {
   display: flex;
   align-items: center;
-  font-size: 14px;
+  flex-wrap: wrap;
+  font-size: 13px;
   color: #909399;
 }
 
-.announcement-author .el-icon {
+.info-item {
+  display: flex;
+  align-items: center;
+}
+
+.info-item .el-icon {
   margin-right: 4px;
+}
+
+.info-divider {
+  margin: 0 8px;
+  color: #DCDFE6;
 }
 
 .pagination-container {
@@ -328,6 +307,20 @@ onMounted(() => {
 
   .search-input {
     width: 100%;
+  }
+
+  .announcement-footer {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .announcement-info {
+    margin-bottom: 10px;
+    width: 100%;
+  }
+
+  .info-divider {
+    margin: 0 5px;
   }
 }
 </style>
