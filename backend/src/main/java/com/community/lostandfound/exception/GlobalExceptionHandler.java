@@ -56,6 +56,13 @@ public class GlobalExceptionHandler {
         return ApiResponse.fail("用户名或密码错误");
     }
 
+    @ExceptionHandler(UnauthorizedException.class)
+    @ResponseStatus(HttpStatus.UNAUTHORIZED)
+    public ApiResponse<?> handleUnauthorizedException(UnauthorizedException ex, WebRequest request) {
+        log.error("Unauthorized: {}", ex.getMessage());
+        return ApiResponse.fail(ex.getMessage());
+    }
+
     @ExceptionHandler(AccessDeniedException.class)
     @ResponseStatus(HttpStatus.FORBIDDEN)
     public ApiResponse<?> handleAccessDeniedException(AccessDeniedException ex, WebRequest request) {

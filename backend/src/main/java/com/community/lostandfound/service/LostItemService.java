@@ -8,7 +8,25 @@ import java.util.Optional;
  * 寻物启事服务接口
  * 提供寻物启事功能的业务逻辑处理
  */
-public interface LostItemService {
+public interface LostItemService extends BaseItemService<LostItem> {
+    
+    /**
+     * 查询当前用户发布的寻物启事
+     *
+     * @param userId 用户ID
+     * @return 该用户发布的所有寻物启事
+     */
+    List<LostItem> getLostItemsByUserId(Long userId);
+    
+    /**
+     * 查询符合条件的寻物启事列表（不分页）
+     *
+     * @param category 物品分类（可选）
+     * @param status 状态（可选）
+     * @param keyword 关键词（可选）
+     * @return 符合条件的寻物启事列表
+     */
+    List<LostItem> getAllLostItemsNoPage(String category, String status, String keyword);
     
     /**
      * 创建寻物启事
@@ -84,12 +102,4 @@ public interface LostItemService {
      * @throws IllegalArgumentException 如果用户无权删除
      */
     void deleteLostItem(Long id, Long userId);
-    
-    /**
-     * 查询当前用户发布的寻物启事
-     *
-     * @param userId 用户ID
-     * @return 该用户发布的所有寻物启事
-     */
-    List<LostItem> getLostItemsByUserId(Long userId);
 } 

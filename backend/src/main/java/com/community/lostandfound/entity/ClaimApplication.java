@@ -15,9 +15,8 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 public class ClaimApplication {
-    
     /**
-     * 认领申请ID
+     * 申请ID
      */
     private Long id;
     
@@ -32,22 +31,22 @@ public class ClaimApplication {
     private Long applicantId;
     
     /**
-     * 申请说明
+     * 申请描述
      */
     private String description;
     
     /**
-     * 申请状态: pending(待处理), approved(已同意), rejected(已拒绝)
+     * 申请状态：pending, approved, rejected
      */
     private String status;
     
     /**
-     * 认领申请的创建时间
+     * 创建时间
      */
     private LocalDateTime createdAt;
     
     /**
-     * 认领申请的更新时间
+     * 更新时间
      */
     private LocalDateTime updatedAt;
     
@@ -56,28 +55,30 @@ public class ClaimApplication {
      */
     private LocalDateTime processedAt;
     
+    // 以下字段为辅助展示字段，不存储在数据库中
+    
     /**
-     * 申请人用户名（非持久化字段）
+     * 申请人用户名
      */
     private String applicantName;
     
     /**
-     * 申请人联系方式（非持久化字段）
+     * 申请人联系方式
      */
     private String applicantContact;
     
     /**
-     * 失物招领标题（非持久化字段）
+     * 失物招领标题
      */
     private String foundItemTitle;
     
     /**
-     * 失物招领发布者ID（非持久化字段）
+     * 失物招领所有者ID
      */
     private Long foundItemOwnerId;
     
     /**
-     * 失物招领发布者用户名（非持久化字段）
+     * 失物招领所有者用户名
      */
     private String foundItemOwnerName;
 } 
