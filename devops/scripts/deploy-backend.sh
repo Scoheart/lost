@@ -70,11 +70,85 @@ echo -e "${BLUE}🔄 准备部署应用...${NC}" | tee -a $DEPLOY_LOG
 
 # 测试数据库连接
 echo -e "${BLUE}🔍 测试数据库连接...${NC}" | tee -a $DEPLOY_LOG
+DB_NAME="lost_and_found"
+
+# 首先测试MySQL服务连接
 if mysql -u root -p"$DB_PASSWORD" -e "SELECT 1;" &>/dev/null; then
-    echo -e "${GREEN}✅ 数据库连接测试成功${NC}" | tee -a $DEPLOY_LOG
+    echo -e "${GREEN}✅ MySQL服务连接成功${NC}" | tee -a $DEPLOY_LOG
+    
+    # 然后检查特定数据库是否存在
+    if mysql -u root -p"$DB_PASSWORD" -e "SHOW DATABASES LIKE '$DB_NAME';" 2>/dev/null | grep -q "$DB_NAME"; then
+        echo -e "${GREEN}✅ 数据库 '$DB_NAME' 存在${NC}" | tee -a $DEPLOY_LOG
+        
+        # 检查数据库表
+        TABLES_COUNT=$(mysql -u root -p"$DB_PASSWORD" -e "USE $DB_NAME; SHOW TABLES;" 2>/dev/null | wc -l)
+        if [ "$TABLES_COUNT" -gt 1 ]; then
+            echo -e "${GREEN}✅ 数据库包含 $((TABLES_COUNT-1)) 个表${NC}" | tee -a $DEPLOY_LOG
+            
+            # 检查必需的核心表
+            REQUIRED_TABLES=("users" "lost_items" "found_items")
+            MISSING_TABLES=()
+            
+            for TABLE in "${REQUIRED_TABLES[@]}"; do
+                if ! mysql -u root -p"$DB_PASSWORD" -e "USE $DB_NAME; SHOW TABLES LIKE '$TABLE';" 2>/dev/null | grep -q "$TABLE"; then
+                    MISSING_TABLES+=("$TABLE")
+                fi
+            done
+            
+            if [ ${#MISSING_TABLES[@]} -gt 0 ]; then
+                echo -e "${RED}⚠️ 警告: 缺少必需的表: ${MISSING_TABLES[*]}${NC}" | tee -a $DEPLOY_LOG
+                echo -e "${YELLOW}⚠️ 请先正确初始化数据库，或者应用可能无法正常工作${NC}" | tee -a $DEPLOY_LOG
+                
+                # 询问用户是否继续
+                read -p "$(echo -e ${YELLOW}❓ 是否继续部署? [y/N]:${NC} )" ANSWER
+                if [[ ! "$ANSWER" =~ ^[Yy]$ ]]; then
+                    echo -e "${BLUE}ℹ️ 部署已取消${NC}" | tee -a $DEPLOY_LOG
+                    exit 1
+                fi
+            else
+                echo -e "${GREEN}✅ 所有必需的表都存在${NC}" | tee -a $DEPLOY_LOG
+                
+                # 查询用户表中的记录数，确认是否有初始用户
+                USER_COUNT=$(mysql -u root -p"$DB_PASSWORD" -e "SELECT COUNT(*) FROM $DB_NAME.users;" 2>/dev/null | tail -1)
+                echo -e "${GREEN}✓ 用户表中有 $USER_COUNT 条记录${NC}" | tee -a $DEPLOY_LOG
+                
+                if [ "$USER_COUNT" -eq 0 ]; then
+                    echo -e "${YELLOW}⚠️ 用户表中没有记录，可能需要创建初始管理员用户${NC}" | tee -a $DEPLOY_LOG
+                fi
+            fi
+        else
+            echo -e "${RED}⚠️ 警告: 数据库存在但没有表或表结构不完整${NC}" | tee -a $DEPLOY_LOG
+            echo -e "${YELLOW}⚠️ 请先初始化数据库，或者应用可能无法正常工作${NC}" | tee -a $DEPLOY_LOG
+            
+            # 询问用户是否继续
+            read -p "$(echo -e ${YELLOW}❓ 是否继续部署? [y/N]:${NC} )" ANSWER
+            if [[ ! "$ANSWER" =~ ^[Yy]$ ]]; then
+                echo -e "${BLUE}ℹ️ 部署已取消${NC}" | tee -a $DEPLOY_LOG
+                exit 1
+            fi
+        fi
+    else
+        echo -e "${RED}⚠️ 警告: 数据库 '$DB_NAME' 不存在${NC}" | tee -a $DEPLOY_LOG
+        echo -e "${YELLOW}⚠️ 应用启动后将尝试创建数据库，但可能会失败${NC}" | tee -a $DEPLOY_LOG
+        echo -e "${YELLOW}💡 建议先运行数据库初始化脚本: /tmp/init-database.sh${NC}" | tee -a $DEPLOY_LOG
+        
+        # 询问用户是否继续
+        read -p "$(echo -e ${YELLOW}❓ 是否继续部署? [y/N]:${NC} )" ANSWER
+        if [[ ! "$ANSWER" =~ ^[Yy]$ ]]; then
+            echo -e "${BLUE}ℹ️ 部署已取消${NC}" | tee -a $DEPLOY_LOG
+            exit 1
+        fi
+    fi
 else
-    echo -e "${RED}⚠️ 数据库连接测试失败，请检查凭据${NC}" | tee -a $DEPLOY_LOG
-    echo -e "${YELLOW}⚠️ 将继续部署，但应用可能无法连接数据库${NC}" | tee -a $DEPLOY_LOG
+    echo -e "${RED}⚠️ 数据库连接测试失败，请检查MySQL服务和凭据${NC}" | tee -a $DEPLOY_LOG
+    echo -e "${YELLOW}⚠️ 应用部署可能因数据库连接问题而失败${NC}" | tee -a $DEPLOY_LOG
+    
+    # 询问用户是否继续
+    read -p "$(echo -e ${YELLOW}❓ 是否继续部署? [y/N]:${NC} )" ANSWER
+    if [[ ! "$ANSWER" =~ ^[Yy]$ ]]; then
+        echo -e "${BLUE}ℹ️ 部署已取消${NC}" | tee -a $DEPLOY_LOG
+        exit 1
+    fi
 fi
 
 # 替换配置文件中的数据库密码

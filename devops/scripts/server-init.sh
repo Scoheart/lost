@@ -164,26 +164,77 @@ else
 fi
 
 # 初始化数据库
-echo -e "${BLUE}🗃️ 检查数据库初始化脚本...${NC}" | tee -a $LOG_FILE
+echo -e "${BLUE}🗃️ 检查数据库初始化状态...${NC}" | tee -a $LOG_FILE
 INIT_DB_SQL_FILE="/tmp/init-database.sql"
 INIT_DB_SCRIPT="/tmp/init-database.sh"
+DB_NAME="lost_and_found"
 
+# 首先检查数据库初始化脚本是否存在
 if [ -f "$INIT_DB_SQL_FILE" ] && [ -f "$INIT_DB_SCRIPT" ]; then
-    if ! is_installed "db_initialized"; then
+    # 检查数据库是否真实存在
+    DB_EXISTS=0
+    
+    # 尝试查询数据库是否存在
+    if mysql -u root -p"$MYSQL_ROOT_PASSWORD" -e "SHOW DATABASES LIKE '$DB_NAME'" 2>/dev/null | grep -q "$DB_NAME"; then
+        # 数据库存在，进一步检查必要的表是否存在
+        DB_EXISTS=1
+        
+        # 检查必需的核心表是否存在
+        TABLES_COUNT=$(mysql -u root -p"$MYSQL_ROOT_PASSWORD" -e "USE $DB_NAME; SHOW TABLES;" 2>/dev/null | wc -l)
+        if [ "$TABLES_COUNT" -lt 2 ]; then # 至少应该有一张表加表头行
+            echo -e "${YELLOW}⚠️ 数据库 '$DB_NAME' 存在，但没有表或表结构不完整${NC}" | tee -a $LOG_FILE
+            DB_EXISTS=0 # 将状态标记为需要初始化
+        else
+            echo -e "${GREEN}✓ 数据库 '$DB_NAME' 已存在且包含 $((TABLES_COUNT-1)) 个表${NC}" | tee -a $LOG_FILE
+            
+            # 抽样检查几个关键表
+            for TABLE in "users" "lost_items" "found_items"; do
+                if ! mysql -u root -p"$MYSQL_ROOT_PASSWORD" -e "USE $DB_NAME; DESCRIBE $TABLE" &>/dev/null; then
+                    echo -e "${YELLOW}⚠️ 表 '$TABLE' 不存在或结构不完整${NC}" | tee -a $LOG_FILE
+                    DB_EXISTS=0 # 将状态标记为需要初始化
+                    break
+                fi
+            done
+        fi
+    else
+        echo -e "${YELLOW}⚠️ 数据库 '$DB_NAME' 不存在${NC}" | tee -a $LOG_FILE
+    fi
+    
+    # 根据检查结果决定是否初始化数据库
+    if [ "$DB_EXISTS" -eq 0 ] || ! is_installed "db_initialized"; then
+        if [ "$DB_EXISTS" -eq 1 ]; then
+            # 数据库存在但标记未初始化，确认是否重新初始化
+            read -p "$(echo -e ${YELLOW}❓ 数据库已存在，是否强制重新初始化? [y/N]:${NC} )" ANSWER
+            if [[ ! "$ANSWER" =~ ^[Yy]$ ]]; then
+                echo -e "${BLUE}ℹ️ 保留现有数据库，跳过初始化${NC}" | tee -a $LOG_FILE
+                mark_installed "db_initialized" # 标记为已初始化，避免下次再询问
+                return
+            else
+                echo -e "${YELLOW}⚠️ 将强制重新初始化数据库 '$DB_NAME'${NC}" | tee -a $LOG_FILE
+            fi
+        fi
+        
         echo -e "${YELLOW}⏳ 执行数据库初始化脚本...${NC}" | tee -a $LOG_FILE
         chmod +x "$INIT_DB_SCRIPT"
         "$INIT_DB_SCRIPT" "$MYSQL_ROOT_PASSWORD" "$INIT_DB_SQL_FILE" | tee -a $LOG_FILE
         if [ $? -eq 0 ]; then
-            mark_installed "db_initialized"
-            echo -e "${GREEN}✅ 数据库初始化成功${NC}" | tee -a $LOG_FILE
+            # 再次验证数据库是否真实存在并包含表
+            if mysql -u root -p"$MYSQL_ROOT_PASSWORD" -e "USE $DB_NAME; SHOW TABLES;" 2>/dev/null | grep -q ""; then
+                TABLES_COUNT=$(mysql -u root -p"$MYSQL_ROOT_PASSWORD" -e "USE $DB_NAME; SHOW TABLES;" 2>/dev/null | wc -l)
+                echo -e "${GREEN}✅ 数据库初始化成功，共创建 $((TABLES_COUNT-1)) 个表${NC}" | tee -a $LOG_FILE
+                mark_installed "db_initialized"
+            else
+                echo -e "${RED}❌ 数据库初始化失败，未成功创建数据库或表${NC}" | tee -a $LOG_FILE
+            fi
         else
-            echo -e "${RED}❌ 数据库初始化失败${NC}" | tee -a $LOG_FILE
+            echo -e "${RED}❌ 数据库初始化脚本执行失败${NC}" | tee -a $LOG_FILE
         fi
     else
-        echo -e "${GREEN}✓ 数据库已初始化，跳过${NC}" | tee -a $LOG_FILE
+        echo -e "${GREEN}✓ 数据库已正确初始化，跳过${NC}" | tee -a $LOG_FILE
     fi
 else
     echo -e "${YELLOW}⚠️ 数据库初始化脚本不存在，跳过初始化${NC}" | tee -a $LOG_FILE
+    echo -e "${BLUE}💡 请将 init-database.sql 和 init-database.sh 放至 /tmp 目录${NC}" | tee -a $LOG_FILE
 fi
 
 # 配置防火墙
