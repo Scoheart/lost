@@ -23292,3 +23292,19 @@ Caused by: java.sql.SQLSyntaxErrorException: Unknown column 'a.contact_info' in 
 2025-03-16T13:19:02.113+08:00 DEBUG 7616 --- [http-nio-0.0.0.0-8080-exec-2] c.c.l.r.FoundItemRepository.countAll     : ==> Parameters: electronics(String)
 2025-03-16T13:19:02.128+08:00 DEBUG 7616 --- [http-nio-0.0.0.0-8080-exec-2] c.c.l.r.FoundItemRepository.countAll     : <==      Total: 1
 2025-03-16T13:19:02.128+08:00 DEBUG 7616 --- [http-nio-0.0.0.0-8080-exec-2] c.c.l.controller.FoundItemController     : 查询到1条记录，共1页
+2025-03-16T13:41:39.946+08:00 DEBUG 7616 --- [http-nio-0.0.0.0-8080-exec-8] c.c.l.security.AuthTokenFilter           : Setting up authentication for user: sanjin
+2025-03-16T13:41:39.947+08:00 DEBUG 7616 --- [http-nio-0.0.0.0-8080-exec-8] c.c.l.security.UserDetailsServiceImpl    : Loading user by username or email: sanjin
+2025-03-16T13:41:44.955+08:00  WARN 7616 --- [http-nio-0.0.0.0-8080-exec-8] com.zaxxer.hikari.pool.PoolBase          : HikariPool-1 - Failed to validate connection com.mysql.cj.jdbc.ConnectionImpl@27236494 (No operations allowed after connection closed.). Possibly consider using a shorter maxLifetime value.
+2025-03-16T13:41:49.957+08:00  WARN 7616 --- [http-nio-0.0.0.0-8080-exec-8] com.zaxxer.hikari.pool.PoolBase          : HikariPool-1 - Failed to validate connection com.mysql.cj.jdbc.ConnectionImpl@48ca14d4 (No operations allowed after connection closed.). Possibly consider using a shorter maxLifetime value.
+2025-03-16T13:41:54.965+08:00  WARN 7616 --- [http-nio-0.0.0.0-8080-exec-8] com.zaxxer.hikari.pool.PoolBase          : HikariPool-1 - Failed to validate connection com.mysql.cj.jdbc.ConnectionImpl@4e99a3c8 (No operations allowed after connection closed.). Possibly consider using a shorter maxLifetime value.
+2025-03-16T13:41:59.970+08:00  WARN 7616 --- [http-nio-0.0.0.0-8080-exec-8] com.zaxxer.hikari.pool.PoolBase          : HikariPool-1 - Failed to validate connection com.mysql.cj.jdbc.ConnectionImpl@6df9c69 (No operations allowed after connection closed.). Possibly consider using a shorter maxLifetime value.
+2025-03-16T13:41:59.990+08:00 DEBUG 7616 --- [http-nio-0.0.0.0-8080-exec-8] c.c.l.r.UserRepository.findByUsername    : ==>  Preparing: SELECT * FROM users WHERE username = ?
+2025-03-16T13:41:59.992+08:00 DEBUG 7616 --- [http-nio-0.0.0.0-8080-exec-8] c.c.l.r.UserRepository.findByUsername    : ==> Parameters: sanjin(String)
+2025-03-16T13:42:00.013+08:00 DEBUG 7616 --- [http-nio-0.0.0.0-8080-exec-8] c.c.l.r.UserRepository.findByUsername    : <==      Total: 1
+2025-03-16T13:42:00.015+08:00 DEBUG 7616 --- [http-nio-0.0.0.0-8080-exec-8] c.c.l.security.UserDetailsServiceImpl    : User found: id=2, username=sanjin, email=sdfsd@sfsdf.com
+2025-03-16T13:42:00.017+08:00 DEBUG 7616 --- [http-nio-0.0.0.0-8080-exec-8] c.c.l.security.AuthTokenFilter           : Authentication set for user: sanjin
+2025-03-16T13:42:00.022+08:00 DEBUG 7616 --- [http-nio-0.0.0.0-8080-exec-8] c.c.l.controller.UserController          : Fetching profile for authenticated user: sanjin
+2025-03-16T13:42:00.024+08:00 DEBUG 7616 --- [http-nio-0.0.0.0-8080-exec-8] c.c.l.r.UserRepository.findById          : ==>  Preparing: SELECT * FROM users WHERE id = ?
+2025-03-16T13:42:00.025+08:00 DEBUG 7616 --- [http-nio-0.0.0.0-8080-exec-8] c.c.l.r.UserRepository.findById          : ==> Parameters: 2(Long)
+2025-03-16T13:42:00.043+08:00 DEBUG 7616 --- [http-nio-0.0.0.0-8080-exec-8] c.c.l.r.UserRepository.findById          : <==      Total: 1
+2025-03-16T13:42:00.043+08:00 DEBUG 7616 --- [http-nio-0.0.0.0-8080-exec-8] c.c.l.controller.UserController          : User found: sanjin

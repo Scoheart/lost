@@ -11,80 +11,14 @@ on:
   workflow_dispatch:
 
 jobs:
-  prepare:
-    runs-on: ubuntu-latest
-    steps:
-    - name: 检查Secrets配置
-      env:
-        ALIYUN_SSH_KEY: ${{ secrets.ALIYUN_SSH_PRIVATE_KEY }}
-        ALIYUN_HOST: ${{ secrets.ALIYUN_HOST }}
-        ALIYUN_USER: ${{ secrets.ALIYUN_USER }}
-        DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
-        FRONTEND_PATH: ${{ secrets.FRONTEND_DEPLOY_PATH }}
-        DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
-      run: |
-        echo "正在检查必要的Secrets配置..."
-        if [ -z "$ALIYUN_SSH_KEY" ]; then
-          echo "::error::缺少必要的Secret: ALIYUN_SSH_PRIVATE_KEY"
-          exit 1
-        fi
-        if [ -z "$ALIYUN_HOST" ]; then
-          echo "::error::缺少必要的Secret: ALIYUN_HOST"
-          exit 1
-        fi
-        if [ -z "$ALIYUN_USER" ]; then
-          echo "::error::缺少必要的Secret: ALIYUN_USER"
-          exit 1
-        fi
-        if [ -z "$DEPLOY_PATH" ]; then
-          echo "::error::缺少必要的Secret: DEPLOY_PATH"
-          exit 1
-        fi
-        if [ -z "$FRONTEND_PATH" ]; then
-          echo "::error::缺少必要的Secret: FRONTEND_DEPLOY_PATH"
-          exit 1
-        fi
-        if [ -z "$DB_PASSWORD" ]; then
-          echo "::warning::未设置DB_PASSWORD，将使用配置文件中的默认密码"
-        fi
-        echo "✅ Secrets检查通过"
-  
   build-and-deploy:
-    needs: prepare
     runs-on: ubuntu-latest
     
     steps:
     - name: 检出代码
       uses: actions/checkout@v3
     
-    # 服务器预检查和SSH设置
-    - name: 验证SSH密钥格式
-      run: |
-        echo "检查SSH密钥格式..."
-        # 使用临时文件来存储SSH密钥，避免直接在命令行输出密钥
-        KEY_FILE=$(mktemp)
-        echo "${{ secrets.ALIYUN_SSH_PRIVATE_KEY }}" > $KEY_FILE
-        chmod 600 $KEY_FILE
-        
-        # 验证SSH密钥格式
-        if ! grep -q "BEGIN" $KEY_FILE; then
-          echo "::error::SSH密钥格式错误：缺少BEGIN PRIVATE KEY行"
-          echo "提示: 确保在GitHub Secrets中设置密钥时包含了完整内容，包括BEGIN和END行以及所有换行符"
-          rm $KEY_FILE
-          exit 1
-        fi
-        
-        # 检查OpenSSH密钥格式
-        if ! ssh-keygen -l -f $KEY_FILE &>/dev/null; then
-          echo "::error::SSH密钥无效或格式不正确"
-          echo "提示: 使用 'ssh-keygen -t ed25519' 生成新的密钥，并确保上传到GitHub Secrets的是私钥（通常是没有.pub后缀的文件）"
-          rm $KEY_FILE
-          exit 1
-        fi
-        
-        echo "SSH密钥格式验证通过"
-        rm $KEY_FILE
-
+    # SSH设置
     - name: 设置SSH Agent
       uses: webfactory/ssh-agent@v0.8.0
       with:
@@ -98,47 +32,25 @@ jobs:
     - name: 测试SSH连接
       run: |
         echo "正在测试SSH连接..."
-        # 增加连接超时，并添加详细输出以便调试
-        ssh -v -o ConnectTimeout=10 ${{ secrets.ALIYUN_USER }}@${{ secrets.ALIYUN_HOST }} 'echo "SSH连接成功！" && uname -a'
+        ssh -o ConnectTimeout=10 ${{ secrets.ALIYUN_USER }}@${{ secrets.ALIYUN_HOST }} 'echo "SSH连接成功！"'
     
-    - name: 检查服务器环境
-      id: server-check
-      continue-on-error: true
-      run: |
-        echo "正在检查服务器环境..."
-        RESULT=$(ssh ${{ secrets.ALIYUN_USER }}@${{ secrets.ALIYUN_HOST }} '
-          # 简化检查，只检查必要软件
-          MISSING=""
-          if ! command -v java &> /dev/null; then MISSING="$MISSING java"; fi
-          if ! command -v mysql &> /dev/null; then MISSING="$MISSING mysql"; fi
-          if ! command -v nginx &> /dev/null; then MISSING="$MISSING nginx"; fi
-          
-          if [ -n "$MISSING" ]; then
-            echo "初始化"
-          else
-            echo "准备就绪"
-          fi
-        ')
-        
-        echo "服务器状态: $RESULT"
-        echo "server_status=$RESULT" >> $GITHUB_OUTPUT
-
-    # 如果需要初始化，上传并运行初始化脚本
+    # 服务器初始化
     - name: 初始化服务器
-      if: steps.server-check.outputs.server_status == '初始化'
       run: |
-        echo "服务器需要初始化，准备运行初始化脚本..."
+        echo "准备运行初始化脚本..."
         # 上传必要脚本
         scp devops/scripts/server-init.sh ${{ secrets.ALIYUN_USER }}@${{ secrets.ALIYUN_HOST }}:/tmp/
         scp devops/scripts/init-database.sql ${{ secrets.ALIYUN_USER }}@${{ secrets.ALIYUN_HOST }}:/tmp/
         scp devops/scripts/init-database.sh ${{ secrets.ALIYUN_USER }}@${{ secrets.ALIYUN_HOST }}:/tmp/
         
-        # 执行初始化脚本
+        # 设置执行权限
         ssh ${{ secrets.ALIYUN_USER }}@${{ secrets.ALIYUN_HOST }} '
-          # 设置执行权限
           chmod +x /tmp/server-init.sh
           chmod +x /tmp/init-database.sh
-          
+        '
+        
+        # 执行初始化脚本
+        ssh ${{ secrets.ALIYUN_USER }}@${{ secrets.ALIYUN_HOST }} '
           # 执行服务器初始化
           sudo /tmp/server-init.sh "${{ secrets.DB_PASSWORD }}" "${{ secrets.DEPLOY_PATH }}" "${{ secrets.FRONTEND_DEPLOY_PATH }}"
         '
@@ -175,7 +87,6 @@ jobs:
         ssh ${{ secrets.ALIYUN_USER }}@${{ secrets.ALIYUN_HOST }} '
           cd ${{ secrets.DEPLOY_PATH }} && 
           chmod +x deploy.sh && 
-          export DB_PASSWORD="${{ secrets.DB_PASSWORD }}" &&
           ./deploy.sh
         '
     
@@ -190,21 +101,7 @@ jobs:
       with:
         version: 9
         run_install: false
-
-    - name: 获取pnpm缓存目录
-      id: pnpm-cache
-      shell: bash
-      run: |
-        echo "STORE_PATH=$(pnpm store path)" >> $GITHUB_OUTPUT
-
-    - name: 设置pnpm缓存
-      uses: actions/cache@v3
-      with:
-        path: ${{ steps.pnpm-cache.outputs.STORE_PATH }}
-        key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
-        restore-keys: |
-          ${{ runner.os }}-pnpm-store-
-
+    
     - name: 安装前端依赖
       run: |
         cd frontend
@@ -214,12 +111,8 @@ jobs:
       run: |
         cd frontend
         echo "开始构建前端应用..."
-        echo "当前目录: $(pwd)"
-        echo "Node版本: $(node -v)"
-        echo "PNPM版本: $(pnpm -v)"
-        NODE_ENV=production VITE_DEBUG=true pnpm run build:prod
+        NODE_ENV=production pnpm run build:prod
         echo "✅ 前端构建完成"
-      continue-on-error: false
     
     - name: 部署前端文件
       run: |
@@ -248,31 +141,6 @@ jobs:
           chmod +x /tmp/setup-nginx.sh
           sudo /tmp/setup-nginx.sh "${{ secrets.FRONTEND_DEPLOY_PATH }}" "${{ secrets.DOMAIN_NAME || secrets.ALIYUN_HOST }}"
         '
-    
-    # 验证部署
-    - name: 验证部署
-      run: |
-        echo "正在验证部署..."
-        # 检查后端API是否可访问
-        API_STATUS=$(curl -s -o /dev/null -w "%{http_code}" "http://${{ secrets.ALIYUN_HOST }}/api/actuator/health" || echo "Failed")
-        
-        # 检查前端是否可访问
-        FRONTEND_STATUS=$(curl -s -o /dev/null -w "%{http_code}" "http://${{ secrets.ALIYUN_HOST }}/" || echo "Failed")
-        
-        echo "API状态码: $API_STATUS"
-        echo "前端状态码: $FRONTEND_STATUS"
-        
-        if [ "$API_STATUS" == "200" ]; then
-          echo "✅ 后端API验证成功"
-        else
-          echo "⚠️ 后端API验证失败，状态码: $API_STATUS"
-        fi
-        
-        if [ "$FRONTEND_STATUS" == "200" ]; then
-          echo "✅ 前端验证成功"
-        else
-          echo "⚠️ 前端验证失败，状态码: $FRONTEND_STATUS"
-        fi
     
     - name: 部署完成通知
       run: |

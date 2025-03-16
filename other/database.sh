@@ -1,1 +1,0 @@
-cat ./schema.sql | ssh -t aliyun "mysql -u root -pshuhao201028"
