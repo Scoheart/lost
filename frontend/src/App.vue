@@ -30,7 +30,8 @@ onMounted(async () => {
 
 <style>
 /* 全局样式 */
-html, body {
+html,
+body {
   margin: 0;
   padding: 0;
   font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;

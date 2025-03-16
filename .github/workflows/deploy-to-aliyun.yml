@@ -107,8 +107,13 @@ jobs:
       run: |
         echo "正在检查服务器环境..."
         RESULT=$(ssh ${{ secrets.ALIYUN_USER }}@${{ secrets.ALIYUN_HOST }} '
-          # 检查必要软件
-          if ! command -v java &> /dev/null || ! command -v mysql &> /dev/null || ! command -v nginx &> /dev/null; then
+          # 简化检查，只检查必要软件
+          MISSING=""
+          if ! command -v java &> /dev/null; then MISSING="$MISSING java"; fi
+          if ! command -v mysql &> /dev/null; then MISSING="$MISSING mysql"; fi
+          if ! command -v nginx &> /dev/null; then MISSING="$MISSING nginx"; fi
+          
+          if [ -n "$MISSING" ]; then
             echo "初始化"
           else
             echo "准备就绪"
@@ -123,10 +128,18 @@ jobs:
       if: steps.server-check.outputs.server_status == '初始化'
       run: |
         echo "服务器需要初始化，准备运行初始化脚本..."
-        chmod +x devops/scripts/server-init.sh
+        # 上传必要脚本
         scp devops/scripts/server-init.sh ${{ secrets.ALIYUN_USER }}@${{ secrets.ALIYUN_HOST }}:/tmp/
+        scp devops/scripts/init-database.sql ${{ secrets.ALIYUN_USER }}@${{ secrets.ALIYUN_HOST }}:/tmp/
+        scp devops/scripts/init-database.sh ${{ secrets.ALIYUN_USER }}@${{ secrets.ALIYUN_HOST }}:/tmp/
+        
+        # 执行初始化脚本
         ssh ${{ secrets.ALIYUN_USER }}@${{ secrets.ALIYUN_HOST }} '
+          # 设置执行权限
           chmod +x /tmp/server-init.sh
+          chmod +x /tmp/init-database.sh
+          
+          # 执行服务器初始化
           sudo /tmp/server-init.sh "${{ secrets.DB_PASSWORD }}" "${{ secrets.DEPLOY_PATH }}" "${{ secrets.FRONTEND_DEPLOY_PATH }}"
         '
     
