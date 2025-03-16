@@ -68,4 +68,27 @@ public interface UserService {
     User enableUser(Long id);
     
     User disableUser(Long id);
+    
+    /**
+     * 检查用户表结构
+     * 检查数据库中用户表的实际结构，用于诊断字段不匹配问题
+     */
+    void checkUsersTableStructure();
+    
+    /**
+     * 使用最小字段集创建用户
+     * 当标准方法失败时的备选方案
+     * @param user 包含基本字段的用户对象
+     * @return 创建的用户
+     */
+    User createUserWithMinimalFields(User user);
+    
+    /**
+     * 直接更新用户密码
+     * 通过直接执行SQL来更新密码，避免ORM映射问题
+     * @param userId 用户ID
+     * @param encodedPassword 已加密的密码
+     * @return 是否更新成功
+     */
+    boolean updatePasswordDirectly(Long userId, String encodedPassword);
 } 
