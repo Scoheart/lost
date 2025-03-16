@@ -172,8 +172,8 @@
             </el-col>
 
             <!-- 图片上传和提交 -->
-            <el-col :xs="24" :sm="24" :md="8">
-              <el-affix :offset="20">
+            <el-col :xs="24" :sm="24" :md="8" class="right-column">
+              <div class="sticky-container">
                 <!-- 图片上传 -->
                 <el-card class="form-card">
                   <template #header>
@@ -238,7 +238,7 @@
                     </el-button>
                   </div>
                 </el-card>
-              </el-affix>
+              </div>
             </el-col>
           </el-row>
         </el-form>
@@ -637,5 +637,27 @@ onMounted(() => {
   .page-description {
     font-size: 14px;
   }
+}
+
+.right-column {
+  position: relative;
+}
+
+.sticky-container {
+  position: sticky;
+  top: 20px;
+  z-index: 10;
+}
+
+.form-card {
+  margin-bottom: 20px;
+  background-color: #fff;
+  border-radius: 4px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
+  transition: box-shadow 0.3s ease;
+}
+
+.form-card:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 </style>

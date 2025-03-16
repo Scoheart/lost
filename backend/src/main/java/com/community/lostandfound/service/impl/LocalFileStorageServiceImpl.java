@@ -79,14 +79,48 @@ public class LocalFileStorageServiceImpl implements FileStorageService {
      */
     @Override
     public String getFileUrl(String filePath) {
-        // 如果配置了基础URL，则使用它，否则基于当前请求构建URL
+        log.debug("生成文件URL, 原始路径: {}", filePath);
+        
+        // 首先确保文件路径有效
+        if (filePath == null || filePath.trim().isEmpty()) {
+            log.warn("无效的文件路径");
+            return "";
+        }
+        
+        // 移除文件路径前面的 /home 或其他绝对路径前缀
+        // 例如将 "/home/laf/be/uploads/avatars/filename.jpg" 转换为 "uploads/avatars/filename.jpg"
+        String normalizedPath = filePath;
+        
+        // 如果是绝对路径，提取出 uploads 及之后的部分
+        if (filePath.startsWith("/")) {
+            String[] parts = filePath.split("uploads/");
+            if (parts.length > 1) {
+                normalizedPath = "uploads/" + parts[1];
+                log.debug("规范化路径: {}", normalizedPath);
+            }
+        }
+        
+        // 如果配置了基础URL，则使用它构建完整URL
         if (baseUrl != null && !baseUrl.trim().isEmpty()) {
-            return baseUrl + "/" + filePath;
+            String url = baseUrl;
+            
+            // 确保 baseUrl 和 normalizedPath 之间有且只有一个斜杠
+            if (!url.endsWith("/") && !normalizedPath.startsWith("/")) {
+                url += "/";
+            } else if (url.endsWith("/") && normalizedPath.startsWith("/")) {
+                url = url.substring(0, url.length() - 1);
+            }
+            
+            url += normalizedPath;
+            log.debug("使用配置的基础URL生成: {}", url);
+            return url;
         } else {
-            // 基于当前请求构建完整的URL
-            return ServletUriComponentsBuilder.fromCurrentContextPath()
-                    .path("/" + filePath)
-                    .toUriString();
+            // 没有配置基础URL，基于当前请求构建URL
+            String url = ServletUriComponentsBuilder.fromCurrentContextPath()
+                  .path("/" + normalizedPath)
+                  .toUriString();
+            log.debug("使用当前请求上下文生成URL: {}", url);
+            return url;
         }
     }
 

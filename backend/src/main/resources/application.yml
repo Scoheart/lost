@@ -10,6 +10,9 @@ file:
     allowed-extensions: jpg,jpeg,png,gif,webp
     max-file-size: 5
     max-request-size: 10MB
+    # 基础URL配置，如果设置，文件URL将使用此URL加文件路径
+    # 在生产环境中要设置为API的实际访问地址
+    base-url: ${FILE_BASE_URL:http://121.40.52.9/api}
 
 spring:
   datasource:

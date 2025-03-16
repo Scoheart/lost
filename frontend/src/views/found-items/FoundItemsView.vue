@@ -445,25 +445,33 @@ const getStatusType = (status: string) => {
 .button-container {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 16px;
   flex-shrink: 0;
   margin-left: auto;
+  height: 40px;
 }
 
 /* 使按钮与表单控件高度一致，并确保内容居中 */
 .filter-btn,
 .create-btn {
-  padding: 0 15px !important;
-  margin: 0 !important;
-  display: flex !important;
+  height: 40px !important;
+  display: inline-flex !important;
   align-items: center !important;
   justify-content: center !important;
-  height: 40px !important;
+  margin: 0 !important;
+  padding: 0 16px !important;
+  white-space: nowrap !important;
 }
 
 /* 创建按钮的宽度限制 */
 .create-btn {
-  max-width: 140px !important;
+  min-width: 120px !important;
+}
+
+/* 确保图标垂直居中 */
+:deep(.el-button .el-icon) {
+  vertical-align: middle !important;
+  margin-right: 4px !important;
 }
 
 /* 筛选标签区域 */
