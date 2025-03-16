@@ -38,9 +38,6 @@
 
         <div class="remember-forgot">
           <el-checkbox v-model="loginForm.rememberMe" :disabled="loading">记住我</el-checkbox>
-          <el-button type="text" @click="goToForgotPassword" :disabled="loading"
-            >忘记密码？</el-button
-          >
         </div>
 
         <el-form-item>
@@ -144,10 +141,6 @@ const handleSubmit = async () => {
       }
     }
   })
-}
-
-const goToForgotPassword = () => {
-  router.push('/forgot-password')
 }
 </script>
 
