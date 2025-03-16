@@ -23308,3 +23308,63 @@ Caused by: java.sql.SQLSyntaxErrorException: Unknown column 'a.contact_info' in 
 2025-03-16T13:42:00.025+08:00 DEBUG 7616 --- [http-nio-0.0.0.0-8080-exec-8] c.c.l.r.UserRepository.findById          : ==> Parameters: 2(Long)
 2025-03-16T13:42:00.043+08:00 DEBUG 7616 --- [http-nio-0.0.0.0-8080-exec-8] c.c.l.r.UserRepository.findById          : <==      Total: 1
 2025-03-16T13:42:00.043+08:00 DEBUG 7616 --- [http-nio-0.0.0.0-8080-exec-8] c.c.l.controller.UserController          : User found: sanjin
+2025-03-16T13:57:01.437+08:00 DEBUG 7616 --- [http-nio-0.0.0.0-8080-exec-9] c.c.l.security.AuthTokenFilter           : Setting up authentication for user: sanjin
+2025-03-16T13:57:01.437+08:00 DEBUG 7616 --- [http-nio-0.0.0.0-8080-exec-10] c.c.l.security.AuthTokenFilter           : Setting up authentication for user: sanjin
+2025-03-16T13:57:01.439+08:00 DEBUG 7616 --- [http-nio-0.0.0.0-8080-exec-9] c.c.l.security.UserDetailsServiceImpl    : Loading user by username or email: sanjin
+2025-03-16T13:57:01.439+08:00 DEBUG 7616 --- [http-nio-0.0.0.0-8080-exec-10] c.c.l.security.UserDetailsServiceImpl    : Loading user by username or email: sanjin
+2025-03-16T13:57:01.460+08:00 DEBUG 7616 --- [http-nio-0.0.0.0-8080-exec-10] c.c.l.r.UserRepository.findByUsername    : ==>  Preparing: SELECT * FROM users WHERE username = ?
+2025-03-16T13:57:01.460+08:00 DEBUG 7616 --- [http-nio-0.0.0.0-8080-exec-9] c.c.l.r.UserRepository.findByUsername    : ==>  Preparing: SELECT * FROM users WHERE username = ?
+2025-03-16T13:57:01.461+08:00 DEBUG 7616 --- [http-nio-0.0.0.0-8080-exec-10] c.c.l.r.UserRepository.findByUsername    : ==> Parameters: sanjin(String)
+2025-03-16T13:57:01.461+08:00 DEBUG 7616 --- [http-nio-0.0.0.0-8080-exec-9] c.c.l.r.UserRepository.findByUsername    : ==> Parameters: sanjin(String)
+2025-03-16T13:57:01.479+08:00 DEBUG 7616 --- [http-nio-0.0.0.0-8080-exec-10] c.c.l.r.UserRepository.findByUsername    : <==      Total: 1
+2025-03-16T13:57:01.479+08:00 DEBUG 7616 --- [http-nio-0.0.0.0-8080-exec-9] c.c.l.r.UserRepository.findByUsername    : <==      Total: 1
+2025-03-16T13:57:01.480+08:00 DEBUG 7616 --- [http-nio-0.0.0.0-8080-exec-9] c.c.l.security.UserDetailsServiceImpl    : User found: id=2, username=sanjin, email=sdfsd@sfsdf.com
+2025-03-16T13:57:01.480+08:00 DEBUG 7616 --- [http-nio-0.0.0.0-8080-exec-10] c.c.l.security.UserDetailsServiceImpl    : User found: id=2, username=sanjin, email=sdfsd@sfsdf.com
+2025-03-16T13:57:01.481+08:00 DEBUG 7616 --- [http-nio-0.0.0.0-8080-exec-9] c.c.l.security.AuthTokenFilter           : Authentication set for user: sanjin
+2025-03-16T13:57:01.481+08:00 DEBUG 7616 --- [http-nio-0.0.0.0-8080-exec-10] c.c.l.security.AuthTokenFilter           : Authentication set for user: sanjin
+2025-03-16T13:57:01.483+08:00 DEBUG 7616 --- [http-nio-0.0.0.0-8080-exec-10] c.c.l.controller.UserController          : Fetching profile for authenticated user: sanjin
+2025-03-16T13:57:01.483+08:00 DEBUG 7616 --- [http-nio-0.0.0.0-8080-exec-10] c.c.l.r.UserRepository.findById          : ==>  Preparing: SELECT * FROM users WHERE id = ?
+2025-03-16T13:57:01.484+08:00 DEBUG 7616 --- [http-nio-0.0.0.0-8080-exec-10] c.c.l.r.UserRepository.findById          : ==> Parameters: 2(Long)
+2025-03-16T13:57:01.484+08:00  INFO 7616 --- [http-nio-0.0.0.0-8080-exec-9] c.c.l.controller.FoundItemController     : 查询失物招领, ID: 1
+2025-03-16T13:57:01.484+08:00 DEBUG 7616 --- [http-nio-0.0.0.0-8080-exec-9] c.c.l.service.impl.FoundItemServiceImpl  : 根据ID查询失物招领: 1
+2025-03-16T13:57:01.485+08:00 DEBUG 7616 --- [http-nio-0.0.0.0-8080-exec-9] c.c.l.r.FoundItemRepository.findById     : ==>  Preparing: SELECT fi.*, u.username FROM found_items fi JOIN users u ON fi.user_id = u.id WHERE fi.id = ?
+2025-03-16T13:57:01.485+08:00 DEBUG 7616 --- [http-nio-0.0.0.0-8080-exec-9] c.c.l.r.FoundItemRepository.findById     : ==> Parameters: 1(Long)
+2025-03-16T13:57:01.501+08:00 DEBUG 7616 --- [http-nio-0.0.0.0-8080-exec-10] c.c.l.r.UserRepository.findById          : <==      Total: 1
+2025-03-16T13:57:01.501+08:00 DEBUG 7616 --- [http-nio-0.0.0.0-8080-exec-9] c.c.l.r.FoundItemRepository.findById     : <==      Total: 1
+2025-03-16T13:57:01.501+08:00 DEBUG 7616 --- [http-nio-0.0.0.0-8080-exec-10] c.c.l.controller.UserController          : User found: sanjin
+2025-03-16T13:57:01.536+08:00 DEBUG 7616 --- [http-nio-0.0.0.0-8080-exec-1] c.c.l.security.AuthTokenFilter           : Setting up authentication for user: sanjin
+2025-03-16T13:57:01.537+08:00 DEBUG 7616 --- [http-nio-0.0.0.0-8080-exec-1] c.c.l.security.UserDetailsServiceImpl    : Loading user by username or email: sanjin
+2025-03-16T13:57:01.537+08:00 DEBUG 7616 --- [http-nio-0.0.0.0-8080-exec-1] c.c.l.r.UserRepository.findByUsername    : ==>  Preparing: SELECT * FROM users WHERE username = ?
+2025-03-16T13:57:01.537+08:00 DEBUG 7616 --- [http-nio-0.0.0.0-8080-exec-1] c.c.l.r.UserRepository.findByUsername    : ==> Parameters: sanjin(String)
+2025-03-16T13:57:01.553+08:00 DEBUG 7616 --- [http-nio-0.0.0.0-8080-exec-1] c.c.l.r.UserRepository.findByUsername    : <==      Total: 1
+2025-03-16T13:57:01.554+08:00 DEBUG 7616 --- [http-nio-0.0.0.0-8080-exec-1] c.c.l.security.UserDetailsServiceImpl    : User found: id=2, username=sanjin, email=sdfsd@sfsdf.com
+2025-03-16T13:57:01.554+08:00 DEBUG 7616 --- [http-nio-0.0.0.0-8080-exec-1] c.c.l.security.AuthTokenFilter           : Authentication set for user: sanjin
+2025-03-16T13:57:01.556+08:00  INFO 7616 --- [http-nio-0.0.0.0-8080-exec-1] c.c.l.controller.CommentController       : 查询物品留言列表: 物品ID=1, 物品类型=found, 页码=1, 每页条数=10
+2025-03-16T13:57:01.556+08:00 DEBUG 7616 --- [http-nio-0.0.0.0-8080-exec-1] c.c.l.service.impl.CommentServiceImpl    : 查询物品留言列表, 物品ID: 1, 物品类型: found, 页码: 1, 每页条数: 10
+2025-03-16T13:57:01.556+08:00 DEBUG 7616 --- [http-nio-0.0.0.0-8080-exec-1] c.c.l.service.impl.FoundItemServiceImpl  : 根据ID查询失物招领: 1
+2025-03-16T13:57:01.556+08:00 DEBUG 7616 --- [http-nio-0.0.0.0-8080-exec-1] c.c.l.r.FoundItemRepository.findById     : ==>  Preparing: SELECT fi.*, u.username FROM found_items fi JOIN users u ON fi.user_id = u.id WHERE fi.id = ?
+2025-03-16T13:57:01.556+08:00 DEBUG 7616 --- [http-nio-0.0.0.0-8080-exec-1] c.c.l.r.FoundItemRepository.findById     : ==> Parameters: 1(Long)
+2025-03-16T13:57:01.575+08:00 DEBUG 7616 --- [http-nio-0.0.0.0-8080-exec-1] c.c.l.r.FoundItemRepository.findById     : <==      Total: 1
+2025-03-16T13:57:01.575+08:00 DEBUG 7616 --- [http-nio-0.0.0.0-8080-exec-1] .l.r.C.findByItemIdAndTypeWithPagination : ==>  Preparing: SELECT c.*, u.username, u.avatar as user_avatar FROM comments c JOIN users u ON c.user_id = u.id WHERE c.item_id = ? AND c.item_type = ? ORDER BY c.created_at DESC LIMIT ?, ?
+2025-03-16T13:57:01.576+08:00 DEBUG 7616 --- [http-nio-0.0.0.0-8080-exec-1] .l.r.C.findByItemIdAndTypeWithPagination : ==> Parameters: 1(Long), found(String), 0(Integer), 10(Integer)
+2025-03-16T13:57:01.603+08:00 DEBUG 7616 --- [http-nio-0.0.0.0-8080-exec-1] .l.r.C.findByItemIdAndTypeWithPagination : <==      Total: 0
+2025-03-16T13:57:01.604+08:00 DEBUG 7616 --- [http-nio-0.0.0.0-8080-exec-1] c.c.l.r.C.countByItemIdAndType           : ==>  Preparing: SELECT COUNT(*) FROM comments WHERE item_id = ? AND item_type = ?
+2025-03-16T13:57:01.609+08:00 DEBUG 7616 --- [http-nio-0.0.0.0-8080-exec-1] c.c.l.r.C.countByItemIdAndType           : ==> Parameters: 1(Long), found(String)
+2025-03-16T13:57:01.626+08:00 DEBUG 7616 --- [http-nio-0.0.0.0-8080-exec-1] c.c.l.r.C.countByItemIdAndType           : <==      Total: 1
+2025-03-16T13:57:01.709+08:00 DEBUG 7616 --- [http-nio-0.0.0.0-8080-exec-3] c.c.l.security.AuthTokenFilter           : Setting up authentication for user: sanjin
+2025-03-16T13:57:01.709+08:00 DEBUG 7616 --- [http-nio-0.0.0.0-8080-exec-3] c.c.l.security.UserDetailsServiceImpl    : Loading user by username or email: sanjin
+2025-03-16T13:57:01.710+08:00 DEBUG 7616 --- [http-nio-0.0.0.0-8080-exec-3] c.c.l.r.UserRepository.findByUsername    : ==>  Preparing: SELECT * FROM users WHERE username = ?
+2025-03-16T13:57:01.710+08:00 DEBUG 7616 --- [http-nio-0.0.0.0-8080-exec-3] c.c.l.r.UserRepository.findByUsername    : ==> Parameters: sanjin(String)
+2025-03-16T13:57:01.729+08:00 DEBUG 7616 --- [http-nio-0.0.0.0-8080-exec-3] c.c.l.r.UserRepository.findByUsername    : <==      Total: 1
+2025-03-16T13:57:01.730+08:00 DEBUG 7616 --- [http-nio-0.0.0.0-8080-exec-3] c.c.l.security.UserDetailsServiceImpl    : User found: id=2, username=sanjin, email=sdfsd@sfsdf.com
+2025-03-16T13:57:01.730+08:00 DEBUG 7616 --- [http-nio-0.0.0.0-8080-exec-3] c.c.l.security.AuthTokenFilter           : Authentication set for user: sanjin
+2025-03-16T13:57:01.732+08:00  INFO 7616 --- [http-nio-0.0.0.0-8080-exec-3] c.c.l.controller.FoundItemController     : 查询失物招领列表, 分类: electronics, 状态: null, 关键词: null, 页码: 1, 每页条数: 10
+2025-03-16T13:57:01.732+08:00 DEBUG 7616 --- [http-nio-0.0.0.0-8080-exec-3] c.c.l.service.impl.FoundItemServiceImpl  : 查询失物招领列表, 分类: electronics, 状态: null, 关键词: null, 偏移量: 0, 每页条数: 10
+2025-03-16T13:57:01.733+08:00 DEBUG 7616 --- [http-nio-0.0.0.0-8080-exec-3] c.c.l.r.FoundItemRepository.findAll      : ==>  Preparing: SELECT fi.*, u.username FROM found_items fi JOIN users u ON fi.user_id = u.id WHERE fi.category = ? ORDER BY fi.created_at DESC LIMIT ?, ?
+2025-03-16T13:57:01.734+08:00 DEBUG 7616 --- [http-nio-0.0.0.0-8080-exec-3] c.c.l.r.FoundItemRepository.findAll      : ==> Parameters: electronics(String), 0(Integer), 10(Integer)
+2025-03-16T13:57:01.753+08:00 DEBUG 7616 --- [http-nio-0.0.0.0-8080-exec-3] c.c.l.r.FoundItemRepository.findAll      : <==      Total: 1
+2025-03-16T13:57:01.753+08:00 DEBUG 7616 --- [http-nio-0.0.0.0-8080-exec-3] c.c.l.service.impl.FoundItemServiceImpl  : 统计失物招领数量, 分类: electronics, 状态: null, 关键词: null
+2025-03-16T13:57:01.754+08:00 DEBUG 7616 --- [http-nio-0.0.0.0-8080-exec-3] c.c.l.r.FoundItemRepository.countAll     : ==>  Preparing: SELECT COUNT(*) FROM found_items fi WHERE fi.category = ?
+2025-03-16T13:57:01.755+08:00 DEBUG 7616 --- [http-nio-0.0.0.0-8080-exec-3] c.c.l.r.FoundItemRepository.countAll     : ==> Parameters: electronics(String)
+2025-03-16T13:57:01.771+08:00 DEBUG 7616 --- [http-nio-0.0.0.0-8080-exec-3] c.c.l.r.FoundItemRepository.countAll     : <==      Total: 1
+2025-03-16T13:57:01.771+08:00 DEBUG 7616 --- [http-nio-0.0.0.0-8080-exec-3] c.c.l.controller.FoundItemController     : 查询到1条记录，共1页

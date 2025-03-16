@@ -73,8 +73,15 @@ jobs:
     - name: 部署后端应用
       run: |
         echo "正在部署后端应用..."
-        # 上传生产环境配置
-        scp devops/config/application-prod.yml ${{ secrets.ALIYUN_USER }}@${{ secrets.ALIYUN_HOST }}:${{ secrets.DEPLOY_PATH }}/application-prod.yml
+        # 处理配置文件 - 安全地替换占位符
+        TEMP_CONFIG=$(mktemp)
+        # 使用perl代替sed，更安全地处理特殊字符
+        perl -p -e 's/\$\{DB_PASSWORD:your_password_here\}/$ENV{DB_PASSWORD}/g' devops/config/application-prod.yml > $TEMP_CONFIG
+        DB_PASSWORD="${{ secrets.DB_PASSWORD }}" # 设置环境变量供perl使用
+        
+        # 上传处理后的生产环境配置
+        scp $TEMP_CONFIG ${{ secrets.ALIYUN_USER }}@${{ secrets.ALIYUN_HOST }}:${{ secrets.DEPLOY_PATH }}/application-prod.yml
+        rm $TEMP_CONFIG
         
         # 上传部署脚本
         scp devops/scripts/deploy-backend.sh ${{ secrets.ALIYUN_USER }}@${{ secrets.ALIYUN_HOST }}:${{ secrets.DEPLOY_PATH }}/deploy.sh
@@ -87,7 +94,7 @@ jobs:
         ssh ${{ secrets.ALIYUN_USER }}@${{ secrets.ALIYUN_HOST }} '
           cd ${{ secrets.DEPLOY_PATH }} && 
           chmod +x deploy.sh && 
-          ./deploy.sh
+          ./deploy.sh "${{ secrets.DEPLOY_PATH }}" "${{ secrets.DB_PASSWORD }}"
         '
     
     # 前端构建和部署

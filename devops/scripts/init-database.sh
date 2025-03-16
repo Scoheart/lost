@@ -36,19 +36,66 @@ if [ ! -f "$SQL_FILE" ]; then
     exit 1
 fi
 
+# 重置MySQL root密码
+echo "[INFO] 配置MySQL root用户密码..."
+
+# 检查MySQL是否已设置密码
+if mysql -u root -e "SELECT 1" &>/dev/null; then
+    # 无密码可以连接，设置密码
+    mysqladmin -u root password "$DB_PASSWORD" &>/dev/null && echo "[INFO] MySQL root密码已设置"
+elif mysql -u root -p"$DB_PASSWORD" -e "SELECT 1" &>/dev/null; then
+    # 尝试使用提供的密码连接，如果成功，密码已正确设置
+    echo "[INFO] MySQL root密码已正确设置"
+else
+    # 尝试重置密码，但这可能需要根据MySQL版本有所调整
+    echo "[WARNING] 尝试重置MySQL root密码..."
+    
+    # 方法1: 使用mysqladmin (可能需要旧密码)
+    mysqladmin -u root -p"$DB_PASSWORD" password "$DB_PASSWORD" &>/dev/null || true
+    
+    # 方法2: 使用直接的SQL命令
+    mysql -e "ALTER USER 'root'@'localhost' IDENTIFIED BY '$DB_PASSWORD';" &>/dev/null || true
+    mysql -e "SET PASSWORD FOR 'root'@'localhost' = PASSWORD('$DB_PASSWORD');" &>/dev/null || true
+    
+    # 验证是否成功
+    if mysql -u root -p"$DB_PASSWORD" -e "SELECT 1" &>/dev/null; then
+        echo "[SUCCESS] MySQL root密码已重置"
+    else
+        echo "[WARNING] 无法自动重置MySQL密码，可能需要手动设置"
+    fi
+fi
+
+# 创建临时配置文件以避免密码提示
+echo "[INFO] 创建临时MySQL配置文件..."
+MY_CNF=$(mktemp)
+cat > "$MY_CNF" << EOL
+[client]
+user=root
+password="$DB_PASSWORD"
+EOL
+
 # 创建数据库并导入数据
 echo "[INFO] 创建数据库并导入数据..."
 
 # 创建数据库
-mysql -e "CREATE DATABASE IF NOT EXISTS $DB_NAME CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
+mysql --defaults-file="$MY_CNF" -e "CREATE DATABASE IF NOT EXISTS $DB_NAME CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
 
 # 导入SQL文件
-mysql $DB_NAME < "$SQL_FILE"
+mysql --defaults-file="$MY_CNF" $DB_NAME < "$SQL_FILE"
 
 # 验证数据库是否成功创建
-if mysql -e "USE $DB_NAME; SHOW TABLES;" | grep -q "."; then
+if mysql --defaults-file="$MY_CNF" -e "USE $DB_NAME; SHOW TABLES;" | grep -q "."; then
     echo "[SUCCESS] 数据库初始化成功"
 else
     echo "[ERROR] 数据库初始化失败"
     exit 1
-fi 
+fi
+
+# 删除临时配置文件
+rm -f "$MY_CNF"
+
+# 确保MySQL允许本地连接
+echo "[INFO] 配置MySQL允许本地连接..."
+mysql --user=root --password="$DB_PASSWORD" -e "GRANT ALL PRIVILEGES ON *.* TO 'root'@'localhost' IDENTIFIED BY '$DB_PASSWORD'; FLUSH PRIVILEGES;"
+
+echo "[SUCCESS] MySQL配置完成，本地连接已启用" 

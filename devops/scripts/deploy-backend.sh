@@ -13,6 +13,7 @@ JVM_OPTS="-Xms512m -Xmx1024m"
 # 获取部署目录和JAR文件路径
 DEPLOY_DIR=${1:-$(pwd)}
 JAR_FILE="$DEPLOY_DIR/app.jar"
+DB_PASSWORD=${2:-"your_password_here"}
 
 # 确保目录存在
 mkdir -p "$DEPLOY_DIR/logs"
@@ -42,10 +43,33 @@ fi
 
 echo "[INFO] 开始部署应用..."
 
+# 测试数据库连接
+echo "[INFO] 测试数据库连接..."
+if mysql -u root -p"$DB_PASSWORD" -e "SELECT 1;" &>/dev/null; then
+    echo "[SUCCESS] 数据库连接测试成功"
+else
+    echo "[WARNING] 数据库连接测试失败，请检查凭据"
+fi
+
+# 替换配置文件中的数据库密码
+echo "[INFO] 更新配置文件中的数据库密码..."
+CONFIG_FILE="$DEPLOY_DIR/application-prod.yml"
+if [ -f "$CONFIG_FILE" ]; then
+    # 创建备份
+    cp "$CONFIG_FILE" "$CONFIG_FILE.bak"
+    
+    # 使用perl替代sed，更安全地处理特殊字符
+    perl -i -pe "s/\\\$\{DB_PASSWORD:your_password_here\}/$DB_PASSWORD/g" "$CONFIG_FILE"
+    echo "[SUCCESS] 配置文件已更新"
+else
+    echo "[WARNING] 未找到配置文件: $CONFIG_FILE"
+fi
+
 # 启动应用
 echo "[INFO] 启动应用..."
 nohup java $JVM_OPTS -jar "$JAR_FILE" \
     --spring.profiles.active=prod \
+    --spring.datasource.password="$DB_PASSWORD" \
     > "$DEPLOY_DIR/logs/$LOG_FILE" 2>&1 &
 
 # 保存PID到文件
