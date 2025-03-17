@@ -72,6 +72,7 @@ public class UserController {
                     user.getAvatar(),
                     user.getPhone(),
                     user.getRealName(),
+                    user.getAddress(),
                     user.getCreatedAt(),
                     user.getUpdatedAt()
             );

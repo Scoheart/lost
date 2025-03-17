@@ -73,7 +73,7 @@ public interface UserRepository {
     
     @Update("UPDATE users SET username = #{username}, email = #{email}, password = #{password}, " +
             "role = #{role}, avatar = #{avatar}, phone = #{phone}, real_name = #{realName}, " +
-            "updated_at = #{updatedAt}, is_enabled = #{isEnabled} " +
+            "updated_at = #{updatedAt}, is_enabled = #{isEnabled}, address = #{address} " +
             "WHERE id = #{id}")
     void update(User user);
     

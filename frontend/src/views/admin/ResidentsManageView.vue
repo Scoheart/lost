@@ -69,17 +69,21 @@
         style="width: 100%"
         :empty-text="loading ? '加载中...' : '暂无数据'"
       >
-        <el-table-column prop="id" label="ID" width="80" />
         <el-table-column prop="username" label="用户名" min-width="120" />
+        <el-table-column prop="realName" label="真实姓名" min-width="120">
+          <template #default="scope">
+            {{ scope.row.realName || '-' }}
+          </template>
+        </el-table-column>
         <el-table-column prop="email" label="邮箱" min-width="180" />
         <el-table-column prop="phone" label="手机号" min-width="120">
           <template #default="scope">
             {{ scope.row.phone || '-' }}
           </template>
         </el-table-column>
-        <el-table-column prop="createdAt" label="注册时间" min-width="160">
+        <el-table-column prop="address" label="住址" min-width="180">
           <template #default="scope">
-            {{ formatDateTime(scope.row.createdAt) }}
+            {{ scope.row.address || '-' }}
           </template>
         </el-table-column>
         <el-table-column label="状态" width="100">
@@ -89,7 +93,7 @@
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="200" fixed="right">
+        <el-table-column label="操作" width="150" fixed="right">
           <template #default="scope">
             <div class="operation-buttons">
               <el-button
@@ -107,14 +111,6 @@
                 text
               >
                 {{ scope.row.isEnabled ? '锁定' : '解锁' }}
-              </el-button>
-              <el-button
-                type="danger"
-                size="small"
-                @click="deleteResident(scope.row)"
-                text
-              >
-                删除
               </el-button>
             </div>
           </template>
@@ -149,28 +145,44 @@
         label-width="80px"
         status-icon
       >
-        <el-form-item label="用户名" prop="username">
-          <el-input v-model="residentForm.username" placeholder="请输入用户名" />
+        <template v-if="!editingResident">
+          <el-form-item label="用户名" prop="username">
+            <el-input v-model="residentForm.username" placeholder="请输入用户名" />
+          </el-form-item>
+        </template>
+
+        <el-form-item label="真实姓名" prop="realName">
+          <el-input v-model="residentForm.realName" placeholder="请输入真实姓名" />
         </el-form-item>
-        <el-form-item label="邮箱" prop="email">
-          <el-input v-model="residentForm.email" placeholder="请输入邮箱" />
-        </el-form-item>
-        <el-form-item label="手机号" prop="phone">
-          <el-input v-model="residentForm.phone" placeholder="请输入手机号" />
-        </el-form-item>
-        <el-form-item label="密码" prop="password" v-if="!editingResident">
-          <el-input
-            v-model="residentForm.password"
-            type="password"
-            placeholder="请输入密码"
-            show-password
-          />
-        </el-form-item>
-        <el-form-item label="状态" prop="isEnabled">
-          <el-select v-model="residentForm.isEnabled" placeholder="请选择状态" style="width: 100%">
-            <el-option label="正常" :value="true" />
-            <el-option label="锁定" :value="false" />
-          </el-select>
+
+        <!-- 只在添加模式显示邮箱和密码 -->
+        <template v-if="!editingResident">
+          <el-form-item label="手机号" prop="phone">
+            <el-input v-model="residentForm.phone" placeholder="请输入手机号" />
+          </el-form-item>
+          <el-form-item label="邮箱" prop="email">
+            <el-input v-model="residentForm.email" placeholder="请输入邮箱（选填）" />
+          </el-form-item>
+          <el-form-item label="密码" prop="password">
+            <el-input
+              v-model="residentForm.password"
+              type="password"
+              placeholder="请输入密码"
+              show-password
+            />
+          </el-form-item>
+          <el-form-item label="确认密码" prop="confirmPassword">
+            <el-input
+              v-model="residentForm.confirmPassword"
+              type="password"
+              placeholder="请再次输入密码"
+              show-password
+            />
+          </el-form-item>
+        </template>
+
+        <el-form-item label="住址" prop="address">
+          <el-input v-model="residentForm.address" placeholder="请输入住址" />
         </el-form-item>
       </el-form>
       <template #footer>
@@ -202,6 +214,7 @@ interface Resident {
   role: string
   avatar?: string | null
   realName?: string | null
+  address?: string | null
   isEnabled: boolean
   isLocked: boolean
   createdAt: string
@@ -261,10 +274,12 @@ const dateShortcuts = [
 const residentForm = reactive({
   id: 0,
   username: '',
-  email: '',
+  email: '' as string | null,
   phone: '',
   password: '',
-  isEnabled: true
+  confirmPassword: '',
+  realName: '',
+  address: ''
 })
 
 // 表单验证规则
@@ -274,7 +289,6 @@ const formRules = reactive<FormRules>({
     { min: 3, max: 20, message: '长度在3到20个字符之间', trigger: 'blur' }
   ],
   email: [
-    { required: true, message: '请输入邮箱', trigger: 'blur' },
     { type: 'email', message: '请输入正确的邮箱格式', trigger: 'blur' }
   ],
   phone: [
@@ -287,6 +301,27 @@ const formRules = reactive<FormRules>({
   password: [
     { required: !editingResident.value, message: '请输入密码', trigger: 'blur' },
     { min: 6, message: '密码长度不能小于6个字符', trigger: 'blur' }
+  ],
+  confirmPassword: [
+    { required: !editingResident.value, message: '请再次输入密码', trigger: 'blur' },
+    {
+      validator: (rule, value, callback) => {
+        if (value !== residentForm.password) {
+          callback(new Error('两次输入的密码不一致'));
+        } else {
+          callback();
+        }
+      },
+      trigger: 'blur'
+    }
+  ],
+  address: [
+    { required: true, message: '请输入住址', trigger: 'blur' },
+    { max: 200, message: '住址长度不能超过200个字符', trigger: 'blur' }
+  ],
+  realName: [
+    { required: true, message: '请输入真实姓名', trigger: 'blur' },
+    { max: 50, message: '真实姓名长度不能超过50个字符', trigger: 'blur' }
   ]
 })
 
@@ -367,10 +402,8 @@ const openEditDialog = (resident: Resident) => {
   editingResident.value = resident
   resetForm()
   residentForm.id = resident.id
-  residentForm.username = resident.username
-  residentForm.email = resident.email
-  residentForm.phone = resident.phone || ''
-  residentForm.isEnabled = resident.isEnabled
+  residentForm.realName = resident.realName || ''
+  residentForm.address = resident.address || ''
   dialogVisible.value = true
 }
 
@@ -380,7 +413,9 @@ const resetForm = () => {
   residentForm.email = ''
   residentForm.phone = ''
   residentForm.password = ''
-  residentForm.isEnabled = true
+  residentForm.confirmPassword = ''
+  residentForm.realName = ''
+  residentForm.address = ''
   if (residentFormRef.value) {
     residentFormRef.value.resetFields()
   }
@@ -391,11 +426,20 @@ const handleSaveResident = async () => {
 
   await residentFormRef.value.validate(async (valid) => {
     if (valid) {
+      // 验证密码是否一致(在添加模式下)
+      if (!editingResident.value && residentForm.password !== residentForm.confirmPassword) {
+        ElMessage.error('两次输入的密码不一致');
+        return;
+      }
+
       submitting.value = true
       try {
         if (editingResident.value) {
-          // 编辑现有居民
-          const { password, ...updateData } = residentForm
+          // 编辑现有居民 - 只更新真实姓名和住址
+          const updateData = {
+            realName: residentForm.realName,
+            address: residentForm.address
+          }
           const result = await apiClient.put(`/residents/${residentForm.id}`, updateData)
           if (result.data.success) {
             ElMessage.success('居民信息已更新')
@@ -405,8 +449,21 @@ const handleSaveResident = async () => {
             ElMessage.error(result.data.message || '更新居民失败')
           }
         } else {
-          // 添加新居民
-          const result = await apiClient.post('/residents', residentForm)
+          // 添加新居民 - 从表单数据中删除确认密码字段
+          const { confirmPassword, ...submitData } = residentForm;
+
+          // 处理空邮箱 - 将空字符串转换为null
+          if (!submitData.email || submitData.email.trim() === '') {
+            submitData.email = null;
+          }
+
+          // 添加默认启用状态
+          const residentData = {
+            ...submitData,
+            isEnabled: true
+          };
+
+          const result = await apiClient.post('/residents', residentData)
           if (result.data.success) {
             ElMessage.success('居民已添加')
             dialogVisible.value = false
@@ -454,33 +511,6 @@ const toggleResidentStatus = async (resident: Resident) => {
   } catch (error: any) {
     if (error !== 'cancel') {
       const errorMsg = error.response?.data?.message || `${action}失败，请稍后再试`
-      ElMessage.error(errorMsg)
-    }
-  }
-}
-
-const deleteResident = async (resident: Resident) => {
-  try {
-    await ElMessageBox.confirm(
-      `确定要删除用户 "${resident.username}" 吗？此操作不可恢复。`,
-      '删除确认',
-      {
-        confirmButtonText: '确定删除',
-        cancelButtonText: '取消',
-        type: 'warning'
-      }
-    )
-
-    const result = await apiClient.delete(`/residents/${resident.id}`)
-    if (result.data.success) {
-      ElMessage.success('用户删除成功')
-      loadResidents()
-    } else {
-      ElMessage.error(result.data.message || '删除失败')
-    }
-  } catch (error: any) {
-    if (error !== 'cancel') {
-      const errorMsg = error.response?.data?.message || '删除失败，请稍后再试'
       ElMessage.error(errorMsg)
     }
   }

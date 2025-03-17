@@ -383,7 +383,7 @@ public class FoundItemController {
         String newStatus = statusUpdate.get("status");
         // 如果状态是closed，则执行删除操作
         if ("closed".equals(newStatus)) {
-            foundItemService.deleteFoundItem(id);
+            foundItemService.deleteFoundItem(id, currentUser.getId());
             return ResponseEntity.ok(ApiResponse.success("失物招领已删除", null));
         }
         
@@ -396,7 +396,17 @@ public class FoundItemController {
         item.setStatus(newStatus);
         item.setUpdatedAt(LocalDateTime.now());
         
-        FoundItem updatedItem = foundItemService.updateFoundItem(item);
+        FoundItem updatedItem = foundItemService.updateFoundItem(item, currentUser.getId());
         return ResponseEntity.ok(ApiResponse.success("状态已更新", updatedItem));
+    }
+
+    /**
+     * 判断用户是否为管理员
+     * @param currentUser 当前用户
+     * @return 是否为管理员
+     */
+    private boolean userIsAdmin(UserDetailsImpl currentUser) {
+        return currentUser != null && 
+               (currentUser.getRole().equals("admin") || currentUser.getRole().equals("sysadmin"));
     }
 } 

@@ -9,7 +9,6 @@ import com.community.lostandfound.dto.common.ApiResponse;
 import com.community.lostandfound.dto.report.ReportDto;
 import com.community.lostandfound.dto.report.ReportPageDto;
 import com.community.lostandfound.dto.report.ReportResolutionRequest;
-import com.community.lostandfound.dto.user.UpdateProfileRequest;
 import com.community.lostandfound.entity.Report;
 import com.community.lostandfound.entity.User;
 import com.community.lostandfound.exception.BadRequestException;
@@ -26,9 +25,6 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.stereotype.Component;
-import org.springframework.boot.ApplicationArguments;
-import org.springframework.boot.ApplicationRunner;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
@@ -359,8 +355,9 @@ public class AdminController {
             throw new BadRequestException("用户名已被使用");
         }
 
-        // 检查邮箱是否已存在
-        if (userService.existsByEmail(request.getEmail())) {
+        // 检查邮箱是否已存在（如果提供了邮箱）
+        if (request.getEmail() != null && !request.getEmail().isEmpty() && 
+            userService.existsByEmail(request.getEmail())) {
             throw new BadRequestException("邮箱已被使用");
         }
         
@@ -372,11 +369,12 @@ public class AdminController {
         // 创建新用户
         User user = new User();
         user.setUsername(request.getUsername());
-        user.setEmail(request.getEmail());
+        user.setEmail(request.getEmail()); // 可以为空
         user.setPassword(request.getPassword()); // 服务层会加密密码
         user.setRole(request.getRole());
-        user.setRealName(request.getRealName()); // realName可以为空
+        user.setRealName(request.getRealName());
         user.setPhone(request.getPhone());
+        user.setAddress(request.getAddress());
         user.setIsEnabled(true);
         user.setCreatedAt(LocalDateTime.now());
         user.setUpdatedAt(LocalDateTime.now());
@@ -577,6 +575,7 @@ public class AdminController {
                 user.getAvatar(),
                 user.getPhone(),
                 user.getRealName(),
+                user.getAddress(),
                 user.getIsEnabled(),
                 user.getCreatedAt(),
                 user.getUpdatedAt()

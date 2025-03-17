@@ -107,7 +107,7 @@ const router = createRouter({
       path: '/login',
       name: 'login',
       component: () => import('../views/auth/LoginView.vue'),
-      meta: { title: '登录' },
+      meta: { title: '用户登录' },
     },
     {
       path: '/register',
@@ -115,18 +115,11 @@ const router = createRouter({
       component: () => import('../views/auth/RegisterView.vue'),
       meta: { title: '注册' },
     },
-    // 管理员登录
-    {
-      path: '/admin/login',
-      name: 'admin-login',
-      component: () => import('../views/auth/AdminLoginView.vue'),
-      meta: { title: '管理员登录' },
-    },
     {
       path: '/admin/forgot-password',
       name: 'admin-forgot-password',
       component: () => import('../views/auth/AdminForgotPasswordView.vue'),
-      meta: { title: '管理员密码找回' },
+      meta: { title: '密码找回' },
     },
     // 管理员页面
     {

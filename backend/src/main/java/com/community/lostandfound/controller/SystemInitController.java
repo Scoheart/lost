@@ -79,8 +79,8 @@ public class SystemInitController {
             throw new BadRequestException("用户名已被使用");
         }
         
-        // 检查邮箱是否已存在
-        if (userService.existsByEmail(request.getEmail())) {
+        // 检查邮箱是否已存在（仅当邮箱不为空时）
+        if (request.getEmail() != null && !request.getEmail().isEmpty() && userService.existsByEmail(request.getEmail())) {
             throw new BadRequestException("邮箱已被使用");
         }
         
@@ -92,6 +92,7 @@ public class SystemInitController {
         admin.setRole("sysadmin");
         admin.setRealName(request.getRealName());
         admin.setPhone(request.getPhone());
+        admin.setAddress(request.getAddress());
         admin.setIsEnabled(true);
         admin.setCreatedAt(LocalDateTime.now());
         admin.setUpdatedAt(LocalDateTime.now());

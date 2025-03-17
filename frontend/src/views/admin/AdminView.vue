@@ -8,29 +8,37 @@
           <h2>系统管理</h2>
         </div>
 
-        <el-menu
-          router
-          :default-active="activeMenu"
-          class="admin-menu"
-        >
+        <el-menu router :default-active="activeMenu" class="admin-menu">
           <!-- 只有小区管理员可见的菜单项 -->
-          <el-menu-item v-if="userStore.isCommunityAdmin && !userStore.isSysAdmin" index="/admin/announcements">
+          <el-menu-item
+            v-if="userStore.isCommunityAdmin && !userStore.isSysAdmin"
+            index="/admin/announcements"
+          >
             <el-icon><Bell /></el-icon>
             <span>公告管理</span>
           </el-menu-item>
 
-          <el-menu-item v-if="userStore.isCommunityAdmin && !userStore.isSysAdmin" index="/admin/claims">
+          <el-menu-item
+            v-if="userStore.isCommunityAdmin && !userStore.isSysAdmin"
+            index="/admin/claims"
+          >
             <el-icon><Document /></el-icon>
             <span>认领记录</span>
           </el-menu-item>
 
-          <el-menu-item v-if="userStore.isCommunityAdmin && !userStore.isSysAdmin" index="/admin/residents">
+          <el-menu-item
+            v-if="userStore.isCommunityAdmin && !userStore.isSysAdmin"
+            index="/admin/residents"
+          >
             <el-icon><User /></el-icon>
             <span>居民管理</span>
           </el-menu-item>
 
           <!-- 添加举报管理菜单，小区管理员可见 -->
-          <el-menu-item v-if="userStore.isCommunityAdmin && !userStore.isSysAdmin" index="/admin/reports">
+          <el-menu-item
+            v-if="userStore.isCommunityAdmin && !userStore.isSysAdmin"
+            index="/admin/reports"
+          >
             <el-icon><ChatDotRound /></el-icon>
             <span>举报管理</span>
           </el-menu-item>
@@ -39,12 +47,6 @@
           <el-menu-item v-if="userStore.isSysAdmin" index="/admin/users">
             <el-icon><Setting /></el-icon>
             <span>系统用户管理</span>
-          </el-menu-item>
-
-          <!-- 返回前台 -->
-          <el-menu-item index="/">
-            <el-icon><HomeFilled /></el-icon>
-            <span>返回首页</span>
           </el-menu-item>
         </el-menu>
 
@@ -75,12 +77,7 @@
       <el-main class="admin-main">
         <!-- 管理员角色提示 -->
         <div v-if="isRoleSpecificPage" class="role-warning">
-          <el-alert
-            :title="roleWarningTitle"
-            type="info"
-            :closable="false"
-            show-icon
-          >
+          <el-alert :title="roleWarningTitle" type="info" :closable="false" show-icon>
             <template #default>
               {{ roleWarningMessage }}
             </template>
@@ -104,7 +101,7 @@ import {
   Setting,
   SwitchButton,
   HomeFilled,
-  ChatDotRound
+  ChatDotRound,
 } from '@element-plus/icons-vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { useUserStore } from '@/stores/user'
@@ -133,45 +130,49 @@ const adminRoleText = computed(() => {
 // 判断当前页面是否为角色特定页面
 const isRoleSpecificPage = computed(() => {
   // 系统管理员尝试访问非用户管理页面
-  if (userStore.isSysAdmin &&
-      (route.path === '/admin/announcements' ||
-       route.path === '/admin/claims' ||
-       route.path === '/admin/residents')) {
-    return true;
+  if (
+    userStore.isSysAdmin &&
+    (route.path === '/admin/announcements' ||
+      route.path === '/admin/claims' ||
+      route.path === '/admin/residents')
+  ) {
+    return true
   }
 
   // 小区管理员尝试访问用户管理页面
   if (userStore.isCommunityAdmin && !userStore.isSysAdmin && route.path === '/admin/users') {
-    return true;
+    return true
   }
 
-  return false;
+  return false
 })
 
 // 角色警告信息
 const roleWarningTitle = computed(() => {
   if (userStore.isSysAdmin) {
-    return '系统管理员仅可访问系统用户管理';
+    return '系统管理员仅可访问系统用户管理'
   }
   if (route.path === '/admin/users') {
-    return '系统用户管理仅限系统管理员访问';
+    return '系统用户管理仅限系统管理员访问'
   }
-  return '权限提示';
+  return '权限提示'
 })
 
 const roleWarningMessage = computed(() => {
-  if (userStore.isSysAdmin &&
-     (route.path === '/admin/announcements' ||
+  if (
+    userStore.isSysAdmin &&
+    (route.path === '/admin/announcements' ||
       route.path === '/admin/claims' ||
-      route.path === '/admin/residents')) {
-    return '作为系统管理员，您只能访问系统用户管理功能。';
+      route.path === '/admin/residents')
+  ) {
+    return '作为系统管理员，您只能访问系统用户管理功能。'
   }
 
   if (userStore.isCommunityAdmin && !userStore.isSysAdmin && route.path === '/admin/users') {
-    return '您当前的角色是小区管理员，无法访问系统用户管理功能。如需访问，请联系系统管理员提升您的权限。';
+    return '您当前的角色是小区管理员，无法访问系统用户管理功能。如需访问，请联系系统管理员提升您的权限。'
   }
 
-  return '您没有足够的权限访问此页面';
+  return '您没有足够的权限访问此页面'
 })
 
 // 方法
@@ -180,14 +181,15 @@ const logout = async () => {
     await ElMessageBox.confirm('确定要退出管理员登录吗?', '提示', {
       confirmButtonText: '确定',
       cancelButtonText: '取消',
-      type: 'warning'
+      type: 'warning',
     })
 
-    userStore.logout()
-    ElMessage.success('已安全退出登录')
-    router.push('/admin/login')
-  } catch (e) {
-    // 用户取消，不做任何操作
+    await userStore.logout()
+    ElMessage.success('已安全退出系统')
+    router.push('/login')
+  } catch (error) {
+    console.error('Logout error:', error)
+    ElMessage.error('退出失败，请重试')
   }
 }
 </script>

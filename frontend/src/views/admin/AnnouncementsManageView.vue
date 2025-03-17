@@ -85,24 +85,6 @@
               >
                 编辑
               </el-button>
-              <el-button
-                v-if="!scope.row.isSticky"
-                size="small"
-                type="warning"
-                @click="handleSetSticky(scope.row)"
-                text
-              >
-                置顶
-              </el-button>
-              <el-button
-                v-if="scope.row.isSticky"
-                size="small"
-                type="info"
-                @click="handleCancelSticky(scope.row)"
-                text
-              >
-                取消置顶
-              </el-button>
               <el-popconfirm
                 title="确定要删除这条公告吗?"
                 width="220"
@@ -171,10 +153,6 @@
             show-word-limit
           />
         </el-form-item>
-
-        <el-form-item label="是否置顶">
-          <el-switch v-model="announcementForm.isSticky" />
-        </el-form-item>
       </el-form>
 
       <template #footer>
@@ -225,8 +203,7 @@ const filterForm = reactive({
 const announcementForm = reactive({
   id: null as number | null,
   title: '',
-  content: '',
-  isSticky: false
+  content: ''
 })
 
 // 表单验证规则
@@ -353,7 +330,6 @@ const handleEdit = (row: any) => {
   announcementForm.id = row.id
   announcementForm.title = row.title
   announcementForm.content = row.content
-  announcementForm.isSticky = row.isSticky
   dialogVisible.value = true
 }
 
@@ -362,7 +338,6 @@ const resetForm = () => {
   announcementForm.id = null
   announcementForm.title = ''
   announcementForm.content = ''
-  announcementForm.isSticky = false
   if (formRef.value) {
     formRef.value.resetFields()
   }
@@ -403,13 +378,11 @@ const handleSaveAnnouncement = async () => {
             ? await announcementsStore.updateAnnouncement({
                 id: announcementForm.id as number,
                 title: announcementForm.title,
-                content: announcementForm.content,
-                isSticky: announcementForm.isSticky
+                content: announcementForm.content
               })
             : await announcementsStore.createAnnouncement({
                 title: announcementForm.title,
-                content: announcementForm.content,
-                isSticky: announcementForm.isSticky
+                content: announcementForm.content
               })
 
           if (result.success) {
@@ -427,46 +400,6 @@ const handleSaveAnnouncement = async () => {
         }
       }
     })
-  }
-}
-
-// 处理设置置顶
-const handleSetSticky = async (row: any) => {
-  try {
-    const result = await announcementsStore.updateAnnouncement({
-      id: row.id,
-      isSticky: true
-    })
-
-    if (result.success) {
-      ElMessage.success('公告已置顶')
-      fetchAnnouncements()
-    } else {
-      ElMessage.error(result.message || '操作失败')
-    }
-  } catch (error) {
-    console.error('Set sticky error:', error)
-    ElMessage.error('操作失败，请稍后再试')
-  }
-}
-
-// 处理取消置顶
-const handleCancelSticky = async (row: any) => {
-  try {
-    const result = await announcementsStore.updateAnnouncement({
-      id: row.id,
-      isSticky: false
-    })
-
-    if (result.success) {
-      ElMessage.success('已取消置顶')
-      fetchAnnouncements()
-    } else {
-      ElMessage.error(result.message || '操作失败')
-    }
-  } catch (error) {
-    console.error('Cancel sticky error:', error)
-    ElMessage.error('操作失败，请稍后再试')
   }
 }
 

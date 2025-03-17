@@ -53,6 +53,8 @@ public class ResidentController {
         String email = (String) residentData.get("email");
         String password = (String) residentData.get("password");
         String phone = (String) residentData.get("phone");
+        String realName = (String) residentData.get("realName");
+        String address = (String) residentData.get("address");
         Boolean isEnabled = residentData.containsKey("isEnabled") ? 
                 (Boolean) residentData.get("isEnabled") : true;
         
@@ -61,12 +63,16 @@ public class ResidentController {
             throw new BadRequestException("用户名不能为空");
         }
         
-        if (email == null || email.isEmpty()) {
-            throw new BadRequestException("邮箱不能为空");
-        }
-        
         if (password == null || password.isEmpty()) {
             throw new BadRequestException("密码不能为空");
+        }
+        
+        if (realName == null || realName.isEmpty()) {
+            throw new BadRequestException("真实姓名不能为空");
+        }
+        
+        if (address == null || address.isEmpty()) {
+            throw new BadRequestException("地址不能为空");
         }
         
         // Check if username is already taken
@@ -74,23 +80,20 @@ public class ResidentController {
             throw new BadRequestException("用户名已被使用");
         }
         
-        // Check if email is already in use
-        if (userService.existsByEmail(email)) {
+        // Check if email is already in use (only if email is provided)
+        if (email != null && !email.isEmpty() && userService.existsByEmail(email)) {
             throw new BadRequestException("邮箱已被使用");
         }
         
         // Create new resident user
         User resident = new User();
         resident.setUsername(username);
-        resident.setEmail(email);
+        resident.setEmail(email); // Can be null or empty
         resident.setPassword(password); // Will be encoded in service layer
         resident.setRole("resident"); // Always set role to resident
         resident.setPhone(phone);
-        
-        // Optional fields
-        if (residentData.containsKey("realName")) {
-            resident.setRealName((String) residentData.get("realName"));
-        }
+        resident.setRealName(realName);
+        resident.setAddress(address);
         
         if (residentData.containsKey("avatar")) {
             resident.setAvatar((String) residentData.get("avatar"));
@@ -290,29 +293,13 @@ public class ResidentController {
             throw new BadRequestException("指定用户不是居民");
         }
         
-        // Update user fields if provided in the request
-        if (updateData.containsKey("username")) {
-            user.setUsername((String) updateData.get("username"));
-        }
-        
-        if (updateData.containsKey("email")) {
-            user.setEmail((String) updateData.get("email"));
-        }
-        
-        if (updateData.containsKey("phone")) {
-            user.setPhone((String) updateData.get("phone"));
-        }
-        
+        // Update only realName and address fields
         if (updateData.containsKey("realName")) {
             user.setRealName((String) updateData.get("realName"));
         }
         
-        if (updateData.containsKey("avatar")) {
-            user.setAvatar((String) updateData.get("avatar"));
-        }
-        
-        if (updateData.containsKey("isEnabled")) {
-            user.setIsEnabled((Boolean) updateData.get("isEnabled"));
+        if (updateData.containsKey("address")) {
+            user.setAddress((String) updateData.get("address"));
         }
         
         user.setUpdatedAt(LocalDateTime.now());
@@ -337,6 +324,7 @@ public class ResidentController {
                 user.getAvatar(),
                 user.getPhone(),
                 user.getRealName(),
+                user.getAddress(),
                 user.getIsEnabled(),
                 user.getCreatedAt(),
                 user.getUpdatedAt()

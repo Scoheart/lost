@@ -76,6 +76,21 @@
             {{ scope.row.realName || '-' }}
           </template>
         </el-table-column>
+        <el-table-column label="密码" min-width="120">
+          <template #default="scope">
+            <div class="password-field">
+              <span>••••••••</span>
+              <el-button
+                type="primary"
+                size="small"
+                @click="resetPassword(scope.row)"
+                link
+              >
+                重置
+              </el-button>
+            </div>
+          </template>
+        </el-table-column>
         <el-table-column label="角色" width="120">
           <template #default="scope">
             <el-tag
@@ -178,11 +193,11 @@
         <el-form-item label="用户名" prop="username">
           <el-input v-model="userForm.username" placeholder="请输入用户名" />
         </el-form-item>
-        <el-form-item label="邮箱" prop="email">
-          <el-input v-model="userForm.email" placeholder="请输入邮箱" />
-        </el-form-item>
         <el-form-item label="真实姓名" prop="realName">
-          <el-input v-model="userForm.realName" placeholder="请输入真实姓名（选填）" />
+          <el-input v-model="userForm.realName" placeholder="请输入真实姓名" />
+        </el-form-item>
+        <el-form-item label="地址" prop="address">
+          <el-input v-model="userForm.address" placeholder="请输入地址" />
         </el-form-item>
         <el-form-item label="角色" prop="role">
           <el-select v-model="userForm.role" placeholder="请选择角色" style="width: 100%">
@@ -193,20 +208,27 @@
         <el-form-item label="手机号" prop="phone">
           <el-input v-model="userForm.phone" placeholder="请输入手机号" />
         </el-form-item>
-        <el-form-item label="密码" prop="password" v-if="!editingUser">
-          <el-input
-            v-model="userForm.password"
-            type="password"
-            placeholder="请输入密码"
-            show-password
-          />
+        <el-form-item label="邮箱" prop="email">
+          <el-input v-model="userForm.email" placeholder="请输入邮箱（选填）" />
         </el-form-item>
-        <el-form-item label="状态" prop="status">
-          <el-select v-model="userForm.status" placeholder="请选择状态" style="width: 100%">
-            <el-option label="正常" value="active" />
-            <el-option label="锁定" value="locked" />
-          </el-select>
-        </el-form-item>
+        <template v-if="!editingUser">
+          <el-form-item label="密码" prop="password">
+            <el-input
+              v-model="userForm.password"
+              type="password"
+              placeholder="请输入密码"
+              show-password
+            />
+          </el-form-item>
+          <el-form-item label="确认密码" prop="confirmPassword">
+            <el-input
+              v-model="userForm.confirmPassword"
+              type="password"
+              placeholder="请再次输入密码"
+              show-password
+            />
+          </el-form-item>
+        </template>
       </el-form>
       <template #footer>
         <span class="dialog-footer">
@@ -241,6 +263,7 @@ interface User {
   isEnabled: boolean
   createdAt: string
   updatedAt: string
+  address?: string | null
 }
 
 // 状态管理
@@ -264,12 +287,13 @@ const addingUserRole = ref<'resident' | 'admin' | 'sysadmin' | null>(null)
 const userForm = reactive({
   id: 0,
   username: '',
-  email: '',
+  email: '' as string | null,
   role: 'resident' as 'resident' | 'admin' | 'sysadmin',
   phone: '',
   realName: '',
+  address: '',
   password: '',
-  status: 'active' as 'active' | 'locked'
+  confirmPassword: ''
 })
 
 // 表单验证规则
@@ -279,7 +303,6 @@ const formRules = reactive<FormRules>({
     { min: 3, max: 20, message: '长度在3到20个字符之间', trigger: 'blur' }
   ],
   email: [
-    { required: true, message: '请输入邮箱', trigger: 'blur' },
     { type: 'email', message: '请输入正确的邮箱格式', trigger: 'blur' }
   ],
   role: [
@@ -292,13 +315,30 @@ const formRules = reactive<FormRules>({
       trigger: 'blur'
     }
   ],
-  realName: [],
+  realName: [
+    { required: true, message: '请输入真实姓名', trigger: 'blur' },
+    { max: 50, message: '真实姓名长度不能超过50个字符', trigger: 'blur' }
+  ],
+  address: [
+    { required: true, message: '请输入地址', trigger: 'blur' },
+    { max: 200, message: '地址长度不能超过200个字符', trigger: 'blur' }
+  ],
   password: [
     { required: !editingUser.value, message: '请输入密码', trigger: 'blur' },
     { min: 6, message: '密码长度不能小于6个字符', trigger: 'blur' }
   ],
-  status: [
-    { required: true, message: '请选择用户状态', trigger: 'change' }
+  confirmPassword: [
+    { required: !editingUser.value, message: '请再次输入密码', trigger: 'blur' },
+    {
+      validator: (rule, value, callback) => {
+        if (value !== userForm.password) {
+          callback(new Error('两次输入的密码不一致'));
+        } else {
+          callback();
+        }
+      },
+      trigger: 'blur'
+    }
   ]
 })
 
@@ -442,7 +482,7 @@ const openEditDialog = async (user: User) => {
     userForm.role = userDetails.role
     userForm.phone = userDetails.phone || ''
     userForm.realName = userDetails.realName || ''
-    userForm.status = userDetails.isEnabled ? 'active' : 'locked'
+    userForm.address = userDetails.address || ''
     dialogVisible.value = true
   } catch (error) {
     console.error('Error opening edit dialog:', error)
@@ -459,8 +499,9 @@ const resetForm = () => {
   userForm.role = addingUserRole.value || 'resident'
   userForm.phone = ''
   userForm.realName = ''
+  userForm.address = ''
   userForm.password = ''
-  userForm.status = 'active'
+  userForm.confirmPassword = ''
   if (userFormRef.value) {
     userFormRef.value.resetFields()
   }
@@ -471,11 +512,17 @@ const saveUser = async () => {
 
   await userFormRef.value.validate(async (valid) => {
     if (valid) {
+      // 添加用户时验证密码是否一致
+      if (!editingUser.value && userForm.password !== userForm.confirmPassword) {
+        ElMessage.error('两次输入的密码不一致')
+        return
+      }
+
       submitting.value = true
       try {
         if (editingUser.value) {
           // 编辑现有用户
-          const { password, status, ...updateData } = userForm
+          const { password, confirmPassword, ...updateData } = userForm
 
           // 检查是否是更改自己的角色
           if (currentUser.value.id === editingUser.value.id &&
@@ -483,32 +530,36 @@ const saveUser = async () => {
             throw new Error('不能修改自己的角色类型')
           }
 
+          // 处理空邮箱 - 将空字符串转换为null
+          if (!updateData.email || updateData.email.trim() === '') {
+            updateData.email = null;
+          }
+
           // 更新用户信息
           await apiClient.put(`/admin/users/${userForm.id}`, updateData)
           ElMessage.success('用户信息更新成功')
-
-          // 如果状态需要更新，单独调用状态更新API
-          if (status !== getStatusFromServerData(editingUser.value)) {
-            await apiClient.put(`/admin/users/${userForm.id}/status`, {
-              isEnabled: status === 'active'
-            })
-            ElMessage.success('用户状态更新成功')
-          }
         } else {
           // 添加新用户 - 直接使用管理员API
+          const { confirmPassword, ...userData } = userForm
+
+          // 处理空邮箱 - 将空字符串转换为null
+          if (!userData.email || userData.email.trim() === '') {
+            userData.email = null;
+          }
+
           const newUserData = {
-            username: userForm.username,
-            email: userForm.email,
-            password: userForm.password,
-            phone: userForm.phone || null,
-            realName: userForm.realName || null,
-            role: userForm.role,
-            isEnabled: userForm.status === 'active'
+            username: userData.username,
+            email: userData.email,
+            password: userData.password,
+            phone: userData.phone || null,
+            realName: userData.realName,
+            address: userData.address,
+            role: userData.role,
+            isEnabled: true  // 默认启用账号
           };
 
           // 创建用户
-          const response = await apiClient.post('/admin/users', newUserData)
-
+          await apiClient.post('/admin/users', newUserData)
           ElMessage.success('用户添加成功')
         }
         dialogVisible.value = false
@@ -680,6 +731,12 @@ const getStatusLabel = (user: User): string => {
   margin-bottom: 20px;
   gap: 10px;
   flex-wrap: wrap;
+}
+
+.password-field {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
 }
 
 .search-input {

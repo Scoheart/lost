@@ -373,7 +373,7 @@ public class LostItemController {
         String newStatus = statusUpdate.get("status");
         // 如果状态不是pending，则执行删除操作
         if (!"pending".equals(newStatus)) {
-            lostItemService.deleteLostItem(id);
+            lostItemService.deleteLostItem(id, currentUser.getId());
             return ResponseEntity.ok(ApiResponse.success("寻物启事已删除", null));
         }
         
@@ -381,7 +381,17 @@ public class LostItemController {
         item.setStatus(newStatus);
         item.setUpdatedAt(LocalDateTime.now());
         
-        LostItem updatedItem = lostItemService.updateLostItem(item);
+        LostItem updatedItem = lostItemService.updateLostItem(item, currentUser.getId());
         return ResponseEntity.ok(ApiResponse.success("状态已更新", updatedItem));
+    }
+
+    /**
+     * 判断用户是否为管理员
+     * @param currentUser 当前用户
+     * @return 是否为管理员
+     */
+    private boolean userIsAdmin(UserDetailsImpl currentUser) {
+        return currentUser != null && 
+               (currentUser.getRole().equals("admin") || currentUser.getRole().equals("sysadmin"));
     }
 } 

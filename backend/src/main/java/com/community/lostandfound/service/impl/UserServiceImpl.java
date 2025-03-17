@@ -38,6 +38,32 @@ public class UserServiceImpl implements UserService {
 
     @Override
     @Transactional
+    public User save(User user) {
+        try {
+            // 密码已经在controller中加密，这里不需要再次加密
+            
+            // 确保时间戳存在
+            if (user.getCreatedAt() == null) {
+                user.setCreatedAt(LocalDateTime.now());
+            }
+            if (user.getUpdatedAt() == null) {
+                user.setUpdatedAt(LocalDateTime.now());
+            }
+            
+            // 保存用户
+            userRepository.save(user);
+            
+            return user;
+        } catch (DataAccessException e) {
+            log.error("保存用户失败，可能是字段映射问题: {}", e.getMessage());
+            
+            // 尝试备选方法
+            return createUserWithMinimalFields(user);
+        }
+    }
+
+    @Override
+    @Transactional
     public User registerUser(User user) {
         try {
             // Encode password
@@ -113,7 +139,7 @@ public class UserServiceImpl implements UserService {
     private boolean updateUserDirectly(User user) {
         try {
             String sql = "UPDATE users SET username = ?, email = ?, password = ?, " +
-                   "role = ?, updated_at = ?, is_enabled = ? WHERE id = ?";
+                   "role = ?, updated_at = ?, is_enabled = ?, real_name = ?, phone = ?, avatar = ?, address = ? WHERE id = ?";
             
             int updated = jdbcTemplate.update(sql,
                 user.getUsername(),
@@ -122,6 +148,10 @@ public class UserServiceImpl implements UserService {
                 user.getRole(),
                 user.getUpdatedAt(),
                 user.getIsEnabled(),
+                user.getRealName(),
+                user.getPhone(),
+                user.getAvatar(),
+                user.getAddress(),
                 user.getId()
             );
             

@@ -20,6 +20,7 @@ public class AdminUserDto {
     private String avatar;
     private String phone;
     private String realName;
+    private String address;
     private Boolean isEnabled;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;

@@ -6,7 +6,7 @@
         <h1>住宅小区互助寻物系统</h1>
       </div>
 
-      <h2 class="login-title">居民用户登录</h2>
+      <h2 class="login-title">系统登录</h2>
 
       <el-form
         ref="formRef"
@@ -91,6 +91,19 @@ const rules = reactive<FormRules>({
   ],
 })
 
+// 根据用户角色返回合适的重定向路径
+const getRedirectPathByRole = (role: string): string => {
+  switch (role) {
+    case 'admin':
+      return '/admin'
+    case 'sysadmin':
+      return '/admin'
+    case 'resident':
+    default:
+      return '/'
+  }
+}
+
 const handleSubmit = async () => {
   if (!formRef.value) return
 
@@ -118,20 +131,14 @@ const handleSubmit = async () => {
 
           ElMessage.success('登录成功！')
 
-          // 如果有重定向参数，则重定向到指定页面
-          const redirectPath = route.query.redirect as string
-          router.push(redirectPath || '/')
+          // 获取用户角色并自动重定向
+          const userRole = userStore.user?.role || 'resident'
+
+          // 优先使用URL中的重定向参数，否则根据角色定向
+          const redirectPath = route.query.redirect as string || getRedirectPathByRole(userRole)
+          router.push(redirectPath)
         } else {
-          if (result.message && result.message.includes('管理员账号')) {
-            // 显示更友好的错误提示，引导管理员使用正确的登录入口
-            error.value = '您正在使用管理员账号登录居民入口，请前往管理员登录页面'
-            ElMessage.warning({
-              message: '请使用管理员登录入口',
-              duration: 5000
-            })
-          } else {
-            error.value = result.message || '登录失败，请检查用户名和密码'
-          }
+          error.value = result.message || '登录失败，请检查用户名和密码'
         }
       } catch (err) {
         console.error('Login error:', err)

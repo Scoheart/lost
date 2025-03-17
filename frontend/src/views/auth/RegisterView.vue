@@ -21,22 +21,34 @@
             v-model="registerForm.username"
             placeholder="请输入用户名"
             :prefix-icon="User"
+            :disabled="loading"
           />
         </el-form-item>
 
-        <el-form-item prop="realName" label="姓名">
+        <el-form-item prop="realName" label="真实姓名">
           <el-input
             v-model="registerForm.realName"
-            placeholder="请输入您的真实姓名"
-            :prefix-icon="UserFilled"
+            placeholder="请输入真实姓名"
+            :prefix-icon="User"
+            :disabled="loading"
           />
         </el-form-item>
 
         <el-form-item prop="address" label="住址">
           <el-input
             v-model="registerForm.address"
-            placeholder="请输入您的住址"
+            placeholder="请输入住址信息"
             :prefix-icon="Location"
+            :disabled="loading"
+          />
+        </el-form-item>
+
+        <el-form-item prop="email" label="邮箱 (选填)">
+          <el-input
+            v-model="registerForm.email"
+            placeholder="请输入邮箱地址（选填）"
+            :prefix-icon="Message"
+            :disabled="loading"
           />
         </el-form-item>
 
@@ -47,6 +59,7 @@
             placeholder="请输入密码"
             :prefix-icon="Lock"
             show-password
+            :disabled="loading"
           />
         </el-form-item>
 
@@ -57,14 +70,7 @@
             placeholder="请再次输入密码"
             :prefix-icon="Lock"
             show-password
-          />
-        </el-form-item>
-
-        <el-form-item prop="phone" label="手机号码">
-          <el-input
-            v-model="registerForm.phone"
-            placeholder="请输入手机号码"
-            :prefix-icon="Phone"
+            :disabled="loading"
           />
         </el-form-item>
 
@@ -76,48 +82,54 @@
 
         <div class="login-link">
           已有账号？
-          <router-link to="/login">去登录</router-link>
+          <router-link to="/login">立即登录</router-link>
         </div>
       </el-form>
+
+      <div v-if="error" class="error-message">
+        <el-alert :title="error" type="error" show-icon :closable="false" />
+      </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { reactive, ref } from 'vue'
+import { ref, reactive } from 'vue'
 import { useRouter } from 'vue-router'
-import { ElMessage } from 'element-plus'
+import { User, Lock, Message, Location } from '@element-plus/icons-vue'
 import type { FormInstance, FormRules } from 'element-plus'
-import { User, Lock, Phone, UserFilled, Location } from '@element-plus/icons-vue'
+import { ElMessage } from 'element-plus'
 import { useUserStore } from '@/stores/user'
 
 const router = useRouter()
 const userStore = useUserStore()
 const formRef = ref<FormInstance>()
 const loading = ref(false)
+const error = ref('')
 
 const registerForm = reactive({
   username: '',
   realName: '',
-  address: '',
+  email: '',
   password: '',
   confirmPassword: '',
-  phone: '',
+  address: '',
 })
 
-// 自定义验证规则
 const validatePass = (rule: any, value: string, callback: any) => {
   if (value === '') {
     callback(new Error('请输入密码'))
   } else {
     if (registerForm.confirmPassword !== '') {
-      if (formRef.value) formRef.value.validateField('confirmPassword')
+      if (formRef.value) {
+        formRef.value.validateField('confirmPassword')
+      }
     }
     callback()
   }
 }
 
-const validatePass2 = (rule: any, value: string, callback: any) => {
+const validatePassConfirm = (rule: any, value: string, callback: any) => {
   if (value === '') {
     callback(new Error('请再次输入密码'))
   } else if (value !== registerForm.password) {
@@ -127,34 +139,43 @@ const validatePass2 = (rule: any, value: string, callback: any) => {
   }
 }
 
-const validatePhone = (rule: any, value: string, callback: any) => {
-  const phoneRegex = /^1[3456789]\d{9}$/
-  if (value && !phoneRegex.test(value)) {
-    callback(new Error('请输入有效的手机号码'))
-  } else {
+// 仅当邮箱字段有值时才验证格式
+const validateEmail = (rule: any, value: string, callback: any) => {
+  if (!value) {
+    // 邮箱为空，不做验证，直接通过
     callback()
+  } else {
+    // 邮箱不为空，验证格式
+    const emailPattern = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,6}$/
+    if (!emailPattern.test(value)) {
+      callback(new Error('请输入有效的邮箱地址'))
+    } else {
+      callback()
+    }
   }
 }
 
 const rules = reactive<FormRules>({
   username: [
     { required: true, message: '请输入用户名', trigger: 'blur' },
-    { min: 3, max: 20, message: '长度在3到20个字符之间', trigger: 'blur' },
+    { min: 3, message: '用户名不能少于3个字符', trigger: 'blur' },
   ],
   realName: [
-    { required: true, message: '请输入您的姓名', trigger: 'blur' },
-    { max: 50, message: '姓名长度不能超过50个字符', trigger: 'blur' },
+    { required: true, message: '请输入真实姓名', trigger: 'blur' },
   ],
   address: [
-    { required: true, message: '请输入您的住址', trigger: 'blur' },
-    { max: 200, message: '住址长度不能超过200个字符', trigger: 'blur' },
+    { required: true, message: '请输入住址信息', trigger: 'blur' },
+  ],
+  email: [
+    { required: false, validator: validateEmail, trigger: 'blur' },
   ],
   password: [
     { required: true, validator: validatePass, trigger: 'blur' },
-    { min: 6, message: '密码长度不能小于6个字符', trigger: 'blur' },
+    { min: 6, message: '密码不能少于6个字符', trigger: 'blur' },
   ],
-  confirmPassword: [{ required: true, validator: validatePass2, trigger: 'blur' }],
-  phone: [{ validator: validatePhone, trigger: 'blur' }],
+  confirmPassword: [
+    { required: true, validator: validatePassConfirm, trigger: 'blur' },
+  ],
 })
 
 const handleSubmit = async () => {
@@ -163,24 +184,33 @@ const handleSubmit = async () => {
   await formRef.value.validate(async (valid) => {
     if (valid) {
       loading.value = true
+      error.value = ''
+
       try {
         const result = await userStore.register({
           username: registerForm.username,
           realName: registerForm.realName,
-          address: registerForm.address,
+          email: registerForm.email || null, // 允许为空
           password: registerForm.password,
-          phone: registerForm.phone || undefined,
+          address: registerForm.address,
         })
 
         if (result.success) {
-          ElMessage.success('注册成功！请登录')
-          router.push('/login')
+          ElMessage.success('注册成功！即将跳转到登录页面')
+          setTimeout(() => {
+            router.push('/login')
+          }, 1500)
         } else {
-          ElMessage.error(result.message || '注册失败，请稍后再试')
+          error.value = result.message || '注册失败，请检查您的输入'
         }
-      } catch (error) {
-        console.error('Registration error:', error)
-        ElMessage.error('注册失败，请稍后再试')
+      } catch (err: any) {
+        console.error('Registration error:', err)
+        if (err.response && err.response.data && err.response.data.message) {
+          // 处理后端返回的错误信息
+          error.value = err.response.data.message
+        } else {
+          error.value = '注册失败，请稍后再试'
+        }
       } finally {
         loading.value = false
       }

@@ -49,13 +49,20 @@
                 </el-dropdown>
               </template>
               <template v-else>
-                <el-button type="primary" @click="$router.push('/login')">登录</el-button>
+                <el-button
+                  v-if="!isAuthenticated"
+                  type="primary"
+                  @click="$router.push('/login')"
+                  class="login-btn"
+                >
+                  登录
+                </el-button>
                 <el-button @click="$router.push('/register')">注册</el-button>
                 <el-link
                   type="info"
                   :underline="false"
                   class="admin-link"
-                  @click="$router.push('/admin/login')"
+                  @click="$router.push('/login')"
                 >
                   管理员入口
                 </el-link>

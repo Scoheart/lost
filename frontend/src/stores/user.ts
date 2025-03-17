@@ -152,18 +152,13 @@ export const useUserStore = defineStore('user', {
           const token = responseData.token
           const role = responseData.role
 
-          // 验证角色是否为居民用户
-          if (role !== 'resident') {
-            this.error = '管理员账号请使用管理员登录入口'
-            console.log('[UserStore] Login failed: Not a resident account')
-            return { success: false, message: this.error }
-          }
+          // 不再限制用户角色，允许任何角色的用户登录
 
           // 构建用户对象
           const user: User = {
             id: responseData.id,
             username: responseData.username,
-            email: responseData.email,
+            email: responseData.email || '', // 邮箱允许为空
             role: responseData.role,
             avatar: responseData.avatar,
             phone: responseData.phone,
@@ -180,12 +175,12 @@ export const useUserStore = defineStore('user', {
 
           return { success: true }
         } else {
-          this.error = response.data.message || '登录失败，请检查用户名和密码'
+          this.error = response.data.message || '登录失败'
           console.log('[UserStore] Login failed:', this.error)
           return { success: false, message: this.error }
         }
       } catch (error: any) {
-        this.handleApiError(error, '登录失败，请稍后再试')
+        this.handleApiError(error, '登录失败，请检查用户名和密码')
         return { success: false, message: this.error }
       } finally {
         this.loading = false
