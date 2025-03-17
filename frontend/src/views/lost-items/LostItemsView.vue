@@ -11,16 +11,18 @@
           <el-col :xs="24" :sm="24" :md="24" :lg="24">
             <div class="filter-bar">
               <div class="filter-container">
-                <div class="filter-inputs">
+                <div class="filter-controls">
                   <el-input
                     v-model="filters.keyword"
-                    placeholder="搜索物品名称、描述或地点"
+                    placeholder="搜索物品名称或描述"
                     clearable
-                    :prefix-icon="Search"
-                    @clear="handleSearch"
-                    @keyup.enter="handleSearch"
-                    class="search-input"
-                  />
+                    @input="handleSearch"
+                    class="filter-input"
+                  >
+                    <template #prefix>
+                      <el-icon><Search /></el-icon>
+                    </template>
+                  </el-input>
                   <el-select
                     v-model="filters.category"
                     placeholder="物品类别"
@@ -33,20 +35,6 @@
                       :key="category.value"
                       :label="category.label"
                       :value="category.value"
-                    />
-                  </el-select>
-                  <el-select
-                    v-model="filters.status"
-                    placeholder="状态"
-                    clearable
-                    @change="handleSearch"
-                    class="filter-select"
-                  >
-                    <el-option
-                      v-for="status in statusOptions"
-                      :key="status.value"
-                      :label="status.label"
-                      :value="status.value"
                     />
                   </el-select>
                 </div>
@@ -88,9 +76,6 @@
           </el-tag>
           <el-tag v-if="filters.category" closable @close="clearCategory" class="filter-tag">
             类别: {{ getCategoryLabel(filters.category) }}
-          </el-tag>
-          <el-tag v-if="filters.status" closable @close="clearStatus" class="filter-tag">
-            状态: {{ getStatusLabel(filters.status) }}
           </el-tag>
         </div>
       </div>
@@ -143,9 +128,6 @@
                   <div v-else class="image-placeholder">
                     <el-icon><Picture /></el-icon>
                   </div>
-                  <el-tag class="item-status-tag" :type="getStatusType(item.status)">
-                    {{ getStatusLabel(item.status) }}
-                  </el-tag>
                 </div>
                 <div class="item-content">
                   <h3 class="item-title">{{ item.title }}</h3>
@@ -228,12 +210,11 @@ const error = ref<string | null>(null)
 const filters = reactive({
   keyword: '',
   category: null as string | null,
-  status: null as string | null,
 })
 
 // 计算筛选条件是否激活
 const isFilterActive = computed(() => {
-  return !!filters.keyword || !!filters.category || !!filters.status
+  return !!filters.keyword || !!filters.category
 })
 
 // 分页
@@ -262,7 +243,6 @@ onMounted(() => {
   const urlParams = new URLSearchParams(window.location.search)
   if (urlParams.has('keyword')) filters.keyword = urlParams.get('keyword') || ''
   if (urlParams.has('category')) filters.category = urlParams.get('category')
-  if (urlParams.has('status')) filters.status = urlParams.get('status')
   if (urlParams.has('page')) pagination.page = parseInt(urlParams.get('page') || '1')
 
   fetchLostItems()
@@ -270,7 +250,7 @@ onMounted(() => {
 
 // 监听筛选条件变化，更新URL
 watch(
-  [() => filters.keyword, () => filters.category, () => filters.status, () => pagination.page],
+  [() => filters.keyword, () => filters.category, () => pagination.page],
   () => {
     updateUrlParams()
   },
@@ -283,7 +263,6 @@ const updateUrlParams = () => {
 
   if (filters.keyword) params.set('keyword', filters.keyword)
   if (filters.category) params.set('category', filters.category)
-  if (filters.status) params.set('status', filters.status)
   if (pagination.page > 1) params.set('page', pagination.page.toString())
 
   const newUrl = window.location.pathname + (params.toString() ? `?${params.toString()}` : '')
@@ -294,7 +273,6 @@ const updateUrlParams = () => {
 const resetFilters = () => {
   filters.keyword = ''
   filters.category = null
-  filters.status = null
   pagination.page = 1
   fetchLostItems()
   ElMessage.success('已清除所有筛选条件')
@@ -311,11 +289,6 @@ const clearCategory = () => {
   handleSearch()
 }
 
-const clearStatus = () => {
-  filters.status = null
-  handleSearch()
-}
-
 // 方法
 const fetchLostItems = async () => {
   loading.value = true
@@ -326,7 +299,6 @@ const fetchLostItems = async () => {
     lostItemsStore.setFilters({
       keyword: filters.keyword || null,
       category: filters.category || null,
-      status: filters.status || null,
     })
 
     await lostItemsStore.fetchLostItems()
@@ -367,22 +339,6 @@ const formatDate = (dateString: string) => {
   }
 }
 
-const getStatusLabel = (status: string) => {
-  return getLostItemStatusLabel(status)
-}
-
-const getStatusType = (status: string) => {
-  switch (status) {
-    case 'pending':
-      return 'warning'
-    case 'found':
-      return 'success'
-    case 'closed':
-      return 'info'
-    default:
-      return 'info'
-  }
-}
 </script>
 
 <style scoped>
@@ -422,7 +378,7 @@ const getStatusType = (status: string) => {
   min-height: 40px;
 }
 
-.filter-inputs {
+.filter-controls {
   flex: 1;
   display: flex;
   align-items: center;
@@ -430,7 +386,7 @@ const getStatusType = (status: string) => {
   max-width: 700px;
 }
 
-.search-input {
+.filter-input {
   flex: 2;
   min-width: 200px;
   max-width: 300px;
@@ -655,7 +611,7 @@ const getStatusType = (status: string) => {
     gap: 15px;
   }
 
-  .filter-inputs {
+  .filter-controls {
     flex-direction: column;
     max-width: none;
     width: 100%;
