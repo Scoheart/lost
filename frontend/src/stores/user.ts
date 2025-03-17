@@ -10,6 +10,7 @@ export interface User {
   avatar?: string
   phone?: string
   realName?: string
+  address?: string
   createdAt: string
   updatedAt: string
 }
@@ -110,6 +111,7 @@ export const useUserStore = defineStore('user', {
             avatar: responseData.avatar,
             phone: responseData.phone,
             realName: responseData.realName,
+            address: responseData.address,
             createdAt: responseData.createdAt || new Date().toISOString(),
             updatedAt: responseData.updatedAt || new Date().toISOString()
           }
@@ -166,6 +168,7 @@ export const useUserStore = defineStore('user', {
             avatar: responseData.avatar,
             phone: responseData.phone,
             realName: responseData.realName,
+            address: responseData.address,
             createdAt: responseData.createdAt || new Date().toISOString(),
             updatedAt: responseData.updatedAt || new Date().toISOString()
           }
@@ -192,7 +195,13 @@ export const useUserStore = defineStore('user', {
     /**
      * 用户注册
      */
-    async register(userData: { username: string, email: string, password: string, phone?: string }): Promise<ApiResult> {
+    async register(userData: {
+      username: string,
+      password: string,
+      realName: string,
+      address: string,
+      phone?: string
+    }): Promise<ApiResult> {
       this.loading = true
       this.error = undefined
       console.log('[UserStore] Register attempt')
@@ -279,6 +288,7 @@ export const useUserStore = defineStore('user', {
             avatar: userData.avatar,
             phone: userData.phone,
             realName: userData.realName,
+            address: userData.address,
             createdAt: userData.createdAt || new Date().toISOString(),
             updatedAt: userData.updatedAt || new Date().toISOString()
           }

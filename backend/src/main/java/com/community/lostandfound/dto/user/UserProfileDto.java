@@ -20,6 +20,7 @@ public class UserProfileDto {
     private String avatar;
     private String phone;
     private String realName;
+    private String address;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 } 

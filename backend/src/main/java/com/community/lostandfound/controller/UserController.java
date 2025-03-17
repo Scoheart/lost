@@ -198,10 +198,13 @@ public class UserController {
             updatedUser.setIsEnabled(user.getIsEnabled()); // Preserve enabled status
             updatedUser.setCreatedAt(user.getCreatedAt()); // Preserve creation timestamp
             
+            // Preserve the fields that cannot be modified
+            updatedUser.setRealName(user.getRealName());
+            updatedUser.setAddress(user.getAddress());
+            
             // Update the fields that were part of the request
             updatedUser.setEmail(updateRequest.getEmail());
             updatedUser.setPhone(updateRequest.getPhone());
-            updatedUser.setRealName(updateRequest.getRealName());
             
             if (updateRequest.getAvatar() != null && !updateRequest.getAvatar().isEmpty()) {
                 updatedUser.setAvatar(updateRequest.getAvatar());
@@ -224,6 +227,7 @@ public class UserController {
                     resultUser.getAvatar(),
                     resultUser.getPhone(),
                     resultUser.getRealName(),
+                    resultUser.getAddress(),
                     resultUser.getCreatedAt(),
                     resultUser.getUpdatedAt()
             );

@@ -69,30 +69,10 @@
           <div class="item-header">
             <h1 class="item-title">
               {{ lostItem.title }}
-              <el-tag type="danger" v-if="lostItem.status === 'pending'">寻找中</el-tag>
-              <el-tag type="success" v-else-if="lostItem.status === 'found'">已找到</el-tag>
-              <el-tag type="info" v-else-if="lostItem.status === 'closed'">已关闭</el-tag>
             </h1>
-
             <div class="item-meta">
-              <span class="meta-item">
-                <el-icon><User /></el-icon>
-                {{ lostItem.username }}
-              </span>
-              <span class="meta-item">
-                <el-icon><Calendar /></el-icon>
-                发布于{{ formatDate(lostItem.createdAt) }}
-              </span>
-              <span class="meta-item">
-                <el-button
-                  type="text"
-                  size="small"
-                  @click="reportItem"
-                  v-if="isLoggedIn && !isOwner"
-                >
-                  <el-icon><Warning /></el-icon> 举报
-                </el-button>
-              </span>
+              <span class="item-category">{{ getCategoryName(lostItem.category) }}</span>
+              <span class="item-date">发布于: {{ formatDate(lostItem.createdAt) }}</span>
             </div>
           </div>
 
@@ -137,7 +117,7 @@
             <p>{{ lostItem.description }}</p>
           </div>
 
-          <div class="item-actions" v-if="lostItem.status === 'pending'">
+          <div class="item-actions">
             <el-button
               type="primary"
               @click="contactOwner"
@@ -149,31 +129,21 @@
             <div class="owner-actions" v-if="isOwner">
               <el-button
                 type="primary"
+                @click="redirectToEdit"
+              >
+                编辑寻物启事
+              </el-button>
+              <el-button
+                type="success"
                 @click="markAsFound"
-                :loading="actionLoading"
               >
                 已找到物品
               </el-button>
               <el-button
                 type="danger"
-                @click="closeItem"
-                :loading="actionLoading"
+                @click="deleteItem"
               >
-                关闭寻物
-              </el-button>
-              <el-button
-                type="primary"
-                plain
-                @click="editItem"
-              >
-                编辑信息
-              </el-button>
-              <el-button
-                type="danger"
-                plain
-                @click="confirmDeleteItem"
-              >
-                删除
+                删除寻物启事
               </el-button>
             </div>
           </div>
@@ -203,7 +173,7 @@
                         @click="reportComment(comment)"
                         title="举报此评论"
                       >
-                        <el-icon><Warning /></el-icon>
+                        <el-icon><Calendar /></el-icon>
                       </el-button>
                     </span>
                   </div>
@@ -313,7 +283,6 @@
                 <h3 class="related-item-title">{{ item.title }}</h3>
                 <div class="related-item-footer">
                   <span class="related-item-location">{{ item.lostLocation }}</span>
-                  <el-tag size="small" type="danger" v-if="item.status === 'pending'">寻找中</el-tag>
                 </div>
               </el-card>
             </el-col>
@@ -365,7 +334,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, watch, nextTick } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
-import { User, Calendar, Picture, Warning } from '@element-plus/icons-vue'
+import { User, Calendar, Picture } from '@element-plus/icons-vue'
 import { format } from 'date-fns'
 import { zhCN } from 'date-fns/locale'
 import { ElMessage, ElMessageBox, ElImage } from 'element-plus'
@@ -419,8 +388,7 @@ const relatedItems = computed(() => {
   return lostItemsStore.items
     .filter(item =>
       item.id !== lostItem.value!.id &&
-      item.category === lostItem.value!.category &&
-      item.status === 'pending'
+      item.category === lostItem.value!.category
     )
     .slice(0, 4) // 最多显示4个相关物品
 })
@@ -536,69 +504,35 @@ const submitComment = async () => {
 }
 
 // 将寻物启事标记为"已找到"
-const markAsFound = async () => {
-  if (!lostItem.value || !itemId.value) return
+const markAsFound = () => {
+  if (!isLoggedIn.value) {
+    ElMessage.warning('请先登录')
+    return
+  }
 
   ElMessageBox.confirm(
-    '确认已找到此物品吗？更新后状态将变为"已找到"。',
-    '更新状态',
+    '确认您已找到此物品？此操作将删除该寻物启事。',
+    '确认操作',
     {
       confirmButtonText: '确认',
       cancelButtonText: '取消',
       type: 'success'
     }
   ).then(async () => {
-    actionLoading.value = true
     try {
       // 使用专用的状态更新函数
       const result = await lostItemsStore.markAsFound(itemId.value)
 
       if (result.success) {
-        ElMessage.success('状态已更新为"已找到"')
-        // 不需要重新获取物品详情，因为markAsFound已经更新了本地状态
-      } else {
-        ElMessage.error(result.message || '更新失败')
-      }
-    } catch (error) {
-      console.error('Failed to update item status:', error)
-      ElMessage.error('更新失败，请稍后再试')
-    } finally {
-      actionLoading.value = false
-    }
-  }).catch(() => {
-    // 用户取消操作
-  })
-}
-
-// 关闭寻物启事
-const closeItem = async () => {
-  if (!lostItem.value || !itemId.value) return
-
-  ElMessageBox.confirm(
-    '确认关闭此寻物启事吗？关闭后将不再公开展示。',
-    '关闭寻物启事',
-    {
-      confirmButtonText: '确认关闭',
-      cancelButtonText: '取消',
-      type: 'warning'
-    }
-  ).then(async () => {
-    actionLoading.value = true
-    try {
-      // 使用专用的关闭函数
-      const result = await lostItemsStore.closeItem(itemId.value)
-
-      if (result.success) {
-        ElMessage.success('寻物启事已关闭')
+        ElMessage.success('寻物启事已删除（物品已找到）')
+        // 跳转到寻物启事列表页
         router.push('/lost-items')
       } else {
-        ElMessage.error(result.message || '关闭失败')
+        ElMessage.error(result.message || '操作失败')
       }
     } catch (error) {
-      console.error('Failed to close lost item:', error)
-      ElMessage.error('关闭失败，请稍后再试')
-    } finally {
-      actionLoading.value = false
+      console.error('标记为已找到失败:', error)
+      ElMessage.error('操作失败，请稍后再试')
     }
   }).catch(() => {
     // 用户取消操作
@@ -606,13 +540,13 @@ const closeItem = async () => {
 }
 
 // 编辑物品信息
-const editItem = () => {
+const redirectToEdit = () => {
   if (!itemId.value) return
   router.push(`/lost-items/edit/${itemId.value}`)
 }
 
 // 确认删除物品
-const confirmDeleteItem = () => {
+const deleteItem = () => {
   if (!itemId.value) return
 
   ElMessageBox.confirm(
@@ -786,6 +720,7 @@ function handleReportSubmitted(report) {
 .item-meta {
   display: flex;
   color: #606266;
+  gap: 8px;
   font-size: 14px;
 }
 

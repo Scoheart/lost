@@ -32,16 +32,20 @@
             <el-input v-model="profileForm.username" disabled placeholder="用户名不可修改" />
           </el-form-item>
 
+          <el-form-item label="姓名" prop="realName">
+            <el-input v-model="profileForm.realName" disabled placeholder="姓名不可修改" />
+          </el-form-item>
+
+          <el-form-item label="住址" prop="address">
+            <el-input v-model="profileForm.address" disabled placeholder="住址不可修改" />
+          </el-form-item>
+
           <el-form-item label="电子邮箱" prop="email">
             <el-input v-model="profileForm.email" placeholder="请输入您的电子邮箱" />
           </el-form-item>
 
           <el-form-item label="手机号码" prop="phone">
             <el-input v-model="profileForm.phone" placeholder="请输入您的手机号码" />
-          </el-form-item>
-
-          <el-form-item label="姓名" prop="realName">
-            <el-input v-model="profileForm.realName" placeholder="请输入您的真实姓名" />
           </el-form-item>
 
           <el-form-item label="注册时间">
@@ -125,7 +129,8 @@ const profileForm = reactive({
   username: '',
   email: '',
   phone: '',
-  realName: ''
+  realName: '',
+  address: '',
 })
 
 // 密码表单
@@ -215,6 +220,7 @@ const loadUserData = () => {
   profileForm.email = user.email || ''
   profileForm.phone = user.phone || ''
   profileForm.realName = user.realName || ''
+  profileForm.address = user.address || ''
 
   isLoading.value = false
 }
@@ -229,8 +235,7 @@ const updateProfile = async () => {
         // Create update data with typed fields for the API
         const updateData: Partial<User> = {
           email: profileForm.email,
-          phone: profileForm.phone,
-          realName: profileForm.realName
+          phone: profileForm.phone
         }
 
         const result = await userStore.updateProfile(updateData)
@@ -241,7 +246,6 @@ const updateProfile = async () => {
           if (result.data) {
             profileForm.email = result.data.email || profileForm.email
             profileForm.phone = result.data.phone || profileForm.phone
-            profileForm.realName = result.data.realName || profileForm.realName
           }
         } else {
           ElMessage.error(result.message || '更新失败')

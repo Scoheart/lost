@@ -13,8 +13,6 @@ export const ITEM_CATEGORIES = [
 // 寻物启事状态常量
 export const LOST_ITEM_STATUS = [
   { value: 'pending', label: '寻找中' },
-  { value: 'found', label: '已找到' },
-  { value: 'closed', label: '已关闭' },
 ]
 
 // 失物招领状态常量

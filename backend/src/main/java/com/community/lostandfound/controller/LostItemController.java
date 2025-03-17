@@ -338,12 +338,12 @@ public class LostItemController {
     }
 
     /**
-     * 更新寻物启事状态
-     *
-     * @param id           寻物启事ID
-     * @param statusUpdate 包含状态字段的请求体
-     * @param currentUser  当前用户
-     * @return 更新后的寻物启事
+     * 更新寻物启事状态（现在只支持pending状态，其他情况执行删除操作）
+     * 
+     * @param id 寻物启事ID
+     * @param statusUpdate 状态更新请求
+     * @param currentUser 当前用户
+     * @return 更新结果
      */
     @PutMapping("/{id}/status")
     @PreAuthorize("isAuthenticated()")
@@ -352,39 +352,36 @@ public class LostItemController {
             @Valid @RequestBody Map<String, String> statusUpdate,
             @CurrentUser UserDetailsImpl currentUser) {
         
-        log.info("更新寻物启事状态, ID: {}, 新状态: {}", id, statusUpdate.get("status"));
-        
-        if (currentUser == null) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body(ApiResponse.fail("未授权操作，请先登录"));
+        if (!statusUpdate.containsKey("status")) {
+            return ResponseEntity.badRequest().body(ApiResponse.fail("缺少status字段"));
         }
         
-        String status = statusUpdate.get("status");
-        if (status == null || status.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body(ApiResponse.fail("状态字段不能为空"));
-        }
-        
-        try {
-            LostItem updatedItem = lostItemService.updateLostItemStatus(id, status, currentUser.getId());
-            
-            // 根据不同状态返回不同的成功消息
-            String message;
-            if ("found".equals(status)) {
-                message = "物品已标记为已找到";
-            } else if ("closed".equals(status)) {
-                message = "寻物启事已关闭";
-            } else {
-                message = "寻物启事状态已更新";
-            }
-            
-            return ResponseEntity.ok(ApiResponse.success(message, updatedItem));
-        } catch (ResourceNotFoundException e) {
+        Optional<LostItem> itemOptional = lostItemService.getLostItemById(id);
+        if (!itemOptional.isPresent()) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body(ApiResponse.fail(e.getMessage()));
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body(ApiResponse.fail(e.getMessage()));
+                    .body(ApiResponse.fail("寻物启事不存在"));
         }
+        
+        LostItem item = itemOptional.get();
+        
+        // 检查是否有权限更新
+        if (!currentUser.getId().equals(item.getUserId()) && !userIsAdmin(currentUser)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body(ApiResponse.fail("您没有权限更新此寻物启事"));
+        }
+        
+        String newStatus = statusUpdate.get("status");
+        // 如果状态不是pending，则执行删除操作
+        if (!"pending".equals(newStatus)) {
+            lostItemService.deleteLostItem(id);
+            return ResponseEntity.ok(ApiResponse.success("寻物启事已删除", null));
+        }
+        
+        // 只允许设置为pending状态
+        item.setStatus(newStatus);
+        item.setUpdatedAt(LocalDateTime.now());
+        
+        LostItem updatedItem = lostItemService.updateLostItem(item);
+        return ResponseEntity.ok(ApiResponse.success("状态已更新", updatedItem));
     }
 } 

@@ -24,8 +24,20 @@
           />
         </el-form-item>
 
-        <el-form-item prop="email" label="邮箱">
-          <el-input v-model="registerForm.email" placeholder="请输入邮箱" :prefix-icon="Message" />
+        <el-form-item prop="realName" label="姓名">
+          <el-input
+            v-model="registerForm.realName"
+            placeholder="请输入您的真实姓名"
+            :prefix-icon="UserFilled"
+          />
+        </el-form-item>
+
+        <el-form-item prop="address" label="住址">
+          <el-input
+            v-model="registerForm.address"
+            placeholder="请输入您的住址"
+            :prefix-icon="Location"
+          />
         </el-form-item>
 
         <el-form-item prop="password" label="密码">
@@ -76,7 +88,7 @@ import { reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import type { FormInstance, FormRules } from 'element-plus'
-import { User, Message, Lock, Phone } from '@element-plus/icons-vue'
+import { User, Lock, Phone, UserFilled, Location } from '@element-plus/icons-vue'
 import { useUserStore } from '@/stores/user'
 
 const router = useRouter()
@@ -86,7 +98,8 @@ const loading = ref(false)
 
 const registerForm = reactive({
   username: '',
-  email: '',
+  realName: '',
+  address: '',
   password: '',
   confirmPassword: '',
   phone: '',
@@ -128,9 +141,13 @@ const rules = reactive<FormRules>({
     { required: true, message: '请输入用户名', trigger: 'blur' },
     { min: 3, max: 20, message: '长度在3到20个字符之间', trigger: 'blur' },
   ],
-  email: [
-    { required: true, message: '请输入邮箱地址', trigger: 'blur' },
-    { type: 'email', message: '请输入正确的邮箱地址', trigger: 'blur' },
+  realName: [
+    { required: true, message: '请输入您的姓名', trigger: 'blur' },
+    { max: 50, message: '姓名长度不能超过50个字符', trigger: 'blur' },
+  ],
+  address: [
+    { required: true, message: '请输入您的住址', trigger: 'blur' },
+    { max: 200, message: '住址长度不能超过200个字符', trigger: 'blur' },
   ],
   password: [
     { required: true, validator: validatePass, trigger: 'blur' },
@@ -149,7 +166,8 @@ const handleSubmit = async () => {
       try {
         const result = await userStore.register({
           username: registerForm.username,
-          email: registerForm.email,
+          realName: registerForm.realName,
+          address: registerForm.address,
           password: registerForm.password,
           phone: registerForm.phone || undefined,
         })

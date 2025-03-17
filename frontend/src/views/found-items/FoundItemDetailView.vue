@@ -156,25 +156,22 @@
 
             <div class="owner-actions" v-if="isOwner">
               <el-button
-                type="success"
-                @click="confirmMarkAsClaimed"
-                :loading="actionLoading"
+                type="primary"
+                @click="redirectToEdit"
               >
-                物品已被认领
+                编辑招领
               </el-button>
               <el-button
-                type="primary"
-                plain
-                @click="editItem"
+                type="info"
+                @click="closeItem"
               >
-                编辑信息
+                删除招领
               </el-button>
               <el-button
                 type="danger"
-                plain
-                @click="confirmDeleteItem"
+                @click="deleteItem"
               >
-                删除
+                删除招领
               </el-button>
             </div>
           </div>
@@ -206,7 +203,7 @@
               <p><strong>该物品已被认领</strong></p>
             </el-alert>
           </div>
-        </div>
+        </el-card>
 
         <!-- 评论区 -->
         <div class="comments-section">
@@ -638,36 +635,36 @@ const submitComment = async () => {
   }
 }
 
-// 将失物招领标记为"已认领"
-const confirmMarkAsClaimed = () => {
-  if (!itemId.value) {
-    ElMessage.error('物品ID无效');
-    return;
+// 关闭失物招领
+function closeItem() {
+  if (!isLoggedIn.value) {
+    ElMessage.warning('请先登录')
+    return
   }
 
-  ElMessageBox.confirm('您确定要将此物品状态更新为"已认领"吗？此操作不可逆', '确认操作', {
-    confirmButtonText: '确认',
-    cancelButtonText: '取消',
-    type: 'warning'
-  }).then(async () => {
-    actionLoading.value = true
+  ElMessageBox.confirm(
+    '确认删除此失物招领吗？',
+    '确认操作',
+    {
+      confirmButtonText: '确认',
+      cancelButtonText: '取消',
+      type: 'info'
+    }
+  ).then(async () => {
     try {
-      // 使用专用的状态更新函数
-      if (itemId.value) {
-        const result = await foundItemsStore.markAsClaimed(itemId.value)
+      // 使用专用的关闭函数
+      const result = await foundItemsStore.closeItem(itemId.value)
 
-        if (result.success) {
-          ElMessage.success('状态已更新为"已认领"')
-          // 不需要重新获取物品详情，因为markAsClaimed已经更新了本地状态
-        } else {
-          ElMessage.error(result.message || '更新失败')
-        }
+      if (result.success) {
+        ElMessage.success('失物招领已删除')
+        // 跳转到失物招领列表页
+        router.push('/found-items')
+      } else {
+        ElMessage.error(result.message || '操作失败')
       }
     } catch (error) {
-      console.error('Failed to update item status:', error)
-      ElMessage.error('更新失败，请稍后再试')
-    } finally {
-      actionLoading.value = false
+      console.error('删除失物招领失败:', error)
+      ElMessage.error('操作失败，请稍后再试')
     }
   }).catch(() => {
     // 用户取消操作
@@ -675,39 +672,42 @@ const confirmMarkAsClaimed = () => {
 }
 
 // 编辑物品信息
-const editItem = () => {
+function redirectToEdit() {
   if (!itemId.value) return
   router.push(`/found-items/edit/${itemId.value}`)
 }
 
-// 确认删除物品
-const confirmDeleteItem = () => {
-  if (!itemId.value) return
+// 删除物品
+function deleteItem() {
+  if (!isLoggedIn.value) {
+    ElMessage.warning('请先登录')
+    return
+  }
 
   ElMessageBox.confirm(
-    '确定要删除这个失物招领信息吗？删除后将无法恢复。',
-    '删除失物招领信息',
+    '确认删除此失物招领吗？此操作不可撤销。',
+    '警告',
     {
-      confirmButtonText: '确定删除',
+      confirmButtonText: '确认删除',
       cancelButtonText: '取消',
-      type: 'error'
+      type: 'warning'
     }
   ).then(async () => {
     try {
-      const result = await foundItemsStore.deleteFoundItem(itemId.value!)
+      const result = await foundItemsStore.deleteFoundItem(itemId.value)
 
       if (result.success) {
-        ElMessage.success('失物招领信息已删除')
+        ElMessage.success('失物招领已删除')
         router.push('/found-items')
       } else {
         ElMessage.error(result.message || '删除失败')
       }
     } catch (error) {
-      console.error('Failed to delete item:', error)
+      console.error('删除失物招领失败:', error)
       ElMessage.error('删除失败，请稍后再试')
     }
   }).catch(() => {
-    // 用户取消删除
+    // 用户取消操作
   })
 }
 

@@ -9,20 +9,20 @@ const router = createRouter({
       path: '/',
       name: 'home',
       component: HomeView,
-      meta: { title: '首页' },
+      meta: { title: '首页', requiresAuth: true },
     },
     // 公告浏览
     {
       path: '/announcements',
       name: 'announcements',
       component: () => import('../views/announcements/AnnouncementsView.vue'),
-      meta: { title: '社区公告' },
+      meta: { title: '社区公告', requiresAuth: true },
     },
     {
       path: '/announcements/:id',
       name: 'announcement-detail',
       component: () => import('../views/announcements/AnnouncementDetailView.vue'),
-      meta: { title: '公告详情' },
+      meta: { title: '公告详情', requiresAuth: true },
     },
     // 个人中心
     {
@@ -57,7 +57,7 @@ const router = createRouter({
       path: '/lost-items',
       name: 'lost-items',
       component: () => import('../views/lost-items/LostItemsView.vue'),
-      meta: { title: '寻物启事' },
+      meta: { title: '寻物启事', requiresAuth: true },
     },
     {
       path: '/lost-items/create',
@@ -75,14 +75,14 @@ const router = createRouter({
       path: '/lost-items/:id',
       name: 'lost-item-detail',
       component: () => import('../views/lost-items/LostItemDetailView.vue'),
-      meta: { title: '寻物详情' },
+      meta: { title: '寻物详情', requiresAuth: true },
     },
     // 失物招领
     {
       path: '/found-items',
       name: 'found-items',
       component: () => import('../views/found-items/FoundItemsView.vue'),
-      meta: { title: '失物招领' },
+      meta: { title: '失物招领', requiresAuth: true },
     },
     {
       path: '/found-items/create',
@@ -100,7 +100,7 @@ const router = createRouter({
       path: '/found-items/:id',
       name: 'found-item-detail',
       component: () => import('../views/found-items/FoundItemDetailView.vue'),
-      meta: { title: '招领详情' },
+      meta: { title: '招领详情', requiresAuth: true },
     },
     // 登录/注册
     {

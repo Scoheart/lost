@@ -102,18 +102,21 @@ public class AuthController {
             throw new BadRequestException("用户名已被使用");
         }
 
-        // Check if email is already in use
-        if (userService.existsByEmail(registerRequest.getEmail())) {
-            throw new BadRequestException("邮箱已被使用");
-        }
-
         // Create new user
         User user = new User();
         user.setUsername(registerRequest.getUsername());
-        user.setEmail(registerRequest.getEmail());
+        // 不再设置邮箱
+        user.setEmail(""); // 设置为空字符串，可以在后续更新
         user.setPassword(registerRequest.getPassword()); // Will be encoded in service
         user.setRole("resident");
         user.setIsEnabled(true);
+        // 设置姓名和住址
+        user.setRealName(registerRequest.getRealName());
+        user.setAddress(registerRequest.getAddress());
+        // 设置电话
+        if (registerRequest.getPhone() != null) {
+            user.setPhone(registerRequest.getPhone());
+        }
         user.setCreatedAt(LocalDateTime.now());
         user.setUpdatedAt(LocalDateTime.now());
 

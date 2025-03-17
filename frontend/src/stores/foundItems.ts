@@ -40,7 +40,7 @@ export interface FoundItem {
   images: string[]
   contactInfo: string
   claimRequirements?: string
-  status: 'pending' | 'processing' | 'claimed' | 'closed'
+  status: 'pending' | 'processing' | 'claimed'
   userId: number
   username: string
   createdAt: string
@@ -638,6 +638,50 @@ export const useFoundItemsStore = defineStore('foundItems', {
       } catch (error: any) {
         return handleApiError(error, '更新失物招领状态失败')
       }
-    }
+    },
+
+    /**
+     * 关闭失物招领(现在直接删除)
+     */
+    async closeItem(id: number) {
+      if (!this.token) return { success: false, message: '未授权操作' }
+
+      try {
+        console.log(`关闭并删除失物招领 #${id}`)
+
+        // 找到要删除的物品的索引
+        const itemIndex = this.items.findIndex(item => item.id === id)
+        const itemExists = itemIndex !== -1
+
+        // 现在直接删除该物品
+        const endpoint = `/found-items/${id}`
+        const response = await apiClient.delete(endpoint)
+
+        if (response.data.success) {
+          if (this.currentItem && this.currentItem.id === id) {
+            this.currentItem = null
+          }
+
+          if (itemExists) {
+            // 从数组中删除该物品
+            this.items.splice(itemIndex, 1)
+          }
+
+          return {
+            success: true,
+            message: '失物招领已关闭并从列表中删除',
+            data: response.data.data
+          }
+        } else {
+          return { success: false, message: response.data.message }
+        }
+      } catch (error: any) {
+        console.error(`关闭失物招领 #${id} 失败:`, error)
+        return {
+          success: false,
+          message: error.response?.data?.message || '操作失败，请稍后再试'
+        }
+      }
+    },
   },
 })

@@ -14,7 +14,5 @@ public class UpdateProfileRequest {
     
     private String phone;
     
-    private String realName;
-    
     private String avatar;
 } 

@@ -13,7 +13,7 @@ export interface LostItem {
   images: string[]
   reward?: number
   contactInfo: string
-  status: 'pending' | 'found' | 'closed'
+  status: 'pending'
   userId: number
   username: string
   createdAt: string
@@ -467,74 +467,90 @@ export const useLostItemsStore = defineStore('lostItems', {
     },
 
     /**
-     * 将寻物启事标记为"已找到"
-     * @param id 寻物启事ID
-     * @returns 操作结果
+     * 将寻物启事标记为"已找到"(现在直接删除)
      */
     async markAsFound(id: number) {
-      if (!id) return { success: false, message: '无效的ID' }
-
-      console.log(`将寻物启事 #${id} 标记为已找到`)
+      if (!this.token) return { success: false, message: '未授权操作' }
 
       try {
-        // 使用专用的状态更新端点
-        const endpoint = `/lost-items/${id}/status`
-        const response = await apiClient.put(endpoint, { status: 'found' })
+        console.log(`将寻物启事 #${id} 标记为已找到并删除`)
 
-        // 更新本地状态
-        if (this.currentItem?.id === id) {
-          this.currentItem.status = 'found'
-        }
-
-        // 更新列表中的状态
+        // 找到要删除的物品的索引
         const itemIndex = this.items.findIndex(item => item.id === id)
-        if (itemIndex !== -1) {
-          this.items[itemIndex].status = 'found'
-        }
+        const itemExists = itemIndex !== -1
 
-        return {
-          success: true,
-          message: '寻物启事已标记为已找到',
-          data: response.data
+        // 现在直接删除该物品
+        const endpoint = `/lost-items/${id}`
+        const response = await apiClient.delete(endpoint)
+
+        if (response.data.success) {
+          if (this.currentItem && this.currentItem.id === id) {
+            this.currentItem = null
+          }
+
+          if (itemExists) {
+            // 从数组中删除该物品
+            this.items.splice(itemIndex, 1)
+          }
+
+          return {
+            success: true,
+            message: '物品已标记为已找到并从列表中删除',
+            data: response.data.data
+          }
+        } else {
+          return { success: false, message: response.data.message }
         }
       } catch (error: any) {
-        return handleApiError(error, '更新寻物状态失败')
+        console.error(`删除寻物启事 #${id} 失败:`, error)
+        return {
+          success: false,
+          message: error.response?.data?.message || '操作失败，请稍后再试'
+        }
       }
     },
 
     /**
-     * 关闭寻物启事
-     * @param id 寻物启事ID
-     * @returns 操作结果
+     * 关闭寻物启事(现在直接删除)
      */
     async closeItem(id: number) {
-      if (!id) return { success: false, message: '无效的ID' }
-
-      console.log(`关闭寻物启事 #${id}`)
+      if (!this.token) return { success: false, message: '未授权操作' }
 
       try {
-        // 使用专用的状态更新端点
-        const endpoint = `/lost-items/${id}/status`
-        const response = await apiClient.put(endpoint, { status: 'closed' })
+        console.log(`关闭并删除寻物启事 #${id}`)
 
-        // 更新本地状态
-        if (this.currentItem?.id === id) {
-          this.currentItem.status = 'closed'
-        }
-
-        // 更新列表中的状态
+        // 找到要删除的物品的索引
         const itemIndex = this.items.findIndex(item => item.id === id)
-        if (itemIndex !== -1) {
-          this.items[itemIndex].status = 'closed'
-        }
+        const itemExists = itemIndex !== -1
 
-        return {
-          success: true,
-          message: '寻物启事已关闭',
-          data: response.data
+        // 现在直接删除该物品
+        const endpoint = `/lost-items/${id}`
+        const response = await apiClient.delete(endpoint)
+
+        if (response.data.success) {
+          if (this.currentItem && this.currentItem.id === id) {
+            this.currentItem = null
+          }
+
+          if (itemExists) {
+            // 从数组中删除该物品
+            this.items.splice(itemIndex, 1)
+          }
+
+          return {
+            success: true,
+            message: '寻物启事已关闭并从列表中删除',
+            data: response.data.data
+          }
+        } else {
+          return { success: false, message: response.data.message }
         }
       } catch (error: any) {
-        return handleApiError(error, '关闭寻物启事失败')
+        console.error(`关闭寻物启事 #${id} 失败:`, error)
+        return {
+          success: false,
+          message: error.response?.data?.message || '操作失败，请稍后再试'
+        }
       }
     },
   },

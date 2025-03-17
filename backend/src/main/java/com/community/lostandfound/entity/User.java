@@ -54,6 +54,11 @@ public class User {
     private String realName;
     
     /**
+     * 住址
+     */
+    private String address;
+    
+    /**
      * 创建时间
      */
     private LocalDateTime createdAt;
