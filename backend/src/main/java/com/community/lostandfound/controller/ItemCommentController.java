@@ -49,6 +49,12 @@ public class ItemCommentController {
                     .body(ApiResponse.fail("未授权操作，请先登录"));
         }
         
+        // 禁止对失物招领进行评论
+        if ("found".equalsIgnoreCase(request.getItemType())) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(ApiResponse.fail("失物招领不支持评论功能"));
+        }
+        
         ItemCommentDto comment = itemCommentService.createComment(request, currentUser.getId());
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(ApiResponse.success("评论创建成功", comment));
@@ -72,6 +78,12 @@ public class ItemCommentController {
         
         log.info("获取物品评论列表: 物品ID={}, 物品类型={}, 页码={}, 每页条数={}", itemId, itemType, page, size);
         
+        // 禁止查询失物招领的评论
+        if ("found".equalsIgnoreCase(itemType)) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(ApiResponse.fail("失物招领不支持评论功能"));
+        }
+        
         ItemCommentPageDto pageDto = itemCommentService.getCommentsByItem(itemId, itemType, page, size);
         return ResponseEntity.ok(ApiResponse.success("获取评论列表成功", pageDto));
     }
@@ -90,6 +102,12 @@ public class ItemCommentController {
         
         log.info("获取物品所有评论: 物品ID={}, 物品类型={}", itemId, itemType);
         
+        // 禁止查询失物招领的评论
+        if ("found".equalsIgnoreCase(itemType)) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(ApiResponse.fail("失物招领不支持评论功能"));
+        }
+        
         List<ItemCommentDto> comments = itemCommentService.getAllCommentsByItem(itemId, itemType);
         return ResponseEntity.ok(ApiResponse.success("获取评论列表成功", comments));
     }
@@ -106,6 +124,12 @@ public class ItemCommentController {
         log.info("获取评论详情: ID={}", id);
         
         Optional<ItemCommentDto> comment = itemCommentService.getCommentById(id);
+        
+        if (comment.isPresent() && "found".equalsIgnoreCase(comment.get().getItemType())) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(ApiResponse.fail("失物招领不支持评论功能"));
+        }
+        
         return comment.map(c -> ResponseEntity.ok(ApiResponse.success("获取评论成功", c)))
                 .orElse(ResponseEntity.status(HttpStatus.NOT_FOUND)
                         .body(ApiResponse.fail("评论不存在")));
@@ -125,6 +149,13 @@ public class ItemCommentController {
             @CurrentUser UserDetailsImpl currentUser) {
         
         log.info("删除评论: ID={}, 用户ID={}", id, currentUser.getId());
+        
+        // 检查评论是否存在以及类型是否为found
+        Optional<ItemCommentDto> comment = itemCommentService.getCommentById(id);
+        if (comment.isPresent() && "found".equalsIgnoreCase(comment.get().getItemType())) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(ApiResponse.fail("失物招领不支持评论功能"));
+        }
         
         boolean success = itemCommentService.deleteComment(id, currentUser.getId());
         if (success) {
@@ -147,6 +178,11 @@ public class ItemCommentController {
         log.info("获取用户的物品评论列表: 用户ID={}", userId);
         
         List<ItemCommentDto> comments = itemCommentService.getCommentsByUser(userId);
+        // 过滤掉失物招领的评论
+        comments = comments.stream()
+                .filter(comment -> !"found".equalsIgnoreCase(comment.getItemType()))
+                .toList();
+        
         return ResponseEntity.ok(ApiResponse.success("获取用户评论列表成功", comments));
     }
     
@@ -164,6 +200,11 @@ public class ItemCommentController {
         log.info("获取当前用户的物品评论列表: 用户ID={}", currentUser.getId());
         
         List<ItemCommentDto> comments = itemCommentService.getCommentsByUser(currentUser.getId());
+        // 过滤掉失物招领的评论
+        comments = comments.stream()
+                .filter(comment -> !"found".equalsIgnoreCase(comment.getItemType()))
+                .toList();
+        
         return ResponseEntity.ok(ApiResponse.success("获取我的评论列表成功", comments));
     }
 } 

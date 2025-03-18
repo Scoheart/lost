@@ -1,9 +1,8 @@
 // stores/foundItems.ts
 import { defineStore } from 'pinia'
 import apiClient from '@/utils/api'
-import { getUpdateEndpoint, handleApiError, processCommentsResponse } from '@/utils/apiHelpers'
+import { getUpdateEndpoint, handleApiError } from '@/utils/apiHelpers'
 import { getFoundStatusChangeMessage } from '@/utils/statusHelpers'
-import type { Comment, CommentPagination } from '@/stores/lostItems'
 import type { Ref } from 'vue'
 
 // 内部辅助函数替代 urlHelpers 缺失的功能
@@ -17,16 +16,6 @@ function addSearchParams(url: string, params: Record<string, any>): string {
   });
 
   return urlObj.pathname + urlObj.search;
-}
-
-// 定义失物招领评论类型
-export interface FoundItemComment {
-  id: number;
-  content: string;
-  userId: number;
-  username: string;
-  createdAt: string;
-  updatedAt: string;
 }
 
 export interface FoundItem {
@@ -57,10 +46,8 @@ export interface FoundItem {
 export interface FoundItemsState {
   items: FoundItem[]
   currentItem: FoundItem | null
-  comments: Comment[]
   loading: boolean
   error: string | null
-  commentPagination: CommentPagination
   filters: {
     category: string | null
     status: string | null
@@ -77,15 +64,8 @@ export const useFoundItemsStore = defineStore('foundItems', {
   state: (): FoundItemsState => ({
     items: [],
     currentItem: null,
-    comments: [],
     loading: false,
     error: null,
-    commentPagination: {
-      currentPage: 1,
-      pageSize: 10,
-      totalItems: 0,
-      totalPages: 1
-    },
     filters: {
       category: null,
       status: null,
@@ -99,7 +79,6 @@ export const useFoundItemsStore = defineStore('foundItems', {
   }),
 
   getters: {
-    totalComments: (state) => state.commentPagination.totalItems,
     pendingItems: (state) => state.items.filter(item => item.status === 'pending'),
     claimedItems: (state) => state.items.filter(item => item.status === 'claimed'),
     closedItems: (state) => state.items.filter(item => item.status === 'closed'),
@@ -296,68 +275,6 @@ export const useFoundItemsStore = defineStore('foundItems', {
       }
     },
 
-    async fetchComments(itemId: number, page = 1, size = 10) {
-      try {
-        const response = await apiClient.get('/item-comments', {
-          params: {
-            itemId,
-            itemType: 'found',
-            page,
-            size
-          }
-        })
-
-        console.log('Comments API response:', response.data);
-
-        // 根据API响应示例更新处理逻辑
-        if (response.data && response.data.success) {
-          // 处理 { success: true, data: { comments: [], ... } } 格式
-          const responseData = response.data.data || {};
-
-          // 确保comments是数组，即使是空数组
-          this.comments = Array.isArray(responseData.comments) ? responseData.comments : [];
-
-          // 更新分页信息
-          this.commentPagination = {
-            currentPage: responseData.currentPage || 1,
-            pageSize: responseData.pageSize || 10,
-            totalItems: responseData.totalItems || 0,
-            totalPages: responseData.totalPages || 0
-          }
-
-          return { success: true, data: this.comments };
-        } else {
-          // 处理失败的响应
-          console.warn('Comments API returned unsuccessful response:', response.data);
-          this.comments = [];
-          this.commentPagination = {
-            currentPage: 1,
-            pageSize: 10,
-            totalItems: 0,
-            totalPages: 0
-          };
-          return {
-            success: false,
-            message: response.data?.message || '获取评论失败'
-          };
-        }
-      } catch (error: any) {
-        console.error('Failed to fetch comments:', error);
-        // 确保在错误情况下仍有有效数据
-        this.comments = [];
-        this.commentPagination = {
-          currentPage: 1,
-          pageSize: 10,
-          totalItems: 0,
-          totalPages: 0
-        };
-        return {
-          success: false,
-          message: error.response?.data?.message || '获取评论失败'
-        };
-      }
-    },
-
     // POST /found-items - 发布失物招领
     async createFoundItem(
       itemData: Omit<
@@ -466,65 +383,6 @@ export const useFoundItemsStore = defineStore('foundItems', {
         return { success: false, message: this.error }
       } finally {
         this.loading = false
-      }
-    },
-
-    /**
-     * 添加评论
-     * @param itemId 失物招领ID
-     * @param commentData 评论内容
-     * @returns 操作结果
-     */
-    async addComment(itemId: number, commentData: { content: string, type?: string }) {
-      try {
-        const response = await apiClient.post('/item-comments', {
-          ...commentData,
-          itemId,
-          itemType: 'found'
-        })
-
-        // 获取最新的评论列表
-        await this.fetchComments(itemId);
-
-        return {
-          success: true,
-          message: '评论已添加',
-          data: response.data
-        }
-      } catch (error: any) {
-        return {
-          success: false,
-          message: error.response?.data?.message || '添加评论失败'
-        }
-      }
-    },
-
-    /**
-     * 删除评论
-     * @param commentId 评论ID
-     * @returns 操作结果
-     */
-    async deleteComment(commentId: number) {
-      try {
-        const response = await apiClient.delete(`/item-comments/${commentId}`);
-
-        if (response.data && response.data.success) {
-          return {
-            success: true,
-            message: '评论删除成功'
-          }
-        } else {
-          return {
-            success: false,
-            message: response.data?.message || '评论删除失败'
-          }
-        }
-      } catch (error: any) {
-        console.error('Failed to delete comment:', error);
-        return {
-          success: false,
-          message: error.response?.data?.message || '评论删除失败'
-        }
       }
     },
 
@@ -676,7 +534,7 @@ export const useFoundItemsStore = defineStore('foundItems', {
      * 关闭失物招领(现在直接删除)
      */
     async closeItem(id: number) {
-      if (!this.token) return { success: false, message: '未授权操作' }
+      if (!id) return { success: false, message: '无效的ID' }
 
       try {
         console.log(`关闭并删除失物招领 #${id}`)

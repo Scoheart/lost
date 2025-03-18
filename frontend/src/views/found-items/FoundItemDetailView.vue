@@ -236,97 +236,6 @@
           </div>
         </template>
       </el-dialog>
-
-      <!-- 评论部分 -->
-      <el-card v-if="!loading && !error" class="comments-section">
-        <template #header>
-          <div class="comments-header">
-            <h3>评论 ({{ totalItems }})</h3>
-          </div>
-        </template>
-
-        <!-- 评论列表 -->
-        <div v-if="comments.length > 0" class="comments-list">
-          <el-card
-            v-for="comment in comments"
-            :key="comment.id"
-            class="comment-card"
-            shadow="hover"
-          >
-            <div class="comment-author">
-              <el-avatar :size="32" :icon="User" :src="comment.userAvatar"></el-avatar>
-              <span class="author-name">{{ comment.username }}</span>
-              <span>{{ formatDate(comment.createdAt) }}</span>
-
-              <!-- 评论操作按钮 -->
-              <div class="comment-actions" v-if="isCommentOwner(comment) || isItemOwner">
-                <el-button
-                  type="danger"
-                  text
-                  size="small"
-                  @click="deleteComment(comment)"
-                  :icon="Delete"
-                >
-                  删除
-                </el-button>
-              </div>
-              <div class="comment-actions" v-else-if="isLoggedIn">
-                <el-button type="warning" text size="small" @click="reportComment(comment)">
-                  举报
-                </el-button>
-              </div>
-            </div>
-            <div class="comment-content">{{ comment.content }}</div>
-          </el-card>
-        </div>
-        <el-empty v-else description="暂无评论"></el-empty>
-
-        <!-- 分页 -->
-        <el-pagination
-          v-if="totalPages > 1"
-          layout="prev, pager, next"
-          :total="totalItems"
-          :page-size="pageSize"
-          :current-page="currentPage"
-          @current-change="handleCommentPageChange"
-          hide-on-single-page
-          class="pagination"
-        ></el-pagination>
-
-        <!-- 评论表单 -->
-        <el-card v-if="isLoggedIn" class="comment-form-card" shadow="never">
-          <div class="comment-form-header">
-            <h3>发表评论</h3>
-            <p>分享您的想法或提问</p>
-          </div>
-          <el-form>
-            <el-form-item>
-              <el-input
-                v-model="commentForm.content"
-                type="textarea"
-                rows="4"
-                placeholder="请输入评论内容"
-                resize="none"
-                maxlength="500"
-                show-word-limit
-              ></el-input>
-            </el-form-item>
-            <el-form-item>
-              <el-button
-                type="primary"
-                @click="submitComment"
-                :loading="commentSubmitting"
-                :disabled="!commentForm.content.trim()"
-              >
-                发布评论
-              </el-button>
-            </el-form-item>
-          </el-form>
-        </el-card>
-        <el-alert v-else type="info" :closable="false" show-icon>
-          请<router-link to="/login">登录</router-link>后发表评论
-        </el-alert>
-      </el-card>
     </div>
   </main-layout>
 </template>
@@ -358,17 +267,6 @@ const foundItem = ref<any>(null)
 const loading = ref(true)
 const error = ref<boolean>(false)
 const itemId = ref<number | null>(null)
-
-// 评论相关数据
-const comments = ref<any[]>([])
-const commentForm = ref({
-  content: '',
-})
-const commentSubmitting = ref(false)
-const currentPage = ref(1)
-const pageSize = ref(10)
-const totalItems = ref(0)
-const totalPages = ref(0)
 
 // 图片查看器
 const imageViewerVisible = ref(false)
@@ -405,11 +303,6 @@ const isOwner = computed(() => {
   return isLoggedIn.value && foundItem.value?.userId === userStore.user?.id
 })
 const currentUserID = computed(() => userStore.user?.id)
-
-// 检查用户是否是评论的作者
-const isCommentOwner = (comment: any) => {
-  return currentUserID.value === comment.userId
-}
 
 // 方法
 // 获取用户名首字母，用于头像
@@ -516,9 +409,6 @@ async function loadItemDetail() {
       return
     }
 
-    // 加载评论数据
-    await loadComments()
-
     // 滚动到顶部
     window.scrollTo(0, 0)
   } catch (err) {
@@ -528,116 +418,6 @@ async function loadItemDetail() {
   } finally {
     loading.value = false
   }
-}
-
-// 加载评论
-async function loadComments() {
-  if (!itemId.value) return
-
-  try {
-    const result = await foundItemsStore.fetchComments(
-      itemId.value,
-      currentPage.value,
-      pageSize.value,
-    )
-
-    if (result.success) {
-      comments.value = result.data || []
-
-      // 更新分页信息
-      if (foundItemsStore.commentPagination) {
-        totalItems.value = foundItemsStore.commentPagination.totalItems
-        totalPages.value = foundItemsStore.commentPagination.totalPages
-      }
-    } else {
-      console.error('加载评论失败:', result.message)
-      ElMessage.error('加载评论失败，请稍后再试')
-    }
-  } catch (error) {
-    console.error('加载评论失败:', error)
-    ElMessage.error('加载评论失败，请稍后再试')
-  }
-}
-
-// 处理评论分页变化
-async function handleCommentPageChange(page: number) {
-  currentPage.value = page
-  await loadComments()
-}
-
-// 提交评论
-async function submitComment() {
-  if (!isLoggedIn.value) {
-    ElMessage.warning('请先登录')
-    return
-  }
-
-  if (!commentForm.value.content.trim()) {
-    ElMessage.warning('评论内容不能为空')
-    return
-  }
-
-  if (!itemId.value) {
-    ElMessage.error('物品ID无效')
-    return
-  }
-
-  commentSubmitting.value = true
-
-  try {
-    const result = await foundItemsStore.addComment(itemId.value, {
-      content: commentForm.value.content,
-    })
-
-    if (result.success) {
-      commentForm.value.content = ''
-      ElMessage.success('评论发布成功')
-
-      // 重新加载第一页评论
-      currentPage.value = 1
-      await loadComments()
-    } else {
-      ElMessage.error(result.message || '发布评论失败')
-    }
-  } catch (error) {
-    console.error('发布评论失败:', error)
-    ElMessage.error('发布评论失败，请稍后再试')
-  } finally {
-    commentSubmitting.value = false
-  }
-}
-
-// 删除评论
-function deleteComment(comment: any) {
-  if (!isLoggedIn.value) {
-    ElMessage.warning('请先登录')
-    return
-  }
-
-  ElMessageBox.confirm('确定要删除这条评论吗？删除后将无法恢复。', '删除评论', {
-    confirmButtonText: '确定删除',
-    cancelButtonText: '取消',
-    type: 'warning',
-  })
-    .then(async () => {
-      try {
-        const result = await foundItemsStore.deleteComment(comment.id)
-
-        if (result.success) {
-          ElMessage.success('评论已删除')
-          // 重新加载评论
-          await loadComments()
-        } else {
-          ElMessage.error(result.message || '删除失败')
-        }
-      } catch (error) {
-        console.error('删除评论失败:', error)
-        ElMessage.error('删除评论失败，请稍后再试')
-      }
-    })
-    .catch(() => {
-      // 用户取消删除
-    })
 }
 
 // 关闭失物招领
@@ -806,19 +586,6 @@ function reportItem() {
 function handleReportSubmitted(report: any) {
   console.log('举报已提交:', report)
 }
-
-// 举报评论
-function reportComment(comment: any) {
-  if (!isLoggedIn.value) {
-    ElMessage.warning('请先登录')
-    return
-  }
-
-  reportItemType.value = 'COMMENT'
-  reportItemId.value = comment.id
-  reportItemTitle.value = `评论: ${comment.content.substring(0, 20)}${comment.content.length > 20 ? '...' : ''}`
-  reportDialogVisible.value = true
-}
 </script>
 
 <style scoped>
@@ -928,54 +695,6 @@ function reportComment(comment: any) {
   border-bottom: 1px solid #ebeef5;
 }
 
-.comments-section {
-  margin-bottom: 40px;
-}
-
-.comments-list {
-  margin-bottom: 20px;
-}
-
-.comment-card {
-  margin-bottom: 10px;
-}
-
-.comment-author {
-  display: flex;
-  align-items: center;
-  margin-bottom: 8px;
-}
-
-.author-name {
-  margin-left: 8px;
-  font-weight: 500;
-  flex-grow: 1;
-}
-
-.comment-content {
-  color: #303133;
-  line-height: 1.6;
-}
-
-.comment-form-card {
-  margin-top: 20px;
-}
-
-.comment-form-header {
-  margin-bottom: 15px;
-}
-
-.comment-form-header h3 {
-  margin: 0 0 5px;
-  font-size: 16px;
-}
-
-.comment-form-header p {
-  margin: 0;
-  color: #909399;
-  font-size: 14px;
-}
-
 .related-items {
   margin-top: 40px;
 }
@@ -1049,19 +768,6 @@ function reportComment(comment: any) {
 .pagination-container {
   margin-top: 20px;
   text-align: center;
-}
-
-.comment-actions {
-  margin-left: auto;
-}
-
-.comment-actions .el-button {
-  padding: 2px 5px;
-  color: #909399;
-}
-
-.comment-actions .el-button:hover {
-  color: #f56c6c;
 }
 
 @media (max-width: 768px) {
