@@ -13,6 +13,8 @@ export interface User {
   address?: string
   createdAt: string
   updatedAt: string
+  isBanned?: boolean
+  isLocked?: boolean
 }
 
 // API操作结果通用接口
@@ -113,7 +115,9 @@ export const useUserStore = defineStore('user', {
             realName: responseData.realName,
             address: responseData.address,
             createdAt: responseData.createdAt || new Date().toISOString(),
-            updatedAt: responseData.updatedAt || new Date().toISOString()
+            updatedAt: responseData.updatedAt || new Date().toISOString(),
+            isBanned: responseData.isBanned,
+            isLocked: responseData.isLocked
           }
 
           // 设置token和用户信息
@@ -165,7 +169,9 @@ export const useUserStore = defineStore('user', {
             realName: responseData.realName,
             address: responseData.address,
             createdAt: responseData.createdAt || new Date().toISOString(),
-            updatedAt: responseData.updatedAt || new Date().toISOString()
+            updatedAt: responseData.updatedAt || new Date().toISOString(),
+            isBanned: responseData.isBanned,
+            isLocked: responseData.isLocked
           }
 
           // 设置token和用户信息
@@ -285,7 +291,9 @@ export const useUserStore = defineStore('user', {
             realName: userData.realName,
             address: userData.address,
             createdAt: userData.createdAt || new Date().toISOString(),
-            updatedAt: userData.updatedAt || new Date().toISOString()
+            updatedAt: userData.updatedAt || new Date().toISOString(),
+            isBanned: userData.isBanned,
+            isLocked: userData.isLocked
           }
 
           this.setUser(user)

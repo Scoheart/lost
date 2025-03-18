@@ -21,6 +21,7 @@
               <el-menu-item index="/announcements">社区公告</el-menu-item>
               <el-menu-item index="/lost-items">寻物启事</el-menu-item>
               <el-menu-item index="/found-items">失物招领</el-menu-item>
+              <el-menu-item index="/forum">邻居论坛</el-menu-item>
               <el-menu-item index="/claim-communications" v-if="isLoggedIn">认领交流</el-menu-item>
             </el-menu>
           </div>
@@ -93,6 +94,7 @@
             <h3>快速链接</h3>
             <p><router-link to="/lost-items">寻物启事</router-link></p>
             <p><router-link to="/found-items">失物招领</router-link></p>
+            <p><router-link to="/forum">邻居论坛</router-link></p>
             <p><router-link to="/announcements">社区公告</router-link></p>
           </div>
         </div>

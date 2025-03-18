@@ -185,7 +185,8 @@
 
                   <el-form-item label="上传图片" prop="images">
                     <el-upload
-                      action="/api/upload"
+                      ref="uploadRef"
+                      action="/upload"
                       list-type="picture-card"
                       :limit="5"
                       :multiple="true"

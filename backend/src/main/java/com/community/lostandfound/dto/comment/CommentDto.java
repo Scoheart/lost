@@ -8,12 +8,14 @@ import lombok.NoArgsConstructor;
 import java.time.LocalDateTime;
 
 /**
- * 留言数据传输对象
+ * 留言DTO
+ * @deprecated 已被拆分为ItemCommentDto和PostCommentDto，保留此类是为了保持兼容性
  */
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
+@Deprecated
 public class CommentDto {
     
     /**

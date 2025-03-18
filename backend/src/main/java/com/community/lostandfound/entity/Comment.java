@@ -9,10 +9,12 @@ import java.time.LocalDateTime;
 /**
  * 留言实体类
  * 用于寻物启事和失物招领的留言
+ * @deprecated 已被拆分为ItemComment和PostComment，保留此类是为了保持兼容性
  */
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
+@Deprecated
 public class Comment {
     
     /**
@@ -31,7 +33,7 @@ public class Comment {
     private Long itemId;
     
     /**
-     * 物品类型：lost - 寻物启事，found - 失物招领
+     * 物品类型：lost - 寻物启事，found - 失物招领, post - 论坛帖子
      */
     private String itemType;
     

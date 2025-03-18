@@ -1,37 +1,37 @@
 package com.community.lostandfound.repository;
 
-import com.community.lostandfound.entity.Comment;
+import com.community.lostandfound.entity.ItemComment;
 import org.apache.ibatis.annotations.*;
 
 import java.util.List;
 import java.util.Optional;
 
 /**
- * 留言数据访问接口
+ * 物品评论数据访问接口
  */
 @Mapper
-public interface CommentRepository {
+public interface ItemCommentRepository {
     
     /**
-     * 保存留言
+     * 保存评论
      *
-     * @param comment 留言对象
+     * @param comment 评论对象
      */
     @Insert("INSERT INTO comments (content, item_id, item_type, user_id, created_at, updated_at) " +
             "VALUES (#{content}, #{itemId}, #{itemType}, #{userId}, #{createdAt}, #{updatedAt})")
     @Options(useGeneratedKeys = true, keyProperty = "id")
-    void save(Comment comment);
+    void save(ItemComment comment);
     
     /**
-     * 根据ID查询留言
+     * 根据ID查询评论
      *
-     * @param id 留言ID
-     * @return 留言对象
+     * @param id 评论ID
+     * @return 评论对象
      */
     @Select("SELECT c.*, u.username, u.avatar as user_avatar " +
             "FROM comments c " +
             "JOIN users u ON c.user_id = u.id " +
-            "WHERE c.id = #{id}")
+            "WHERE c.id = #{id} AND (c.item_type = 'lost' OR c.item_type = 'found')")
     @Results({
         @Result(property = "id", column = "id"),
         @Result(property = "content", column = "content"),
@@ -43,14 +43,14 @@ public interface CommentRepository {
         @Result(property = "username", column = "username"),
         @Result(property = "userAvatar", column = "user_avatar")
     })
-    Optional<Comment> findById(Long id);
+    Optional<ItemComment> findById(Long id);
     
     /**
-     * 查询物品的所有留言
+     * 查询物品的所有评论
      *
      * @param itemId   物品ID
-     * @param itemType 物品类型
-     * @return 留言列表
+     * @param itemType 物品类型 (lost 或 found)
+     * @return 评论列表
      */
     @Select("SELECT c.*, u.username, u.avatar as user_avatar " +
             "FROM comments c " +
@@ -68,16 +68,16 @@ public interface CommentRepository {
         @Result(property = "username", column = "username"),
         @Result(property = "userAvatar", column = "user_avatar")
     })
-    List<Comment> findByItemIdAndType(@Param("itemId") Long itemId, @Param("itemType") String itemType);
+    List<ItemComment> findByItemIdAndType(@Param("itemId") Long itemId, @Param("itemType") String itemType);
     
     /**
-     * 查询物品的所有留言（分页）
+     * 查询物品的所有评论（分页）
      *
      * @param itemId   物品ID
-     * @param itemType 物品类型
+     * @param itemType 物品类型 (lost 或 found)
      * @param offset   偏移量
      * @param limit    每页数量
-     * @return 留言列表
+     * @return 评论列表
      */
     @Select("SELECT c.*, u.username, u.avatar as user_avatar " +
             "FROM comments c " +
@@ -96,40 +96,40 @@ public interface CommentRepository {
         @Result(property = "username", column = "username"),
         @Result(property = "userAvatar", column = "user_avatar")
     })
-    List<Comment> findByItemIdAndTypeWithPagination(
+    List<ItemComment> findByItemIdAndTypeWithPagination(
             @Param("itemId") Long itemId, 
             @Param("itemType") String itemType,
             @Param("offset") int offset,
             @Param("limit") int limit);
     
     /**
-     * 统计物品的留言数量
+     * 统计物品的评论数量
      *
      * @param itemId   物品ID
-     * @param itemType 物品类型
-     * @return 留言数量
+     * @param itemType 物品类型 (lost 或 found)
+     * @return 评论数量
      */
     @Select("SELECT COUNT(*) FROM comments WHERE item_id = #{itemId} AND item_type = #{itemType}")
     int countByItemIdAndType(@Param("itemId") Long itemId, @Param("itemType") String itemType);
     
     /**
-     * 删除留言
+     * 删除评论
      *
-     * @param id 留言ID
+     * @param id 评论ID
      */
     @Delete("DELETE FROM comments WHERE id = #{id}")
     void deleteById(Long id);
     
     /**
-     * 查询用户的所有留言
+     * 查询用户的所有物品评论
      *
      * @param userId 用户ID
-     * @return 留言列表
+     * @return 评论列表
      */
     @Select("SELECT c.*, u.username, u.avatar as user_avatar " +
             "FROM comments c " +
             "JOIN users u ON c.user_id = u.id " +
-            "WHERE c.user_id = #{userId} " +
+            "WHERE c.user_id = #{userId} AND (c.item_type = 'lost' OR c.item_type = 'found') " +
             "ORDER BY c.created_at DESC")
     @Results({
         @Result(property = "id", column = "id"),
@@ -142,24 +142,14 @@ public interface CommentRepository {
         @Result(property = "username", column = "username"),
         @Result(property = "userAvatar", column = "user_avatar")
     })
-    List<Comment> findByUserId(Long userId);
+    List<ItemComment> findByUserId(Long userId);
     
     /**
-     * 删除指定物品的所有留言
+     * 删除指定物品的所有评论
      *
      * @param itemId   物品ID
-     * @param itemType 物品类型
+     * @param itemType 物品类型 (lost 或 found)
      */
     @Delete("DELETE FROM comments WHERE item_id = #{itemId} AND item_type = #{itemType}")
     void deleteByItemIdAndItemType(@Param("itemId") Long itemId, @Param("itemType") String itemType);
-    
-    /**
-     * 统计物品的留言数量
-     *
-     * @param itemId   物品ID
-     * @param itemType 物品类型
-     * @return 留言数量
-     */
-    @Select("SELECT COUNT(*) FROM comments WHERE item_id = #{itemId} AND item_type = #{itemType}")
-    int countByItemIdAndItemType(@Param("itemId") Long itemId, @Param("itemType") String itemType);
 } 

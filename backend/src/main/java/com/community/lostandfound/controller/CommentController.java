@@ -20,11 +20,16 @@ import java.util.Optional;
 
 /**
  * 留言控制器
+ * @deprecated 已被拆分为ItemCommentController和PostCommentController，保留此控制器是为了保持兼容性
+ * 新代码请使用：
+ * - 物品评论：/api/item-comments (ItemCommentController)
+ * - 帖子评论：/api/post-comments (PostCommentController)
  */
 @Slf4j
 @RestController
 @RequestMapping("/comments")
 @RequiredArgsConstructor
+@Deprecated
 public class CommentController {
     
     private final CommentService commentService;
@@ -35,9 +40,13 @@ public class CommentController {
      * @param request     创建留言请求
      * @param currentUser 当前用户
      * @return 创建的留言
+     * @deprecated 请使用新的端点：
+     *  - 物品评论：POST /api/item-comments
+     *  - 帖子评论：POST /api/post-comments
      */
     @PostMapping
     @PreAuthorize("isAuthenticated()")
+    @Deprecated
     public ResponseEntity<ApiResponse<CommentDto>> createComment(
             @Valid @RequestBody CreateCommentRequest request,
             @CurrentUser UserDetailsImpl currentUser) {
@@ -62,8 +71,12 @@ public class CommentController {
      * @param page     页码
      * @param size     每页条数
      * @return 留言分页列表
+     * @deprecated 请使用新的端点：
+     *  - 物品评论：GET /api/item-comments
+     *  - 帖子评论：GET /api/post-comments
      */
     @GetMapping
+    @Deprecated
     public ResponseEntity<ApiResponse<CommentPageDto>> getCommentsByItem(
             @RequestParam Long itemId,
             @RequestParam String itemType,
@@ -83,8 +96,12 @@ public class CommentController {
      * @param itemId   物品ID
      * @param itemType 物品类型
      * @return 留言列表
+     * @deprecated 请使用新的端点：
+     *  - 物品评论：GET /api/item-comments/all
+     *  - 帖子评论：GET /api/post-comments/all
      */
     @GetMapping("/all")
+    @Deprecated
     public ResponseEntity<ApiResponse<List<CommentDto>>> getAllCommentsByItem(
             @RequestParam Long itemId,
             @RequestParam String itemType) {
@@ -100,8 +117,12 @@ public class CommentController {
      *
      * @param id 留言ID
      * @return 留言
+     * @deprecated 请使用新的端点：
+     *  - 物品评论：GET /api/item-comments/{id}
+     *  - 帖子评论：GET /api/post-comments/{id}
      */
     @GetMapping("/{id}")
+    @Deprecated
     public ResponseEntity<ApiResponse<CommentDto>> getCommentById(@PathVariable Long id) {
         log.info("根据ID查询留言: {}", id);
         
@@ -120,9 +141,13 @@ public class CommentController {
      * @param id          留言ID
      * @param currentUser 当前用户
      * @return 删除结果
+     * @deprecated 请使用新的端点：
+     *  - 物品评论：DELETE /api/item-comments/{id}
+     *  - 帖子评论：DELETE /api/post-comments/{id}
      */
     @DeleteMapping("/{id}")
     @PreAuthorize("isAuthenticated()")
+    @Deprecated
     public ResponseEntity<ApiResponse<Void>> deleteComment(
             @PathVariable Long id,
             @CurrentUser UserDetailsImpl currentUser) {
@@ -148,9 +173,13 @@ public class CommentController {
      *
      * @param currentUser 当前用户
      * @return 留言列表
+     * @deprecated 请使用新的端点：
+     *  - 物品评论：GET /api/item-comments/me
+     *  - 帖子评论：GET /api/post-comments/me
      */
     @GetMapping("/my-comments")
     @PreAuthorize("isAuthenticated()")
+    @Deprecated
     public ResponseEntity<ApiResponse<List<CommentDto>>> getMyComments(
             @CurrentUser UserDetailsImpl currentUser) {
         

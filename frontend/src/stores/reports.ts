@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import api from '../utils/api'
+import api from '@/utils/api'
 
 /**
  * 举报类型枚举

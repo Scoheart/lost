@@ -5,23 +5,32 @@
       <div v-if="loading" class="loading-container">
         <el-skeleton animated>
           <template #template>
-            <div style="padding: 20px;">
-              <el-skeleton-item variant="h1" style="width: 70%; height: 40px; margin-bottom: 20px;" />
-              <div style="display: flex; align-items: center; margin-bottom: 20px;">
-                <el-skeleton-item variant="image" style="width: 32px; height: 32px; margin-right: 16px;" />
-                <el-skeleton-item variant="text" style="width: 100px;" />
+            <div style="padding: 20px">
+              <el-skeleton-item
+                variant="h1"
+                style="width: 70%; height: 40px; margin-bottom: 20px"
+              />
+              <div style="display: flex; align-items: center; margin-bottom: 20px">
+                <el-skeleton-item
+                  variant="image"
+                  style="width: 32px; height: 32px; margin-right: 16px"
+                />
+                <el-skeleton-item variant="text" style="width: 100px" />
               </div>
               <div style="display: flex; gap: 20px; margin-bottom: 20px">
                 <el-skeleton-item variant="image" style="width: 300px; height: 200px" />
                 <el-skeleton-item variant="text" style="width: 100%; height: 200px" />
               </div>
-              <div style="margin-top: 30px;">
-                <el-skeleton-item variant="h3" style="width: 50%; margin-bottom: 10px;" />
-                <div v-for="i in 3" :key="i" style="margin-bottom: 20px;">
-                  <el-skeleton-item variant="image" style="width: 32px; height: 32px; margin-right: 16px; float: left;" />
+              <div style="margin-top: 30px">
+                <el-skeleton-item variant="h3" style="width: 50%; margin-bottom: 10px" />
+                <div v-for="i in 3" :key="i" style="margin-bottom: 20px">
+                  <el-skeleton-item
+                    variant="image"
+                    style="width: 32px; height: 32px; margin-right: 16px; float: left"
+                  />
                   <div>
-                    <el-skeleton-item variant="text" style="width: 40%; margin-bottom: 8px;" />
-                    <el-skeleton-item variant="text" style="width: 100%;" />
+                    <el-skeleton-item variant="text" style="width: 40%; margin-bottom: 8px" />
+                    <el-skeleton-item variant="text" style="width: 100%" />
                   </div>
                 </div>
               </div>
@@ -45,10 +54,7 @@
       </el-result>
 
       <!-- 无数据状态 -->
-      <el-empty
-        v-else-if="!foundItem"
-        description="未找到该失物招领信息"
-      >
+      <el-empty v-else-if="!foundItem" description="未找到该失物招领信息">
         <el-button type="primary" @click="$router.push('/found-items')">
           返回失物招领列表
         </el-button>
@@ -85,12 +91,12 @@
               </span>
               <span class="meta-item">
                 <el-button
-                  type="text"
+                  plain
                   size="small"
                   @click="reportItem"
-                  v-if="isLoggedIn && !isOwner"
+                  v-if="isLoggedIn && !isItemOwner"
                 >
-                  <el-icon><Warning /></el-icon> 举报
+                  举报
                 </el-button>
               </span>
             </div>
@@ -136,56 +142,33 @@
 
           <div class="item-note" v-if="foundItem.claimRequirements">
             <h3>认领要求</h3>
-            <el-alert
-              type="info"
-              :closable="false"
-              show-icon
-            >
+            <el-alert type="info" :closable="false" show-icon>
               <p>{{ foundItem.claimRequirements }}</p>
             </el-alert>
           </div>
 
           <div class="item-actions" v-if="foundItem.status === 'pending'">
-            <el-button
-              type="primary"
-              @click="initiateClaimProcess"
-              v-if="!isOwner"
-            >
+            <el-button type="primary" @click="initiateClaimProcess" v-if="canClaim">
               这是我的物品
             </el-button>
 
-            <div class="owner-actions" v-if="isOwner">
-              <el-button
-                type="primary"
-                @click="redirectToEdit"
-              >
-                编辑招领
-              </el-button>
-              <el-button
-                type="info"
-                @click="closeItem"
-              >
-                删除招领
-              </el-button>
-              <el-button
-                type="danger"
-                @click="deleteItem"
-              >
-                删除招领
-              </el-button>
+            <div class="owner-actions" v-if="isItemOwner">
+              <el-button type="primary" @click="redirectToEdit"> 编辑招领 </el-button>
+              <el-button type="info" @click="closeItem"> 删除招领 </el-button>
+              <el-button type="danger" @click="deleteItem"> 删除招领 </el-button>
             </div>
           </div>
 
           <!-- 认领中状态 -->
           <div class="item-actions" v-if="foundItem.status === 'processing'">
-            <el-alert
-              type="info"
-              :closable="false"
-              show-icon
-            >
-              <template v-if="isOwner">
+            <el-alert type="info" :closable="false" show-icon>
+              <template v-if="isItemOwner">
                 <p><strong>该物品正在被申请认领中</strong></p>
-                <p>请前往 <router-link to="/claim-communication?tab=processing">认领交流</router-link> 页面查看认领申请</p>
+                <p>
+                  请前往
+                  <router-link to="/claim-communication?tab=processing">认领交流</router-link>
+                  页面查看认领申请
+                </p>
               </template>
               <template v-else>
                 <p>该物品正在被认领中，请等待确认或查看其他物品。</p>
@@ -195,164 +178,29 @@
 
           <!-- 已认领状态 -->
           <div class="item-actions" v-if="foundItem.status === 'claimed'">
-            <el-alert
-              type="success"
-              :closable="false"
-              show-icon
-            >
+            <el-alert type="success" :closable="false" show-icon>
               <p><strong>该物品已被认领</strong></p>
             </el-alert>
           </div>
-        </el-card>
-
-        <!-- 评论区 -->
-        <div class="comments-section">
-          <h2 class="section-title">留言板 ({{ totalComments }}条)</h2>
-
-          <!-- 评论列表 -->
-          <div class="comments-list" v-if="comments.length > 0">
-            <el-timeline>
-              <el-timeline-item
-                v-for="comment in comments"
-                :key="comment.id"
-                :timestamp="formatDate(comment.createdAt, true)"
-                :type="getTimelineItemType(comment.id)"
-              >
-                <el-card class="comment-card">
-                  <div class="comment-author">
-                    <el-avatar :size="32" :src="comment.userAvatar || ''">{{ getInitials(comment.username) }}</el-avatar>
-                    <span class="author-name">{{ comment.username }}</span>
-                    <span class="comment-actions" v-if="isLoggedIn && userStore.user.id !== comment.userId">
-                      <el-button
-                        type="text"
-                        size="small"
-                        @click="reportComment(comment)"
-                        title="举报此评论"
-                      >
-                        <el-icon><Warning /></el-icon>
-                      </el-button>
-                    </span>
-                  </div>
-                  <div class="comment-content">
-                    {{ comment.content }}
-                  </div>
-                </el-card>
-              </el-timeline-item>
-            </el-timeline>
-
-            <!-- 分页 -->
-            <div class="pagination-container" v-if="totalComments > pageSize">
-              <el-pagination
-                v-model:current-page="currentPage"
-                v-model:page-size="pageSize"
-                :page-sizes="[5, 10, 20, 50]"
-                :total="totalComments"
-                layout="total, sizes, prev, pager, next, jumper"
-                @size-change="handleSizeChange"
-                @current-change="handlePageChange"
-              />
-            </div>
-          </div>
-
-          <!-- 无评论提示 -->
-          <el-empty
-            v-else
-            description="暂无留言"
-            :image-size="100"
-          >
-          </el-empty>
-
-          <!-- 评论输入框 -->
-          <el-card class="comment-form-card" v-if="isLoggedIn">
-            <div class="comment-form-header">
-              <h3>发表留言</h3>
-              <p>如果您认为这是您的物品，请描述细节以证明物品归属</p>
-            </div>
-            <el-form :model="commentForm" @submit.prevent="submitComment">
-              <el-form-item>
-                <el-input
-                  v-model="commentForm.content"
-                  type="textarea"
-                  :rows="3"
-                  :maxlength="500"
-                  show-word-limit
-                  placeholder="写下您的留言，如需认领请提供能够证明物品归属的信息..."
-                />
-              </el-form-item>
-              <el-form-item>
-                <el-button
-                  type="primary"
-                  @click="submitComment"
-                  :loading="commentSubmitting"
-                  :disabled="!commentForm.content.trim()"
-                >
-                  发表留言
-                </el-button>
-              </el-form-item>
-            </el-form>
-          </el-card>
-
-          <!-- 登录提示 -->
-          <el-alert
-            v-else
-            title="登录后才能发表留言"
-            type="info"
-            :closable="false"
-            center
-            show-icon
-            style="margin-top: 20px;"
-          >
-            <template #default>
-              <el-button
-                type="primary"
-                @click="goToLogin"
-                plain
-                size="small"
-                style="margin-left: 10px;"
-              >
-                去登录
-              </el-button>
-            </template>
-          </el-alert>
         </div>
 
-        <!-- 相似物品 -->
-        <div class="related-items" v-if="relatedItems.length > 0">
-          <h2 class="section-title">相似拾获物品</h2>
-          <el-row :gutter="20">
-            <el-col
-              v-for="item in relatedItems"
-              :key="item.id"
-              :xs="24"
-              :sm="12"
-              :md="8"
-              :lg="6"
-            >
-              <el-card
-                shadow="hover"
-                class="related-item-card"
-                @click="goToItem(item.id)"
-              >
-                <div class="related-item-image">
-                  <img :src="item.images && item.images.length > 0 ? item.images[0] : '/placeholder.jpg'" />
-                </div>
-                <h3 class="related-item-title">{{ item.title }}</h3>
-                <div class="related-item-footer">
-                  <span class="related-item-location">{{ item.foundLocation }}</span>
-                  <el-tag size="small" type="primary" v-if="item.status === 'pending'">招领中</el-tag>
-                </div>
-              </el-card>
-            </el-col>
-          </el-row>
+        <!-- 底部操作按钮 -->
+        <div class="action-buttons" v-if="isLoggedIn">
+          <!-- Note: Removed duplicate report button here to keep only the one in the header -->
         </div>
+
+        <!-- 举报对话框 -->
+        <report-dialog
+          v-model:visible="reportDialogVisible"
+          :item-type="reportItemType"
+          :item-id="reportItemId"
+          :item-title="reportItemTitle"
+          @report-submitted="handleReportSubmitted"
+        />
       </template>
 
       <!-- 认领对话框 -->
-      <el-dialog
-        v-model="claimDialogVisible"
-        title="认领流程"
-        width="500px"
-      >
+      <el-dialog v-model="claimDialogVisible" title="认领流程" width="500px">
         <div class="claim-dialog-content">
           <p>如果您是该物品的失主，请填写认领申请信息：</p>
 
@@ -362,7 +210,7 @@
               prop="description"
               :rules="[
                 { required: true, message: '请填写认领说明', trigger: 'blur' },
-                { min: 10, message: '说明至少包含10个字符', trigger: 'blur' }
+                { min: 10, message: '说明至少包含10个字符', trigger: 'blur' },
               ]"
             >
               <el-input
@@ -374,34 +222,105 @@
             </el-form-item>
           </el-form>
 
-          <el-alert
-            type="warning"
-            :closable="false"
-            show-icon
-          >
+          <el-alert type="warning" :closable="false" show-icon>
             <template #title>
               认领要求：{{ foundItem?.claimRequirements || '请提供有效的物品归属证明' }}
             </template>
           </el-alert>
 
-          <p class="claim-note">提交认领申请后，物品状态将变为"认领中"，其他人将无法申请认领此物品。</p>
+          <p class="claim-note">
+            提交认领申请后，物品状态将变为"认领中"，其他人将无法申请认领此物品。
+          </p>
         </div>
         <template #footer>
           <div class="dialog-footer">
             <el-button @click="claimDialogVisible = false">取消</el-button>
-            <el-button type="primary" @click="submitClaimApplication" :loading="claimSubmitting">提交认领申请</el-button>
+            <el-button type="primary" @click="submitClaimApplication" :loading="claimSubmitting"
+              >提交认领申请</el-button
+            >
           </div>
         </template>
       </el-dialog>
 
-      <!-- 举报对话框 -->
-      <report-dialog
-        v-model="reportDialogVisible"
-        :item-type="reportItemType"
-        :item-id="reportItemId"
-        :item-title="reportItemTitle"
-        @submitted="handleReportSubmitted"
-      />
+      <!-- 评论部分 -->
+      <el-card v-if="!loading && !error" class="comments-section">
+        <template #header>
+          <div class="comments-header">
+            <h3>评论 ({{ totalItems }})</h3>
+          </div>
+        </template>
+
+        <!-- 评论列表 -->
+        <div v-if="comments.length > 0" class="comments-list">
+          <el-card v-for="comment in comments" :key="comment.id" class="comment-card" shadow="hover">
+            <div class="comment-author">
+              <el-avatar :size="32" :icon="User" :src="comment.userAvatar"></el-avatar>
+              <span class="author-name">{{ comment.username }}</span>
+              <span>{{ formatDate(comment.createdAt) }}</span>
+
+              <!-- 评论操作按钮 -->
+              <div class="comment-actions" v-if="isCommentOwner(comment) || isItemOwner">
+                <el-button type="danger" text size="small" @click="deleteComment(comment)" :icon="Delete">
+                  删除
+                </el-button>
+              </div>
+              <div class="comment-actions" v-else-if="isLoggedIn">
+                <el-button type="warning" text size="small" @click="reportComment(comment)">
+                  举报
+                </el-button>
+              </div>
+            </div>
+            <div class="comment-content">{{ comment.content }}</div>
+          </el-card>
+        </div>
+        <el-empty v-else description="暂无评论"></el-empty>
+
+        <!-- 分页 -->
+        <el-pagination
+          v-if="totalPages > 1"
+          layout="prev, pager, next"
+          :total="totalItems"
+          :page-size="pageSize"
+          :current-page="currentPage"
+          @current-change="handleCommentPageChange"
+          hide-on-single-page
+          class="pagination"
+        ></el-pagination>
+
+        <!-- 评论表单 -->
+        <el-card v-if="isLoggedIn" class="comment-form-card" shadow="never">
+          <div class="comment-form-header">
+            <h3>发表评论</h3>
+            <p>分享您的想法或提问</p>
+          </div>
+          <el-form>
+            <el-form-item>
+              <el-input
+                v-model="commentForm.content"
+                type="textarea"
+                rows="4"
+                placeholder="请输入评论内容"
+                resize="none"
+                maxlength="500"
+                show-word-limit
+              ></el-input>
+            </el-form-item>
+            <el-form-item>
+              <el-button
+                type="primary"
+                @click="submitComment"
+                :loading="commentSubmitting"
+                :disabled="!commentForm.content.trim()"
+              >
+                发布评论
+              </el-button>
+            </el-form-item>
+          </el-form>
+        </el-card>
+        <el-alert v-else type="info" :closable="false" show-icon>
+          请<router-link to="/login">登录</router-link>后发表评论
+        </el-alert>
+      </el-card>
     </div>
   </main-layout>
 </template>
@@ -409,77 +328,80 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, watch, nextTick } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
-import { User, Calendar, Picture, Warning } from '@element-plus/icons-vue'
+import { User, Calendar, Delete, Picture } from '@element-plus/icons-vue'
 import { format } from 'date-fns'
 import { zhCN } from 'date-fns/locale'
 import { ElMessage, ElMessageBox, ElImage } from 'element-plus'
-import MainLayout from '@/components/layout/MainLayout.vue'
 import { useFoundItemsStore } from '@/stores/foundItems'
 import { useUserStore } from '@/stores/user'
 import { useClaimsStore } from '@/stores/claims'
-import type { FoundItem } from '@/stores/foundItems'
-import type { Comment } from '@/stores/lostItems'
+import MainLayout from '@/components/layout/MainLayout.vue'
+import ItemStatusTag from '@/components/common/ItemStatusTag.vue'
 import ReportDialog from '@/components/ReportDialog.vue'
+import type { FormInstance } from 'element-plus'
 
+// 基本数据
 const router = useRouter()
 const route = useRoute()
 const foundItemsStore = useFoundItemsStore()
 const userStore = useUserStore()
 const claimsStore = useClaimsStore()
 
-// 状态变量
-const loading = ref(false)
-const error = ref<string | null>(null)
+// 物品详情数据
+const foundItem = ref<any>(null)
+const loading = ref(true)
+const error = ref<boolean>(false)
+const itemId = ref<number | null>(null)
+
+// 评论相关数据
+const comments = ref<any[]>([])
 const commentForm = ref({
   content: ''
 })
 const commentSubmitting = ref(false)
-const claimDialogVisible = ref(false)
-const claimSubmitting = ref(false)
-const claimForm = ref({
-  description: ''
-})
-const claimFormRef = ref<any>(null)
-const actionLoading = ref(false)
 const currentPage = ref(1)
 const pageSize = ref(10)
+const totalItems = ref(0)
+const totalPages = ref(0)
+
+// 图片查看器
+const imageViewerVisible = ref(false)
+const imageViewerIndex = ref(0)
+
+// 认领相关数据
+const claimDialogVisible = ref(false)
+const claimForm = ref({
+  description: '',
+})
+const claimFormRef = ref<FormInstance | null>(null)
+const claimSubmitting = ref(false)
+
+// 举报相关数据
 const reportDialogVisible = ref(false)
-const reportItemType = ref('')
-const reportItemId = ref(null)
+const reportItemType = ref('FOUND_ITEM')
+const reportItemId = ref<number | null>(null)
 const reportItemTitle = ref('')
 
-// 计算属性
-const itemId = computed(() => {
-  const id = Number(route.params.id)
-  return isNaN(id) ? null : id
-})
-
-const foundItem = computed(() => foundItemsStore.currentItem as FoundItem | null)
-const comments = computed(() => foundItemsStore.comments as Comment[])
+// 辅助状态计算
 const isLoggedIn = computed(() => userStore.isAuthenticated)
-const user = computed(() => userStore.userProfile)
-
+const isItemOwner = computed(() => {
+  return isLoggedIn.value && foundItem.value && userStore.user?.id === foundItem.value.userId
+})
+const canClaim = computed(() => {
+  return isLoggedIn.value &&
+         foundItem.value &&
+         foundItem.value.status === 'pending' &&
+         userStore.user?.id !== foundItem.value.userId
+})
 const isOwner = computed(() => {
-  if (!isLoggedIn.value || !foundItem.value || !user.value) return false
-  return foundItem.value.userId === user.value.id
+  return isLoggedIn.value && foundItem.value?.userId === userStore.user?.id
 })
+const currentUserID = computed(() => userStore.user?.id)
 
-// 认领信息
-const claimInfo = computed(() => foundItem.value?.claimInfo || null)
-
-// 获取相关物品（同类别的其他拾获物品）
-const relatedItems = computed(() => {
-  if (!foundItem.value) return []
-  return foundItemsStore.items
-    .filter(item =>
-      item.id !== foundItem.value!.id &&
-      item.category === foundItem.value!.category &&
-      item.status === 'pending'
-    )
-    .slice(0, 4) // 最多显示4个相关物品
-})
-
-const totalComments = computed(() => foundItemsStore.totalComments)
+// 检查用户是否是评论的作者
+const isCommentOwner = (comment: any) => {
+  return currentUserID.value === comment.userId
+}
 
 // 方法
 // 获取用户名首字母，用于头像
@@ -502,14 +424,14 @@ const formatDate = (dateString: string, full = false) => {
 // 获取物品类别名称
 const getCategoryName = (category: string) => {
   const categories = {
-    'electronics': '电子设备',
-    'documents': '证件/文件',
-    'clothing': '衣物/包包',
-    'keys': '钥匙/门禁卡',
-    'jewelry': '首饰/配饰',
-    'books': '书籍/教材',
-    'pets': '宠物',
-    'other': '其他物品'
+    electronics: '电子设备',
+    documents: '证件/文件',
+    clothing: '衣物/包包',
+    keys: '钥匙/门禁卡',
+    jewelry: '首饰/配饰',
+    books: '书籍/教材',
+    pets: '宠物',
+    other: '其他物品',
   }
   return categories[category as keyof typeof categories] || category
 }
@@ -534,7 +456,7 @@ const goToItem = (id: number) => {
 // 预览图片
 const previewImage = (url: string) => {
   ElImage.PreviewService({
-    urlList: foundItem.value?.images || [url]
+    urlList: foundItem.value?.images || [url],
   })
 }
 
@@ -544,95 +466,166 @@ const initiateClaimProcess = () => {
 }
 
 // 加载物品详情
-const loadItemDetail = async () => {
-  try {
-    loading.value = true;
-    error.value = null;
+async function loadItemDetail() {
+  if (!route.params.id) {
+    error.value = true
+    ElMessage.error('无效的物品ID')
+    return
+  }
 
-    // 获取物品ID
-    const itemId = Number(route.params.id);
-    if (isNaN(itemId)) {
-      error.value = '无效的物品ID';
-      return;
+  loading.value = true
+  error.value = false
+
+  try {
+    console.log('正在加载失物招领详情，ID:', route.params.id)
+    const parsedItemId = parseInt(route.params.id as string, 10)
+    if (isNaN(parsedItemId)) {
+      error.value = true
+      ElMessage.error('无效的物品ID格式')
+      return
     }
 
-    // 分别获取物品详情和评论
-    const itemResult = await foundItemsStore.fetchFoundItemById(itemId);
+    itemId.value = parsedItemId
+
+    // 获取物品详情
+    const itemResult = await foundItemsStore.fetchFoundItemById(parsedItemId)
+    console.log('获取物品详情API响应:', itemResult)
 
     if (!itemResult.success) {
-      error.value = itemResult.message || '获取失物招领失败';
-      return;
+      error.value = true
+      ElMessage.error(itemResult.message || '获取失物招领失败')
+      return
     }
 
-    // 物品详情获取成功后，获取评论
-    const commentsResult = await foundItemsStore.fetchComments(
-      itemId,
-      currentPage.value,
-      pageSize.value
-    );
-
-    // 如果评论获取失败，只记录警告但继续显示物品详情
-    if (!commentsResult.success) {
-      console.warn('Failed to fetch comments:', commentsResult.message);
-      // 不阻止页面显示，只显示物品信息
+    // 检查store中是否有currentItem，并更新本地的foundItem
+    if (foundItemsStore.currentItem) {
+      foundItem.value = { ...foundItemsStore.currentItem }
+      console.log('成功加载失物招领数据:', foundItem.value)
+    } else {
+      console.error('物品详情加载失败: store.currentItem为空')
+      error.value = true
+      ElMessage.error('获取失物招领数据失败')
+      return
     }
 
-    // 获取相关物品
-    if (foundItem.value && foundItem.value.category) {
-      await foundItemsStore.fetchFoundItems({
-        category: foundItem.value.category,
-        page: 1,
-        pageSize: 4
-      });
-    }
+    // 加载评论数据
+    await loadComments()
 
     // 滚动到顶部
-    window.scrollTo(0, 0);
+    window.scrollTo(0, 0)
   } catch (err) {
-    console.error('Error loading found item details:', err);
-    error.value = err instanceof Error ? err.message : '获取失物招领详情时发生错误';
+    console.error('加载失物招领详情时发生错误:', err)
+    error.value = true
+    ElMessage.error(err instanceof Error ? err.message : '获取失物招领详情时发生错误')
   } finally {
-    loading.value = false;
+    loading.value = false
   }
-};
+}
+
+// 加载评论
+async function loadComments() {
+  if (!itemId.value) return
+
+  try {
+    const result = await foundItemsStore.fetchComments(itemId.value, currentPage.value, pageSize.value)
+
+    if (result.success) {
+      comments.value = result.data || []
+
+      // 更新分页信息
+      if (foundItemsStore.commentPagination) {
+        totalItems.value = foundItemsStore.commentPagination.totalItems
+        totalPages.value = foundItemsStore.commentPagination.totalPages
+      }
+    } else {
+      console.error('加载评论失败:', result.message)
+      ElMessage.error('加载评论失败，请稍后再试')
+    }
+  } catch (error) {
+    console.error('加载评论失败:', error)
+    ElMessage.error('加载评论失败，请稍后再试')
+  }
+}
+
+// 处理评论分页变化
+async function handleCommentPageChange(page: number) {
+  currentPage.value = page
+  await loadComments()
+}
 
 // 提交评论
-const submitComment = async () => {
+async function submitComment() {
   if (!isLoggedIn.value) {
-    ElMessage.warning('请先登录');
-    return;
+    ElMessage.warning('请先登录')
+    return
+  }
+
+  if (!commentForm.value.content.trim()) {
+    ElMessage.warning('评论内容不能为空')
+    return
   }
 
   if (!itemId.value) {
-    ElMessage.error('物品ID无效');
-    return;
+    ElMessage.error('物品ID无效')
+    return
   }
 
-  commentSubmitting.value = true;
+  commentSubmitting.value = true
+
   try {
-    const result = await foundItemsStore.addComment(itemId.value, {
-      content: commentForm.value.content
-    });
+    const result = await foundItemsStore.addComment(itemId.value, { content: commentForm.value.content })
 
     if (result.success) {
-      commentForm.value.content = ''; // 清空评论内容
-      currentPage.value = 1; // 重置到第一页以便查看新评论
+      commentForm.value.content = ''
+      ElMessage.success('评论发布成功')
 
-      // 重新加载评论
-      if (itemId.value) {
-        await foundItemsStore.fetchComments(itemId.value, currentPage.value, pageSize.value);
-      }
-
-      ElMessage.success('评论成功');
+      // 重新加载第一页评论
+      currentPage.value = 1
+      await loadComments()
     } else {
-      ElMessage.error(result.message || '评论失败')
+      ElMessage.error(result.message || '发布评论失败')
     }
   } catch (error) {
-    console.error('Failed to submit comment:', error)
-    ElMessage.error('评论失败，请稍后再试')
+    console.error('发布评论失败:', error)
+    ElMessage.error('发布评论失败，请稍后再试')
   } finally {
     commentSubmitting.value = false
   }
+}
+
+// 删除评论
+function deleteComment(comment: any) {
+  if (!isLoggedIn.value) {
+    ElMessage.warning('请先登录')
+    return
+  }
+
+  ElMessageBox.confirm(
+    '确定要删除这条评论吗？删除后将无法恢复。',
+    '删除评论',
+    {
+      confirmButtonText: '确定删除',
+      cancelButtonText: '取消',
+      type: 'warning'
+    }
+  ).then(async () => {
+    try {
+      const result = await foundItemsStore.deleteComment(comment.id)
+
+      if (result.success) {
+        ElMessage.success('评论已删除')
+        // 重新加载评论
+        await loadComments()
+      } else {
+        ElMessage.error(result.message || '删除失败')
+      }
+    } catch (error) {
+      console.error('删除评论失败:', error)
+      ElMessage.error('删除评论失败，请稍后再试')
+    }
+  }).catch(() => {
+    // 用户取消删除
+  })
 }
 
 // 关闭失物招领
@@ -642,38 +635,50 @@ function closeItem() {
     return
   }
 
-  ElMessageBox.confirm(
-    '确认删除此失物招领吗？',
-    '确认操作',
-    {
-      confirmButtonText: '确认',
-      cancelButtonText: '取消',
-      type: 'info'
-    }
-  ).then(async () => {
-    try {
-      // 使用专用的关闭函数
-      const result = await foundItemsStore.closeItem(itemId.value)
+  if (!itemId.value) {
+    ElMessage.warning('无效的物品ID')
+    return
+  }
 
-      if (result.success) {
-        ElMessage.success('失物招领已删除')
-        // 跳转到失物招领列表页
-        router.push('/found-items')
-      } else {
-        ElMessage.error(result.message || '操作失败')
-      }
-    } catch (error) {
-      console.error('删除失物招领失败:', error)
-      ElMessage.error('操作失败，请稍后再试')
-    }
-  }).catch(() => {
-    // 用户取消操作
+  ElMessageBox.confirm('确认删除此失物招领吗？', '确认操作', {
+    confirmButtonText: '确认',
+    cancelButtonText: '取消',
+    type: 'info',
   })
+    .then(async () => {
+      try {
+        // 使用专用的关闭函数
+        const id = itemId.value
+        if (!id) {
+          ElMessage.warning('物品ID无效')
+          return
+        }
+
+        const result = await foundItemsStore.closeItem(id)
+
+        if (result.success) {
+          ElMessage.success('失物招领已删除')
+          // 跳转到失物招领列表页
+          router.push('/found-items')
+        } else {
+          ElMessage.error(result.message || '操作失败')
+        }
+      } catch (error) {
+        console.error('删除失物招领失败:', error)
+        ElMessage.error('操作失败，请稍后再试')
+      }
+    })
+    .catch(() => {
+      // 用户取消操作
+    })
 }
 
 // 编辑物品信息
 function redirectToEdit() {
-  if (!itemId.value) return
+  if (!itemId.value) {
+    ElMessage.warning('无效的物品ID')
+    return
+  }
   router.push(`/found-items/edit/${itemId.value}`)
 }
 
@@ -684,31 +689,40 @@ function deleteItem() {
     return
   }
 
-  ElMessageBox.confirm(
-    '确认删除此失物招领吗？此操作不可撤销。',
-    '警告',
-    {
-      confirmButtonText: '确认删除',
-      cancelButtonText: '取消',
-      type: 'warning'
-    }
-  ).then(async () => {
-    try {
-      const result = await foundItemsStore.deleteFoundItem(itemId.value)
+  if (!itemId.value) {
+    ElMessage.warning('无效的物品ID')
+    return
+  }
 
-      if (result.success) {
-        ElMessage.success('失物招领已删除')
-        router.push('/found-items')
-      } else {
-        ElMessage.error(result.message || '删除失败')
-      }
-    } catch (error) {
-      console.error('删除失物招领失败:', error)
-      ElMessage.error('删除失败，请稍后再试')
-    }
-  }).catch(() => {
-    // 用户取消操作
+  ElMessageBox.confirm('确认删除此失物招领吗？此操作不可撤销。', '警告', {
+    confirmButtonText: '确认删除',
+    cancelButtonText: '取消',
+    type: 'warning',
   })
+    .then(async () => {
+      try {
+        const id = itemId.value
+        if (!id) {
+          ElMessage.warning('物品ID无效')
+          return
+        }
+
+        const result = await foundItemsStore.deleteFoundItem(id)
+
+        if (result.success) {
+          ElMessage.success('失物招领已删除')
+          router.push('/found-items')
+        } else {
+          ElMessage.error(result.message || '删除失败')
+        }
+      } catch (error) {
+        console.error('删除失物招领失败:', error)
+        ElMessage.error('删除失败，请稍后再试')
+      }
+    })
+    .catch(() => {
+      // 用户取消操作
+    })
 }
 
 // 路由参数变化时重新加载数据
@@ -718,22 +732,12 @@ watch(
     if (itemId.value) {
       loadItemDetail()
     }
-  }
+  },
 )
 
 onMounted(() => {
   loadItemDetail()
 })
-
-const handleSizeChange = (newSize: number) => {
-  pageSize.value = newSize
-  loadItemDetail()
-}
-
-const handlePageChange = (newPage: number) => {
-  currentPage.value = newPage
-  loadItemDetail()
-}
 
 // 提交认领申请
 const submitClaimApplication = async () => {
@@ -747,16 +751,22 @@ const submitClaimApplication = async () => {
     }
 
     claimSubmitting.value = true
-    await claimsStore.applyForClaim(itemId.value, {
-      description: claimForm.value.description
+    const result = await claimsStore.applyForClaim(itemId.value, {
+      description: claimForm.value.description,
     })
 
-    claimDialogVisible.value = false
+    if (result.success) {
+      ElMessage.success('认领申请已提交成功')
+      claimDialogVisible.value = false
 
-    // 重新加载物品详情，显示最新状态
-    await loadItemDetail()
+      // 重新加载物品详情，显示最新状态
+      await loadItemDetail()
+    } else {
+      ElMessage.error(result.message || '提交认领申请失败')
+    }
   } catch (error) {
     console.error('Failed to submit claim application:', error)
+    ElMessage.error('提交认领申请时发生错误，请稍后再试')
   } finally {
     claimSubmitting.value = false
   }
@@ -769,14 +779,24 @@ function reportItem() {
     return
   }
 
+  if (!foundItem.value) {
+    ElMessage.warning('找不到物品信息')
+    return
+  }
+
   reportItemType.value = 'FOUND_ITEM'
   reportItemId.value = foundItem.value.id
   reportItemTitle.value = foundItem.value.title
   reportDialogVisible.value = true
 }
 
+// 处理举报提交后的操作
+function handleReportSubmitted(report: any) {
+  console.log('举报已提交:', report)
+}
+
 // 举报评论
-function reportComment(comment) {
+function reportComment(comment: any) {
   if (!isLoggedIn.value) {
     ElMessage.warning('请先登录')
     return
@@ -786,11 +806,6 @@ function reportComment(comment) {
   reportItemId.value = comment.id
   reportItemTitle.value = `评论: ${comment.content.substring(0, 20)}${comment.content.length > 20 ? '...' : ''}`
   reportDialogVisible.value = true
-}
-
-// 处理举报提交后的操作
-function handleReportSubmitted(report) {
-  console.log('举报已提交:', report)
 }
 </script>
 
@@ -864,7 +879,8 @@ function handleReportSubmitted(report) {
   margin-bottom: 20px;
 }
 
-.item-description h3, .item-note h3 {
+.item-description h3,
+.item-note h3 {
   margin-top: 0;
   margin-bottom: 10px;
   font-size: 18px;

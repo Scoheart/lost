@@ -60,7 +60,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive } from 'vue'
+import { ref, reactive, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { User, Lock } from '@element-plus/icons-vue'
 import type { FormInstance, FormRules } from 'element-plus'
@@ -73,6 +73,13 @@ const userStore = useUserStore()
 const formRef = ref<FormInstance>()
 const loading = ref(false)
 const error = ref('')
+
+// 从路由查询参数获取错误消息
+onMounted(() => {
+  if (route.query.message) {
+    error.value = route.query.message as string
+  }
+})
 
 const loginForm = reactive({
   username: '',
@@ -95,9 +102,9 @@ const rules = reactive<FormRules>({
 const getRedirectPathByRole = (role: string): string => {
   switch (role) {
     case 'admin':
-      return '/admin'
+      return '/admin/announcements' // 小区管理员直接进入公告管理
     case 'sysadmin':
-      return '/admin'
+      return '/admin/users' // 系统管理员直接进入用户管理
     case 'resident':
     default:
       return '/'
@@ -131,11 +138,16 @@ const handleSubmit = async () => {
 
           ElMessage.success('登录成功！')
 
-          // 获取用户角色并自动重定向
+          // 获取用户角色并根据角色重定向
           const userRole = userStore.user?.role || 'resident'
 
-          // 优先使用URL中的重定向参数，否则根据角色定向
-          const redirectPath = route.query.redirect as string || getRedirectPathByRole(userRole)
+          // 除非明确在URL查询参数中指定了redirect，否则使用基于角色的重定向
+          const redirectPath =
+            route.query.redirect && route.query.redirect !== '/'
+              ? route.query.redirect as string
+              : getRedirectPathByRole(userRole)
+
+          console.log('Redirecting to:', redirectPath)
           router.push(redirectPath)
         } else {
           error.value = result.message || '登录失败，请检查用户名和密码'

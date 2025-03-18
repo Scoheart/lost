@@ -46,6 +46,10 @@
                 <el-icon><Collection /></el-icon>
                 <span>我的招领</span>
               </el-menu-item>
+              <el-menu-item index="/profile/my-posts">
+                <el-icon><ChatDotRound /></el-icon>
+                <span>我的论坛帖子</span>
+              </el-menu-item>
             </el-menu>
           </el-card>
         </el-col>
@@ -82,7 +86,8 @@ import {
   Collection,
   Setting,
   Upload,
-  Phone
+  Phone,
+  ChatDotRound
 } from '@element-plus/icons-vue'
 import MainLayout from '@/components/layout/MainLayout.vue'
 import { useUserStore, type User } from '@/stores/user'

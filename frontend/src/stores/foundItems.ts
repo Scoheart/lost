@@ -298,7 +298,7 @@ export const useFoundItemsStore = defineStore('foundItems', {
 
     async fetchComments(itemId: number, page = 1, size = 10) {
       try {
-        const response = await apiClient.get('/comments', {
+        const response = await apiClient.get('/item-comments', {
           params: {
             itemId,
             itemType: 'found',
@@ -477,11 +477,14 @@ export const useFoundItemsStore = defineStore('foundItems', {
      */
     async addComment(itemId: number, commentData: { content: string, type?: string }) {
       try {
-        const endpoint = `/found-items/${itemId}/comments`
-        const response = await apiClient.post(endpoint, commentData)
+        const response = await apiClient.post('/item-comments', {
+          ...commentData,
+          itemId,
+          itemType: 'found'
+        })
 
         // 获取最新的评论列表
-        await this.fetchComments(itemId)
+        await this.fetchComments(itemId);
 
         return {
           success: true,
@@ -492,6 +495,35 @@ export const useFoundItemsStore = defineStore('foundItems', {
         return {
           success: false,
           message: error.response?.data?.message || '添加评论失败'
+        }
+      }
+    },
+
+    /**
+     * 删除评论
+     * @param commentId 评论ID
+     * @returns 操作结果
+     */
+    async deleteComment(commentId: number) {
+      try {
+        const response = await apiClient.delete(`/item-comments/${commentId}`);
+
+        if (response.data && response.data.success) {
+          return {
+            success: true,
+            message: '评论删除成功'
+          }
+        } else {
+          return {
+            success: false,
+            message: response.data?.message || '评论删除失败'
+          }
+        }
+      } catch (error: any) {
+        console.error('Failed to delete comment:', error);
+        return {
+          success: false,
+          message: error.response?.data?.message || '评论删除失败'
         }
       }
     },

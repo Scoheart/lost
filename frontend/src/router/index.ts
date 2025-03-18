@@ -50,6 +50,12 @@ const router = createRouter({
           component: () => import('../views/profile/MyFoundItemsView.vue'),
           meta: { title: '我的招领', requiresAuth: true },
         },
+        {
+          path: 'my-posts',
+          name: 'my-posts',
+          component: () => import('../views/profile/MyPostsView.vue'),
+          meta: { title: '我的论坛帖子', requiresAuth: true },
+        },
       ],
     },
     // 寻物启事
@@ -101,6 +107,31 @@ const router = createRouter({
       name: 'found-item-detail',
       component: () => import('../views/found-items/FoundItemDetailView.vue'),
       meta: { title: '招领详情', requiresAuth: true },
+    },
+    // 邻居论坛
+    {
+      path: '/forum',
+      name: 'forum',
+      component: () => import('../views/forum/ForumView.vue'),
+      meta: { title: '邻居论坛', requiresAuth: true },
+    },
+    {
+      path: '/forum/create',
+      name: 'create-post',
+      component: () => import('../views/forum/EditPostView.vue'),
+      meta: { title: '发布帖子', requiresAuth: true },
+    },
+    {
+      path: '/forum/edit/:id',
+      name: 'edit-post',
+      component: () => import('../views/forum/EditPostView.vue'),
+      meta: { title: '编辑帖子', requiresAuth: true },
+    },
+    {
+      path: '/forum/:id',
+      name: 'post-detail',
+      component: () => import('../views/forum/PostDetailView.vue'),
+      meta: { title: '帖子详情', requiresAuth: true },
     },
     // 登录/注册
     {
@@ -204,6 +235,41 @@ router.beforeEach(async (to, from, next) => {
   if (userStore.isAuthenticated) {
     console.log('[Router Guard] User is already authenticated')
 
+    // 检查用户是否被锁定或禁言
+    if (userStore.user?.isBanned || userStore.user?.isLocked) {
+      // 如果是去登录页面，允许访问
+      if (to.path === '/login') {
+        next()
+        return
+      }
+
+      // 如果用户被锁定，注销并重定向到登录页
+      if (userStore.user?.isLocked) {
+        console.log('[Router Guard] User account is locked, logging out')
+        userStore.logout()
+        next({
+          name: 'login',
+          query: {
+            message: '您的账号已被锁定，请联系管理员解锁'
+          }
+        })
+        return
+      }
+
+      // 如果用户被禁言，提示但可以继续访问非发布/编辑相关页面
+      if (userStore.user?.isBanned) {
+        // 如果是尝试发布或编辑内容，阻止并重定向
+        if (to.path.includes('/create') || to.path.includes('/edit')) {
+          console.log('[Router Guard] Banned user attempting to create/edit content, redirecting')
+          next({
+            name: 'home',
+            query: { message: '您的账号已被禁言，无法发布或编辑内容' }
+          })
+          return
+        }
+      }
+    }
+
     // 检查是否需要管理员权限
     if (to.meta.requiresAdmin && !userStore.isAdmin) {
       console.log('[Router Guard] Access denied: Admin privileges required')
@@ -264,6 +330,22 @@ router.beforeEach(async (to, from, next) => {
           console.log('[Router Guard] Access denied: SysAdmin privileges required')
           next({ name: 'admin-announcements' })
           return
+        }
+
+        // 根据角色处理根路径跳转
+        if (to.path === '/' && userStore.isAuthenticated) {
+          // 使用userStore中的isAdmin和isSysAdmin getter来判断角色
+
+          // 系统管理员直接进入用户管理
+          if (userStore.isSysAdmin) {
+            next({ name: 'admin-users' })
+            return
+          }
+          // 小区管理员进入公告管理
+          else if (userStore.isCommunityAdmin) {
+            next({ name: 'admin-announcements' })
+            return
+          }
         }
 
         // 权限符合，放行

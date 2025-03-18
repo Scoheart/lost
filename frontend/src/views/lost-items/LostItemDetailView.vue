@@ -73,6 +73,16 @@
             <div class="item-meta">
               <span class="item-category">{{ getCategoryName(lostItem.category) }}</span>
               <span class="item-date">发布于: {{ formatDate(lostItem.createdAt) }}</span>
+              <span class="meta-item">
+                <el-button
+                  type="text"
+                  size="small"
+                  @click="reportItem"
+                  v-if="isLoggedIn && !isItemOwner"
+                >
+                  <el-icon><CircleClose /></el-icon> 举报
+                </el-button>
+              </span>
             </div>
           </div>
 
@@ -166,14 +176,27 @@
                   <div class="comment-author">
                     <el-avatar :size="32" :src="comment.userAvatar || ''">{{ getInitials(comment.username) }}</el-avatar>
                     <span class="author-name">{{ comment.username }}</span>
-                    <span class="comment-actions" v-if="isLoggedIn && userStore.user.id !== comment.userId">
+                    <span class="comment-actions">
+                      <!-- 评论举报按钮 - 仅对他人评论显示 -->
                       <el-button
                         type="text"
                         size="small"
                         @click="reportComment(comment)"
+                        v-if="isLoggedIn && userStore.user.id !== comment.userId"
                         title="举报此评论"
                       >
-                        <el-icon><Calendar /></el-icon>
+                        <el-icon><CircleClose /></el-icon>
+                      </el-button>
+
+                      <!-- 评论删除按钮 - 仅对自己的评论显示 -->
+                      <el-button
+                        type="text"
+                        size="small"
+                        @click="deleteComment(comment)"
+                        v-if="isLoggedIn && userStore.user.id === comment.userId"
+                        title="删除此评论"
+                      >
+                        <el-icon><Delete /></el-icon>
                       </el-button>
                     </span>
                   </div>
@@ -334,7 +357,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, watch, nextTick } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
-import { User, Calendar, Picture } from '@element-plus/icons-vue'
+import { User, Calendar, Delete, CircleClose } from '@element-plus/icons-vue'
 import { format } from 'date-fns'
 import { zhCN } from 'date-fns/locale'
 import { ElMessage, ElMessageBox, ElImage } from 'element-plus'
@@ -342,6 +365,7 @@ import MainLayout from '@/components/layout/MainLayout.vue'
 import { useLostItemsStore } from '@/stores/lostItems'
 import { useUserStore } from '@/stores/user'
 import type { LostItem, Comment } from '@/stores/lostItems'
+import ItemStatusTag from '@/components/common/ItemStatusTag.vue'
 import ReportDialog from '@/components/ReportDialog.vue'
 
 const router = useRouter()
@@ -362,7 +386,7 @@ const currentPage = ref(1)
 const pageSize = ref(10)
 const reportDialogVisible = ref(false)
 const reportItemType = ref('')
-const reportItemId = ref(null)
+const reportItemId = ref<number | null>(null)
 const reportItemTitle = ref('')
 
 // 计算属性
@@ -376,6 +400,9 @@ const comments = computed(() => lostItemsStore.comments as Comment[])
 const isLoggedIn = computed(() => userStore.isAuthenticated)
 const user = computed(() => userStore.userProfile)
 const totalComments = computed(() => lostItemsStore.totalComments)
+const isItemOwner = computed(() => {
+  return isLoggedIn.value && lostItem.value && userStore.user?.id === lostItem.value.userId
+})
 
 const isOwner = computed(() => {
   if (!isLoggedIn.value || !lostItem.value || !user.value) return false
@@ -661,6 +688,11 @@ function reportItem() {
     return
   }
 
+  if (!lostItem.value) {
+    ElMessage.warning('找不到物品信息')
+    return
+  }
+
   reportItemType.value = 'LOST_ITEM'
   reportItemId.value = lostItem.value.id
   reportItemTitle.value = lostItem.value.title
@@ -683,6 +715,41 @@ function reportComment(comment) {
 // 处理举报提交后的操作
 function handleReportSubmitted(report) {
   console.log('举报已提交:', report)
+}
+
+// 删除评论
+function deleteComment(comment) {
+  if (!isLoggedIn.value) {
+    ElMessage.warning('请先登录')
+    return
+  }
+
+  ElMessageBox.confirm(
+    '确定要删除这个评论吗？删除后将无法恢复。',
+    '删除评论',
+    {
+      confirmButtonText: '确定删除',
+      cancelButtonText: '取消',
+      type: 'error'
+    }
+  ).then(async () => {
+    try {
+      const result = await lostItemsStore.deleteComment(comment.id)
+
+      if (result.success) {
+        ElMessage.success('评论已删除')
+        // 重新加载评论
+        await lostItemsStore.fetchComments(itemId.value, currentPage.value, pageSize.value)
+      } else {
+        ElMessage.error(result.message || '删除失败')
+      }
+    } catch (error) {
+      console.error('Failed to delete comment:', error)
+      ElMessage.error('删除评论时发生错误')
+    }
+  }).catch(() => {
+    // 用户取消删除
+  })
 }
 </script>
 
@@ -722,6 +789,8 @@ function handleReportSubmitted(report) {
   color: #606266;
   gap: 8px;
   font-size: 14px;
+  align-items: center;
+  flex-wrap: wrap;
 }
 
 .meta-item {
