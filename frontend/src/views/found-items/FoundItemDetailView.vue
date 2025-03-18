@@ -244,14 +244,13 @@
 import { ref, computed, onMounted, watch, nextTick } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { User, Calendar, Delete, Picture } from '@element-plus/icons-vue'
-import { format } from 'date-fns'
-import { zhCN } from 'date-fns/locale'
 import { ElMessage, ElMessageBox, ElImage } from 'element-plus'
 import { useFoundItemsStore } from '@/stores/foundItems'
 import { useUserStore } from '@/stores/user'
 import { useClaimsStore } from '@/stores/claims'
 import MainLayout from '@/components/layout/MainLayout.vue'
 import ReportDialog from '@/components/ReportDialog.vue'
+import { formatDate } from '@/utils/dateHelpers'
 import type { FormInstance } from 'element-plus'
 
 // 基本数据
@@ -307,18 +306,6 @@ const currentUserID = computed(() => userStore.user?.id)
 // 获取用户名首字母，用于头像
 const getInitials = (username: string) => {
   return username ? username.substring(0, 2).toUpperCase() : 'U'
-}
-
-// 格式化日期
-const formatDate = (dateString: string, full = false) => {
-  try {
-    const date = new Date(dateString)
-    return full
-      ? format(date, 'yyyy年MM月dd日 HH:mm:ss', { locale: zhCN })
-      : format(date, 'yyyy年MM月dd日', { locale: zhCN })
-  } catch (error) {
-    return dateString
-  }
 }
 
 // 获取物品类别名称
@@ -408,12 +395,21 @@ async function loadItemDetail() {
       return
     }
 
+    // Check if foundItem has a valid foundDate, if not, leave it empty
+    if (foundItem.value && foundItem.value.foundDate) {
+      // If found date is in ISO format, it's fine, otherwise convert it
+      if (typeof foundItem.value.foundDate === 'string' && foundItem.value.foundDate.startsWith('1970')) {
+        foundItem.value.foundDate = null
+      }
+    }
+
     // 滚动到顶部
     window.scrollTo(0, 0)
   } catch (err) {
     console.error('加载失物招领详情时发生错误:', err)
     error.value = true
-    ElMessage.error(err instanceof Error ? err.message : '获取失物招领详情时发生错误')
+    const errorMessage = err instanceof Error ? err.message : '获取失物招领详情时发生错误'
+    ElMessage.error(errorMessage)
   } finally {
     loading.value = false
   }

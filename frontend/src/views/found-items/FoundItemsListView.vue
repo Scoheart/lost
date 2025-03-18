@@ -47,7 +47,7 @@
               type="primary"
               icon="Plus"
               @click="handleAddFoundItem"
-              v-if="isLoggedIn"
+              v-if="isAuthenticated"
             >
               发布拾物公告
             </el-button>
@@ -85,7 +85,7 @@
         </el-col>
       </template>
 
-      <template v-else-if="filteredFoundItems.length === 0">
+      <template v-else-if="filteredItems.length === 0">
         <el-col :span="24">
           <el-empty
             description="暂无拾物信息"
@@ -94,13 +94,13 @@
             <template #description>
               <p>暂无符合条件的拾物信息</p>
             </template>
-            <el-button type="primary" @click="handleAddFoundItem" v-if="isLoggedIn">发布拾物公告</el-button>
+            <el-button type="primary" @click="handleAddFoundItem" v-if="isAuthenticated">发布拾物公告</el-button>
           </el-empty>
         </el-col>
       </template>
 
       <el-col
-        v-for="item in filteredFoundItems"
+        v-for="item in filteredItems"
         :key="item.id"
         :xs="24"
         :sm="12"
@@ -137,17 +137,17 @@
               </div>
               <div class="meta-item">
                 <el-icon><Calendar /></el-icon>
-                <span>{{ formatDate(item.foundTime) }}</span>
+                <span>{{ formatDate(item.foundDate) }}</span>
               </div>
               <div class="meta-item">
                 <el-icon><UserFilled /></el-icon>
-                <span>{{ item.contact.name }}</span>
+                <span>{{ getContactName(item) }}</span>
               </div>
             </div>
             <div class="item-footer">
               <el-tag size="small">{{ getCategoryLabel(item.category) }}</el-tag>
-              <el-tag size="small" type="success" v-if="item.storedLocation">
-                存放位置: {{ item.storedLocation }}
+              <el-tag size="small" type="success" v-if="item.storageLocation">
+                存放位置: {{ item.storageLocation }}
               </el-tag>
             </div>
           </div>
@@ -155,7 +155,7 @@
       </el-col>
     </el-row>
 
-    <div class="pagination-container" v-if="filteredFoundItems.length > 0">
+    <div class="pagination-container" v-if="filteredItems.length > 0">
       <el-pagination
         background
         layout="prev, pager, next, jumper"
@@ -268,14 +268,15 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, computed, onMounted } from 'vue'
+import { ref, reactive, computed, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { Search, Picture, Map, Calendar, UserFilled, Plus } from '@element-plus/icons-vue'
-import { ElMessage, FormInstance, FormRules, ElLoading } from 'element-plus'
+import { ElMessage, ElLoading } from 'element-plus'
+import type { FormInstance, FormRules, UploadUserFile } from 'element-plus'
 import { useFoundItemsStore } from '@/stores/foundItems'
 import { useUserStore } from '@/stores/user'
-import type { UploadUserFile } from 'element-plus'
 import fileUploadService from '@/services/fileUploadService'
+import { formatDate } from '@/utils/dateHelpers'
 
 const router = useRouter()
 const foundItemsStore = useFoundItemsStore()
@@ -285,6 +286,7 @@ const userStore = useUserStore()
 const loading = ref(true)
 const searchQuery = ref('')
 const categoryFilter = ref('')
+const statusFilter = ref('')
 const dateRange = ref<[string, string] | null>(null)
 const currentPage = ref(1)
 const pageSize = ref(16)
@@ -294,11 +296,9 @@ const submitting = ref(false)
 const fileList = ref<UploadUserFile[]>([])
 
 // 计算属性
-const isLoggedIn = computed(() => userStore.isLoggedIn)
-const totalCount = computed(() => foundItemsStore.totalFoundItems)
-const filteredFoundItems = computed(() => {
-  return foundItemsStore.filteredFoundItems
-})
+const isAuthenticated = computed(() => userStore.isAuthenticated)
+const totalCount = computed(() => foundItemsStore.pagination.total)
+const filteredItems = computed(() => foundItemsStore.filteredItems)
 
 // 物品类别
 const categories = [
@@ -362,7 +362,7 @@ onMounted(async () => {
   try {
     await foundItemsStore.fetchFoundItems({
       page: currentPage.value,
-      limit: pageSize.value
+      pageSize: pageSize.value
     })
   } catch (error) {
     console.error('Failed to fetch found items:', error)
@@ -397,14 +397,14 @@ const getCategoryLabel = (categoryValue: string) => {
   return category?.label || '其他物品'
 }
 
-// 格式化日期
-const formatDate = (dateString: string) => {
-  const date = new Date(dateString)
-  return date.toLocaleDateString('zh-CN', {
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit'
-  })
+// 获取联系人姓名
+const getContactName = (item: any) => {
+  try {
+    const contactInfo = item.contactInfo ? JSON.parse(item.contactInfo) : null
+    return contactInfo?.name || item.username || '未知'
+  } catch (e) {
+    return item.username || '未知'
+  }
 }
 
 // 搜索
@@ -413,11 +413,10 @@ const handleSearch = async () => {
   try {
     await foundItemsStore.fetchFoundItems({
       page: 1,
-      limit: pageSize.value,
+      pageSize: pageSize.value,
       query: searchQuery.value,
       category: categoryFilter.value,
-      startDate: dateRange.value?.[0],
-      endDate: dateRange.value?.[1]
+      status: statusFilter.value
     })
     currentPage.value = 1
   } catch (error) {
@@ -435,11 +434,10 @@ const handlePageChange = async (page: number) => {
   try {
     await foundItemsStore.fetchFoundItems({
       page,
-      limit: pageSize.value,
+      pageSize: pageSize.value,
       query: searchQuery.value,
       category: categoryFilter.value,
-      startDate: dateRange.value?.[0],
-      endDate: dateRange.value?.[1]
+      status: statusFilter.value
     })
   } catch (error) {
     console.error('Failed to fetch found items:', error)
@@ -456,7 +454,7 @@ const viewItemDetails = (id: string | number) => {
 
 // 添加拾物公告
 const handleAddFoundItem = () => {
-  if (!isLoggedIn.value) {
+  if (!isAuthenticated.value) {
     ElMessage.warning('请先登录后再发布拾物公告')
     router.push('/login')
     return
@@ -538,17 +536,22 @@ const submitFoundItem = async () => {
 
         // 准备要提交的数据
         const foundItemData = {
-          ...foundItemForm,
-          images: uploadedImages,
-          status: 'pending',
-          contact: {
+          title: foundItemForm.title,
+          category: foundItemForm.category,
+          foundDate: foundItemForm.foundTime,
+          foundLocation: foundItemForm.foundLocation,
+          storageLocation: foundItemForm.storedLocation,
+          description: foundItemForm.description,
+          claimRequirements: foundItemForm.claimRequirements,
+          contactInfo: JSON.stringify({
             name: foundItemForm.contactName,
             phone: foundItemForm.contactPhone
-          }
+          }),
+          images: uploadedImages
         }
 
         // 提交数据
-        const result = await foundItemsStore.addFoundItem(foundItemData)
+        const result = await foundItemsStore.createFoundItem(foundItemData)
 
         if (result.success) {
           ElMessage.success('拾物公告发布成功')

@@ -47,7 +47,7 @@
               type="primary"
               icon="Plus"
               @click="handleAddLostItem"
-              v-if="isLoggedIn"
+              v-if="isAuthenticated"
             >
               发布寻物启事
             </el-button>
@@ -94,7 +94,7 @@
             <template #description>
               <p>暂无符合条件的寻物信息</p>
             </template>
-            <el-button type="primary" @click="handleAddLostItem" v-if="isLoggedIn">发布寻物启事</el-button>
+            <el-button type="primary" @click="handleAddLostItem" v-if="isAuthenticated">发布寻物启事</el-button>
           </el-empty>
         </el-col>
       </template>
@@ -137,11 +137,11 @@
               </div>
               <div class="meta-item">
                 <el-icon><Calendar /></el-icon>
-                <span>{{ formatDate(item.lostTime) }}</span>
+                <span>{{ formatDate(item.lostDate) }}</span>
               </div>
               <div class="meta-item">
                 <el-icon><UserFilled /></el-icon>
-                <span>{{ item.contact.name }}</span>
+                <span>{{ JSON.parse(item.contactInfo || '{}').name }}</span>
               </div>
             </div>
             <div class="item-footer">
@@ -258,14 +258,15 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, computed, onMounted } from 'vue'
+import { ref, reactive, computed, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { Search, Picture, Map, Calendar, UserFilled, Plus } from '@element-plus/icons-vue'
-import { ElMessage, FormInstance, FormRules, ElLoading } from 'element-plus'
+import { ElMessage, ElLoading } from 'element-plus'
+import type { FormInstance, FormRules, UploadUserFile } from 'element-plus'
 import { useLostItemsStore } from '@/stores/lostItems'
 import { useUserStore } from '@/stores/user'
-import type { UploadUserFile } from 'element-plus'
 import fileUploadService from '@/services/fileUploadService'
+import { formatDate } from '@/utils/dateHelpers'
 
 const router = useRouter()
 const lostItemsStore = useLostItemsStore()
@@ -275,6 +276,7 @@ const userStore = useUserStore()
 const loading = ref(true)
 const searchQuery = ref('')
 const categoryFilter = ref('')
+const statusFilter = ref('')
 const dateRange = ref<[string, string] | null>(null)
 const currentPage = ref(1)
 const pageSize = ref(16)
@@ -284,11 +286,9 @@ const submitting = ref(false)
 const fileList = ref<UploadUserFile[]>([])
 
 // 计算属性
-const isLoggedIn = computed(() => userStore.isLoggedIn)
-const totalCount = computed(() => lostItemsStore.totalLostItems)
-const filteredLostItems = computed(() => {
-  return lostItemsStore.filteredLostItems
-})
+const isAuthenticated = computed(() => userStore.isAuthenticated)
+const totalCount = computed(() => lostItemsStore.pagination.total)
+const filteredLostItems = computed(() => lostItemsStore.filteredItems)
 
 // 物品类别
 const categories = [
@@ -348,7 +348,7 @@ onMounted(async () => {
   try {
     await lostItemsStore.fetchLostItems({
       page: currentPage.value,
-      limit: pageSize.value
+      pageSize: pageSize.value
     })
   } catch (error) {
     console.error('Failed to fetch lost items:', error)
@@ -383,27 +383,16 @@ const getCategoryLabel = (categoryValue: string) => {
   return category?.label || '其他物品'
 }
 
-// 格式化日期
-const formatDate = (dateString: string) => {
-  const date = new Date(dateString)
-  return date.toLocaleDateString('zh-CN', {
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit'
-  })
-}
-
 // 搜索
 const handleSearch = async () => {
   loading.value = true
   try {
     await lostItemsStore.fetchLostItems({
       page: 1,
-      limit: pageSize.value,
+      pageSize: pageSize.value,
       query: searchQuery.value,
       category: categoryFilter.value,
-      startDate: dateRange.value?.[0],
-      endDate: dateRange.value?.[1]
+      status: statusFilter.value
     })
     currentPage.value = 1
   } catch (error) {
@@ -421,11 +410,10 @@ const handlePageChange = async (page: number) => {
   try {
     await lostItemsStore.fetchLostItems({
       page,
-      limit: pageSize.value,
+      pageSize: pageSize.value,
       query: searchQuery.value,
       category: categoryFilter.value,
-      startDate: dateRange.value?.[0],
-      endDate: dateRange.value?.[1]
+      status: statusFilter.value
     })
   } catch (error) {
     console.error('Failed to fetch lost items:', error)
@@ -442,7 +430,7 @@ const viewItemDetails = (id: string | number) => {
 
 // 添加寻物启事
 const handleAddLostItem = () => {
-  if (!isLoggedIn.value) {
+  if (!isAuthenticated.value) {
     ElMessage.warning('请先登录后再发布寻物启事')
     router.push('/login')
     return
@@ -525,17 +513,21 @@ const submitLostItem = async () => {
 
         // 准备要提交的数据
         const lostItemData = {
-          ...lostItemForm,
-          images: uploadedImages,
-          status: 'pending',
-          contact: {
+          title: lostItemForm.title,
+          category: lostItemForm.category,
+          lostDate: lostItemForm.lostTime,
+          lostLocation: lostItemForm.lostLocation,
+          description: lostItemForm.description,
+          reward: lostItemForm.reward,
+          contactInfo: JSON.stringify({
             name: lostItemForm.contactName,
             phone: lostItemForm.contactPhone
-          }
+          }),
+          images: uploadedImages
         }
 
         // 提交数据
-        const result = await lostItemsStore.addLostItem(lostItemData)
+        const result = await lostItemsStore.createLostItem(lostItemData)
 
         if (result.success) {
           ElMessage.success('寻物启事发布成功')

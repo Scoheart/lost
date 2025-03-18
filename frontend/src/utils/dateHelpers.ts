@@ -1,26 +1,48 @@
-import { format } from 'date-fns'
+import { format, parseISO, isValid } from 'date-fns'
 import { zhCN } from 'date-fns/locale'
 
 /**
- * 格式化日期
- * @param dateString 日期字符串
- * @param full 是否显示完整时间（带时分秒）
- * @returns 格式化后的日期字符串
+ * Format a date string into a user-friendly format
+ * @param dateString Date string from the backend
+ * @param includeTime Whether to include time in the formatted string
+ * @returns Formatted date string
  */
-export function formatDate(dateString: string | undefined | null, full = false): string {
-  if (!dateString) return '-'
+export const formatDate = (dateString: string | null | undefined, includeTime = false): string => {
+  if (!dateString) return ''
 
   try {
-    const date = new Date(dateString)
-    if (isNaN(date.getTime())) return '-'
+    const date = typeof dateString === 'string'
+      ? parseISO(dateString)
+      : new Date(dateString)
 
-    if (full) {
-      return format(date, 'yyyy-MM-dd HH:mm:ss', { locale: zhCN })
+    if (!isValid(date) || date.getFullYear() === 1970) {
+      return ''
     }
-    return format(date, 'yyyy-MM-dd', { locale: zhCN })
+
+    return includeTime
+      ? format(date, 'yyyy年MM月dd日 HH:mm:ss', { locale: zhCN })
+      : format(date, 'yyyy年MM月dd日', { locale: zhCN })
   } catch (error) {
-    console.error('日期格式化错误:', error)
-    return '-'
+    console.error('Error formatting date:', dateString, error)
+    return ''
+  }
+}
+
+/**
+ * Format a date for API submission (ISO format)
+ * @param date Date object or date string
+ * @returns ISO formatted date string
+ */
+export const formatDateForApi = (date: Date | string | null | undefined): string => {
+  if (!date) return ''
+
+  try {
+    const dateObj = typeof date === 'string' ? new Date(date) : date
+    if (!isValid(dateObj)) return ''
+    return dateObj.toISOString().split('T')[0] // YYYY-MM-DD format
+  } catch (error) {
+    console.error('Error formatting date for API:', date, error)
+    return ''
   }
 }
 

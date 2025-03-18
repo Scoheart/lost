@@ -111,9 +111,9 @@ import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { Picture } from '@element-plus/icons-vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { format } from 'date-fns'
 import { useLostItemsStore } from '@/stores/lostItems'
 import { getLostStatusLabel, getLostStatusType } from '@/utils/statusHelpers'
+import { formatDate } from '@/utils/dateHelpers'
 import type { LostItem } from '@/stores/lostItems'
 
 const router = useRouter()
@@ -129,15 +129,6 @@ const total = ref(0)
 const lostItems = ref<LostItem[]>([])
 
 // 方法
-const formatDate = (dateString: string) => {
-  try {
-    return format(new Date(dateString), 'yyyy-MM-dd')
-  } catch (error) {
-    return dateString
-  }
-}
-
-// 加载寻物启事数据
 const fetchLostItems = async () => {
   loading.value = true
   try {

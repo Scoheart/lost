@@ -114,6 +114,7 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import { format } from 'date-fns'
 import { useFoundItemsStore } from '@/stores/foundItems'
 import { getFoundStatusLabel, getFoundStatusType } from '@/utils/statusHelpers'
+import { formatDate } from '@/utils/dateHelpers'
 import type { FoundItem } from '@/stores/foundItems'
 
 const router = useRouter()
@@ -129,15 +130,6 @@ const total = ref(0)
 const foundItems = ref<FoundItem[]>([])
 
 // 方法
-const formatDate = (dateString: string) => {
-  try {
-    return format(new Date(dateString), 'yyyy-MM-dd')
-  } catch (error) {
-    return dateString
-  }
-}
-
-// 加载失物招领数据
 const fetchFoundItems = async () => {
   loading.value = true
   try {

@@ -182,10 +182,10 @@
                         type="text"
                         size="small"
                         @click="reportComment(comment)"
-                        v-if="isLoggedIn && userStore.user.id !== comment.userId"
+                        v-if="isAuthenticated && userStore.user?.id !== comment.userId"
                         title="举报此评论"
                       >
-                        <el-icon><CircleClose /></el-icon>
+                        举报
                       </el-button>
 
                       <!-- 评论删除按钮 - 仅对自己的评论显示 -->
@@ -193,10 +193,11 @@
                         type="text"
                         size="small"
                         @click="deleteComment(comment)"
-                        v-if="isLoggedIn && userStore.user.id === comment.userId"
+                        v-if="isAuthenticated && userStore.user?.id === comment.userId"
                         title="删除此评论"
                       >
                         <el-icon><Delete /></el-icon>
+                        删除
                       </el-button>
                     </span>
                   </div>
@@ -357,15 +358,14 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, watch, nextTick } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
-import { User, Calendar, Delete, CircleClose } from '@element-plus/icons-vue'
-import { format } from 'date-fns'
-import { zhCN } from 'date-fns/locale'
+import { User, Calendar, Delete } from '@element-plus/icons-vue'
 import { ElMessage, ElMessageBox, ElImage } from 'element-plus'
 import MainLayout from '@/components/layout/MainLayout.vue'
 import { useLostItemsStore } from '@/stores/lostItems'
 import { useUserStore } from '@/stores/user'
 import type { LostItem, Comment } from '@/stores/lostItems'
 import ReportDialog from '@/components/ReportDialog.vue'
+import { formatDate } from '@/utils/dateHelpers'
 
 const router = useRouter()
 const route = useRoute()
@@ -408,6 +408,8 @@ const isOwner = computed(() => {
   return lostItem.value.userId === user.value.id
 })
 
+const isAuthenticated = computed(() => userStore.isAuthenticated)
+
 // 获取相关物品（同类别的其他丢失物品）
 const relatedItems = computed(() => {
   if (!lostItem.value) return []
@@ -423,18 +425,6 @@ const relatedItems = computed(() => {
 // 获取用户名首字母，用于头像
 const getInitials = (username: string) => {
   return username ? username.substring(0, 2).toUpperCase() : 'U'
-}
-
-// 格式化日期
-const formatDate = (dateString: string, full = false) => {
-  try {
-    const date = new Date(dateString)
-    return full
-      ? format(date, 'yyyy年MM月dd日 HH:mm:ss', { locale: zhCN })
-      : format(date, 'yyyy年MM月dd日', { locale: zhCN })
-  } catch (error) {
-    return dateString
-  }
 }
 
 // 获取物品类别名称
@@ -496,73 +486,94 @@ const goToCommentForm = () => {
 
 // 提交评论
 const submitComment = async () => {
+  if (!isAuthenticated.value) {
+    ElMessage.warning('请先登录后再发表评论')
+    router.push('/login')
+    return
+  }
+
+  if (!itemId.value) {
+    ElMessage.error('物品ID无效，无法提交评论')
+    return
+  }
+
   if (!commentForm.value.content.trim()) {
-    ElMessage.warning('评论不能为空');
-    return;
+    ElMessage.warning('评论内容不能为空')
+    return
   }
 
-  if (!userStore.isAuthenticated) {
-    ElMessage.warning('请先登录');
-    return;
-  }
+  commentSubmitting.value = true
 
-  commentSubmitting.value = true;
   try {
-    const result = await lostItemsStore.addComment(itemId.value, commentForm.value.content);
+    const result = await lostItemsStore.addComment(itemId.value, commentForm.value.content)
 
     if (result.success) {
-      commentForm.value.content = ''; // 清空评论内容
-      currentPage.value = 1; // 重置到第一页以便查看新评论
+      ElMessage.success('评论发表成功')
+      commentForm.value.content = ''
+      await loadComments()
 
-      // 重新加载评论
-      await lostItemsStore.fetchComments(itemId.value, currentPage.value, pageSize.value);
-
-      ElMessage.success('评论成功');
+      // Scroll to the new comment
+      nextTick(() => {
+        const commentsContainer = document.querySelector('.comments-section')
+        if (commentsContainer) {
+          commentsContainer.scrollTop = commentsContainer.scrollHeight
+        }
+      })
     } else {
-      ElMessage.error(result.message || '评论失败');
+      ElMessage.error(result.message || '评论发表失败')
     }
   } catch (error) {
-    console.error('Error submitting comment:', error);
-    ElMessage.error('评论提交时发生错误');
+    console.error('Failed to submit comment:', error)
+    ElMessage.error('评论发表失败，请稍后再试')
   } finally {
-    commentSubmitting.value = false;
+    commentSubmitting.value = false
+  }
+}
+
+const loadComments = async () => {
+  if (!itemId.value) {
+    console.error('无效的物品ID，无法加载评论')
+    return
+  }
+
+  try {
+    await lostItemsStore.fetchComments(itemId.value, currentPage.value, pageSize.value)
+  } catch (error) {
+    console.error('Failed to load comments:', error)
+    ElMessage.error('加载评论失败，请稍后再试')
   }
 }
 
 // 将寻物启事标记为"已找到"
-const markAsFound = () => {
-  if (!isLoggedIn.value) {
-    ElMessage.warning('请先登录')
+const markAsFound = async () => {
+  if (!isAuthenticated.value) {
+    ElMessage.warning('请先登录后再执行此操作')
     return
   }
 
-  ElMessageBox.confirm(
-    '确认您已找到此物品？此操作将删除该寻物启事。',
-    '确认操作',
-    {
-      confirmButtonText: '确认',
-      cancelButtonText: '取消',
-      type: 'success'
-    }
-  ).then(async () => {
-    try {
-      // 使用专用的状态更新函数
-      const result = await lostItemsStore.markAsFound(itemId.value)
+  if (!itemId.value) {
+    ElMessage.error('物品ID无效，无法执行操作')
+    return
+  }
 
-      if (result.success) {
-        ElMessage.success('寻物启事已删除（物品已找到）')
-        // 跳转到寻物启事列表页
-        router.push('/lost-items')
-      } else {
-        ElMessage.error(result.message || '操作失败')
-      }
-    } catch (error) {
-      console.error('标记为已找到失败:', error)
-      ElMessage.error('操作失败，请稍后再试')
+  actionLoading.value = true
+
+  try {
+    const result = await lostItemsStore.markAsFound(itemId.value)
+
+    if (result.success) {
+      ElMessage.success('物品已标记为已找到')
+      await loadItemDetail()
+    } else {
+      ElMessage.error(result.message || '操作失败')
     }
-  }).catch(() => {
-    // 用户取消操作
-  })
+  } catch (error) {
+    console.error('Failed to mark item as found:', error)
+    ElMessage.error('操作失败，请稍后再试')
+  } finally {
+    actionLoading.value = false
+    contactDialogVisible.value = false
+  }
 }
 
 // 编辑物品信息
@@ -606,12 +617,13 @@ const deleteItem = () => {
 const loadItemDetail = async () => {
   try {
     loading.value = true
-    error.value = null
+    error.value = false
 
     // 获取物品ID
     const itemId = Number(route.params.id)
     if (isNaN(itemId)) {
-      error.value = '无效的物品ID'
+      error.value = true
+      ElMessage.error('无效的物品ID')
       return
     }
 
@@ -619,7 +631,8 @@ const loadItemDetail = async () => {
     const itemResult = await lostItemsStore.fetchLostItemById(itemId)
 
     if (!itemResult.success) {
-      error.value = itemResult.message || '获取寻物启事失败'
+      error.value = true
+      ElMessage.error(itemResult.message || '获取寻物启事失败')
       return
     }
 
@@ -647,9 +660,11 @@ const loadItemDetail = async () => {
 
     // 滚动到顶部
     window.scrollTo(0, 0)
-  } catch (error) {
-    console.error('Error loading lost item details:', error)
-    error.value = error.message || '获取寻物启事详情时发生错误'
+  } catch (err) {
+    console.error('Error loading lost item details:', err)
+    error.value = true
+    const errorMessage = err instanceof Error ? err.message : '获取寻物启事详情时发生错误'
+    ElMessage.error(errorMessage)
   } finally {
     loading.value = false
   }
@@ -699,56 +714,47 @@ function reportItem() {
 }
 
 // 举报评论
-function reportComment(comment) {
-  if (!isLoggedIn.value) {
-    ElMessage.warning('请先登录')
+const reportComment = (comment: Comment) => {
+  if (!isAuthenticated.value) {
+    ElMessage.warning('请先登录后再进行举报')
     return
   }
 
   reportItemType.value = 'COMMENT'
   reportItemId.value = comment.id
-  reportItemTitle.value = `评论: ${comment.content.substring(0, 20)}${comment.content.length > 20 ? '...' : ''}`
+  reportItemTitle.value = `评论: ${comment.content.substring(0, 20)}...`
   reportDialogVisible.value = true
 }
 
 // 处理举报提交后的操作
-function handleReportSubmitted(report) {
+function handleReportSubmitted(report: any) {
   console.log('举报已提交:', report)
 }
 
 // 删除评论
-function deleteComment(comment) {
-  if (!isLoggedIn.value) {
-    ElMessage.warning('请先登录')
+const deleteComment = async (comment: Comment) => {
+  if (!isAuthenticated.value) {
+    ElMessage.warning('请先登录后再进行操作')
     return
   }
 
-  ElMessageBox.confirm(
-    '确定要删除这个评论吗？删除后将无法恢复。',
-    '删除评论',
-    {
-      confirmButtonText: '确定删除',
-      cancelButtonText: '取消',
-      type: 'error'
-    }
-  ).then(async () => {
-    try {
-      const result = await lostItemsStore.deleteComment(comment.id)
+  if (!userStore.user || userStore.user.id !== comment.userId) {
+    ElMessage.error('您没有权限删除此评论')
+    return
+  }
 
-      if (result.success) {
-        ElMessage.success('评论已删除')
-        // 重新加载评论
-        await lostItemsStore.fetchComments(itemId.value, currentPage.value, pageSize.value)
-      } else {
-        ElMessage.error(result.message || '删除失败')
-      }
-    } catch (error) {
-      console.error('Failed to delete comment:', error)
-      ElMessage.error('删除评论时发生错误')
+  try {
+    const result = await lostItemsStore.deleteComment(comment.id)
+    if (result.success) {
+      ElMessage.success('评论删除成功')
+      loadComments()
+    } else {
+      ElMessage.error(result.message || '评论删除失败')
     }
-  }).catch(() => {
-    // 用户取消删除
-  })
+  } catch (error) {
+    console.error('Failed to delete comment:', error)
+    ElMessage.error('评论删除失败，请稍后再试')
+  }
 }
 </script>
 
