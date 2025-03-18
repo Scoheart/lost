@@ -237,7 +237,7 @@
 
         <el-form-item label="物品图片">
           <el-upload
-            action="/upload"
+            action="/api/upload"
             list-type="picture-card"
             :auto-upload="false"
             :file-list="fileList"

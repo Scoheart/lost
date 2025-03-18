@@ -90,12 +90,7 @@
                 发布于{{ formatDate(foundItem.createdAt) }}
               </span>
               <span class="meta-item">
-                <el-button
-                  plain
-                  size="small"
-                  @click="reportItem"
-                  v-if="isLoggedIn && !isItemOwner"
-                >
+                <el-button plain size="small" @click="reportItem" v-if="isLoggedIn && !isItemOwner">
                   举报
                 </el-button>
               </span>
@@ -182,7 +177,7 @@
               <p><strong>该物品已被认领</strong></p>
             </el-alert>
           </div>
-        </div>
+        </el-card>
 
         <!-- 底部操作按钮 -->
         <div class="action-buttons" v-if="isLoggedIn">
@@ -252,7 +247,12 @@
 
         <!-- 评论列表 -->
         <div v-if="comments.length > 0" class="comments-list">
-          <el-card v-for="comment in comments" :key="comment.id" class="comment-card" shadow="hover">
+          <el-card
+            v-for="comment in comments"
+            :key="comment.id"
+            class="comment-card"
+            shadow="hover"
+          >
             <div class="comment-author">
               <el-avatar :size="32" :icon="User" :src="comment.userAvatar"></el-avatar>
               <span class="author-name">{{ comment.username }}</span>
@@ -260,7 +260,13 @@
 
               <!-- 评论操作按钮 -->
               <div class="comment-actions" v-if="isCommentOwner(comment) || isItemOwner">
-                <el-button type="danger" text size="small" @click="deleteComment(comment)" :icon="Delete">
+                <el-button
+                  type="danger"
+                  text
+                  size="small"
+                  @click="deleteComment(comment)"
+                  :icon="Delete"
+                >
                   删除
                 </el-button>
               </div>
@@ -356,7 +362,7 @@ const itemId = ref<number | null>(null)
 // 评论相关数据
 const comments = ref<any[]>([])
 const commentForm = ref({
-  content: ''
+  content: '',
 })
 const commentSubmitting = ref(false)
 const currentPage = ref(1)
@@ -388,10 +394,12 @@ const isItemOwner = computed(() => {
   return isLoggedIn.value && foundItem.value && userStore.user?.id === foundItem.value.userId
 })
 const canClaim = computed(() => {
-  return isLoggedIn.value &&
-         foundItem.value &&
-         foundItem.value.status === 'pending' &&
-         userStore.user?.id !== foundItem.value.userId
+  return (
+    isLoggedIn.value &&
+    foundItem.value &&
+    foundItem.value.status === 'pending' &&
+    userStore.user?.id !== foundItem.value.userId
+  )
 })
 const isOwner = computed(() => {
   return isLoggedIn.value && foundItem.value?.userId === userStore.user?.id
@@ -527,7 +535,11 @@ async function loadComments() {
   if (!itemId.value) return
 
   try {
-    const result = await foundItemsStore.fetchComments(itemId.value, currentPage.value, pageSize.value)
+    const result = await foundItemsStore.fetchComments(
+      itemId.value,
+      currentPage.value,
+      pageSize.value,
+    )
 
     if (result.success) {
       comments.value = result.data || []
@@ -573,7 +585,9 @@ async function submitComment() {
   commentSubmitting.value = true
 
   try {
-    const result = await foundItemsStore.addComment(itemId.value, { content: commentForm.value.content })
+    const result = await foundItemsStore.addComment(itemId.value, {
+      content: commentForm.value.content,
+    })
 
     if (result.success) {
       commentForm.value.content = ''
@@ -600,32 +614,30 @@ function deleteComment(comment: any) {
     return
   }
 
-  ElMessageBox.confirm(
-    '确定要删除这条评论吗？删除后将无法恢复。',
-    '删除评论',
-    {
-      confirmButtonText: '确定删除',
-      cancelButtonText: '取消',
-      type: 'warning'
-    }
-  ).then(async () => {
-    try {
-      const result = await foundItemsStore.deleteComment(comment.id)
-
-      if (result.success) {
-        ElMessage.success('评论已删除')
-        // 重新加载评论
-        await loadComments()
-      } else {
-        ElMessage.error(result.message || '删除失败')
-      }
-    } catch (error) {
-      console.error('删除评论失败:', error)
-      ElMessage.error('删除评论失败，请稍后再试')
-    }
-  }).catch(() => {
-    // 用户取消删除
+  ElMessageBox.confirm('确定要删除这条评论吗？删除后将无法恢复。', '删除评论', {
+    confirmButtonText: '确定删除',
+    cancelButtonText: '取消',
+    type: 'warning',
   })
+    .then(async () => {
+      try {
+        const result = await foundItemsStore.deleteComment(comment.id)
+
+        if (result.success) {
+          ElMessage.success('评论已删除')
+          // 重新加载评论
+          await loadComments()
+        } else {
+          ElMessage.error(result.message || '删除失败')
+        }
+      } catch (error) {
+        console.error('删除评论失败:', error)
+        ElMessage.error('删除评论失败，请稍后再试')
+      }
+    })
+    .catch(() => {
+      // 用户取消删除
+    })
 }
 
 // 关闭失物招领
