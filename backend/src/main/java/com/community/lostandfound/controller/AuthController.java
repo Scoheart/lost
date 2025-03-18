@@ -104,11 +104,6 @@ public class AuthController {
             return ResponseEntity.badRequest().body(new ApiResponse(false, "用户名已存在，请更换后重试"));
         }
 
-        // 检查邮箱是否已存在（如果提供了邮箱）
-        if (request.getEmail() != null && !request.getEmail().isEmpty() && userService.existsByEmail(request.getEmail())) {
-            return ResponseEntity.badRequest().body(new ApiResponse(false, "邮箱已被注册，请更换后重试"));
-        }
-
         // 创建用户
         User user = User.builder()
                 .username(request.getUsername())

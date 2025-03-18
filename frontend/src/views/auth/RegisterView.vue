@@ -43,15 +43,6 @@
           />
         </el-form-item>
 
-        <el-form-item prop="email" label="邮箱 (选填)">
-          <el-input
-            v-model="registerForm.email"
-            placeholder="请输入邮箱地址（选填）"
-            :prefix-icon="Message"
-            :disabled="loading"
-          />
-        </el-form-item>
-
         <el-form-item prop="password" label="密码">
           <el-input
             v-model="registerForm.password"
@@ -160,22 +151,14 @@ const rules = reactive<FormRules>({
     { required: true, message: '请输入用户名', trigger: 'blur' },
     { min: 3, message: '用户名不能少于3个字符', trigger: 'blur' },
   ],
-  realName: [
-    { required: true, message: '请输入真实姓名', trigger: 'blur' },
-  ],
-  address: [
-    { required: true, message: '请输入住址信息', trigger: 'blur' },
-  ],
-  email: [
-    { required: false, validator: validateEmail, trigger: 'blur' },
-  ],
+  realName: [{ required: true, message: '请输入真实姓名', trigger: 'blur' }],
+  address: [{ required: true, message: '请输入住址信息', trigger: 'blur' }],
+  email: [{ required: false, validator: validateEmail, trigger: 'blur' }],
   password: [
     { required: true, validator: validatePass, trigger: 'blur' },
     { min: 6, message: '密码不能少于6个字符', trigger: 'blur' },
   ],
-  confirmPassword: [
-    { required: true, validator: validatePassConfirm, trigger: 'blur' },
-  ],
+  confirmPassword: [{ required: true, validator: validatePassConfirm, trigger: 'blur' }],
 })
 
 const handleSubmit = async () => {
@@ -190,7 +173,6 @@ const handleSubmit = async () => {
         const result = await userStore.register({
           username: registerForm.username,
           realName: registerForm.realName,
-          email: registerForm.email || null, // 允许为空
           password: registerForm.password,
           address: registerForm.address,
         })

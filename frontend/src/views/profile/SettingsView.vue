@@ -7,7 +7,14 @@
         <template #template>
           <div style="padding: 20px">
             <el-skeleton-item variant="p" style="width: 60%; height: 40px" />
-            <div style="display: flex; justify-content: space-between; align-items: center; margin: 20px 0">
+            <div
+              style="
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                margin: 20px 0;
+              "
+            >
               <el-skeleton-item variant="text" style="width: 30%" />
               <el-skeleton-item variant="text" style="width: 30%" />
             </div>
@@ -137,7 +144,7 @@ const profileForm = reactive({
 const passwordForm = reactive({
   currentPassword: '',
   newPassword: '',
-  confirmPassword: ''
+  confirmPassword: '',
 })
 
 const userStore = useUserStore()
@@ -180,30 +187,21 @@ const validatePhone = (rule: any, value: string, callback: any) => {
 }
 
 const profileRules = reactive<FormRules>({
-  email: [
-    { required: true, message: '请输入电子邮箱地址', trigger: 'blur' },
-    { type: 'email', message: '请输入有效的电子邮箱地址', trigger: 'blur' }
-  ],
-  phone: [
-    { validator: validatePhone, trigger: 'blur' }
-  ],
-  realName: [
-    { max: 20, message: '姓名长度不能超过20个字符', trigger: 'blur' }
-  ]
+  email: [{ type: 'email', message: '请输入有效的电子邮箱地址', trigger: 'blur' }],
+  phone: [{ validator: validatePhone, trigger: 'blur' }],
+  realName: [{ max: 20, message: '姓名长度不能超过20个字符', trigger: 'blur' }],
 })
 
 const passwordRules = reactive<FormRules>({
   currentPassword: [
     { required: true, message: '请输入当前密码', trigger: 'blur' },
-    { min: 6, message: '密码长度不能小于6个字符', trigger: 'blur' }
+    { min: 6, message: '密码长度不能小于6个字符', trigger: 'blur' },
   ],
   newPassword: [
     { required: true, message: '请输入新密码', trigger: 'blur' },
-    { min: 6, message: '密码长度不能小于6个字符', trigger: 'blur' }
+    { min: 6, message: '密码长度不能小于6个字符', trigger: 'blur' },
   ],
-  confirmPassword: [
-    { required: true, validator: validateConfirmPassword, trigger: 'blur' }
-  ]
+  confirmPassword: [{ required: true, validator: validateConfirmPassword, trigger: 'blur' }],
 })
 
 // 方法
@@ -235,7 +233,7 @@ const updateProfile = async () => {
         // Create update data with typed fields for the API
         const updateData: Partial<User> = {
           email: profileForm.email,
-          phone: profileForm.phone
+          phone: profileForm.phone,
         }
 
         const result = await userStore.updateProfile(updateData)
@@ -269,7 +267,7 @@ const updatePassword = async () => {
       try {
         const result = await userStore.changePassword({
           oldPassword: passwordForm.currentPassword,
-          newPassword: passwordForm.newPassword
+          newPassword: passwordForm.newPassword,
         })
 
         if (result.success) {

@@ -58,6 +58,14 @@
           <template #default="scope">
             <div class="table-actions">
               <el-button
+                type="info"
+                size="small"
+                plain
+                @click.stop="viewPost(scope.row.id)"
+              >
+                查看
+              </el-button>
+              <el-button
                 type="primary"
                 size="small"
                 plain

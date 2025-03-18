@@ -48,21 +48,22 @@ public class UserController {
     public ResponseEntity<ApiResponse<UserProfileDto>> getCurrentUser() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         
+        log.debug("Authentication: {}", authentication);
         log.debug("Fetching profile for authenticated user: {}", authentication.getName());
-        
+
         if (authentication != null && authentication.getPrincipal() instanceof UserDetailsImpl) {
             UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
             Long userId = userDetails.getId();
-            
+
             Optional<User> userOptional = userService.getUserById(userId);
             if (!userOptional.isPresent()) {
                 log.warn("User with ID {} not found in database", userId);
                 throw new ResourceNotFoundException("User", "id", userId);
             }
-            
+
             User user = userOptional.get();
             log.debug("User found: {}", user.getUsername());
-            
+
             // Convert User to UserProfileDto
             UserProfileDto profileDto = new UserProfileDto(
                     user.getId(),
@@ -76,14 +77,14 @@ public class UserController {
                     user.getCreatedAt(),
                     user.getUpdatedAt()
             );
-            
+
             return ResponseEntity.ok(ApiResponse.success("获取用户信息成功", profileDto));
         }
-        
+
         log.warn("No authenticated user found or principal is not UserDetailsImpl");
         return ResponseEntity.status(401).body(ApiResponse.fail("用户未认证"));
     }
-    
+
     /**
      * 上传用户头像
      *
@@ -93,56 +94,56 @@ public class UserController {
     @PostMapping(value = "/avatar", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<ApiResponse<FileUploadResponse>> uploadAvatar(@RequestParam("file") MultipartFile file) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        
+
         log.debug("Uploading avatar for user: {}", authentication.getName());
-        
+
         if (authentication == null || !(authentication.getPrincipal() instanceof UserDetailsImpl)) {
             return ResponseEntity.status(401).body(ApiResponse.fail("用户未认证"));
         }
-        
+
         UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
         Long userId = userDetails.getId();
-        
+
         Optional<User> userOptional = userService.getUserById(userId);
         if (!userOptional.isPresent()) {
             throw new ResourceNotFoundException("User", "id", userId);
         }
-        
+
         User user = userOptional.get();
-        
+
         // 验证文件类型
         String originalFilename = file.getOriginalFilename();
         if (originalFilename == null || originalFilename.isEmpty()) {
             return ResponseEntity.badRequest().body(ApiResponse.fail("无效的文件名"));
         }
-        
+
         String fileExtension = originalFilename.substring(originalFilename.lastIndexOf(".") + 1).toLowerCase();
         List<String> allowedExtensions = Arrays.asList("jpg", "jpeg", "png", "gif");
-        
+
         if (!allowedExtensions.contains(fileExtension)) {
             return ResponseEntity.badRequest().body(ApiResponse.fail("不支持的文件类型，允许的类型: jpg, jpeg, png, gif"));
         }
-        
+
         // 验证文件大小（限制为2MB）
         if (file.getSize() > 2 * 1024 * 1024) {
             return ResponseEntity.badRequest().body(ApiResponse.fail("文件过大，最大允许2MB"));
         }
-        
+
         try {
             // 生成唯一的文件名
             String newFilename = "avatar_" + userId + "_" + UUID.randomUUID().toString() + "." + fileExtension;
-            
+
             // 保存文件
             String filePath = fileStorageService.storeFile(file, newFilename, "avatars");
-            
+
             // 获取文件URL
             String fileUrl = fileStorageService.getFileUrl(filePath);
-            
+
             // 更新用户头像
             user.setAvatar(fileUrl);
             user.setUpdatedAt(LocalDateTime.now());
             userService.updateUser(user);
-            
+
             // 构建响应
             FileUploadResponse response = new FileUploadResponse(
                     filePath,
@@ -151,15 +152,15 @@ public class UserController {
                     file.getContentType(),
                     "avatar"
             );
-            
+
             return ResponseEntity.ok(ApiResponse.success("头像上传成功", response));
-            
+
         } catch (IOException e) {
             log.error("头像上传失败", e);
             return ResponseEntity.status(500).body(ApiResponse.fail("头像上传失败: " + e.getMessage()));
         }
     }
-    
+
     /**
      * Update the current user's profile
      * @param updateRequest the updated profile information
@@ -168,29 +169,22 @@ public class UserController {
     @PutMapping("/profile")
     public ResponseEntity<ApiResponse<UserProfileDto>> updateProfile(@Valid @RequestBody UpdateProfileRequest updateRequest) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        
+
         log.debug("Updating profile for authenticated user: {}", authentication.getName());
-        
+
         if (authentication != null && authentication.getPrincipal() instanceof UserDetailsImpl) {
             UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
             Long userId = userDetails.getId();
-            
+
             Optional<User> userOptional = userService.getUserById(userId);
             if (!userOptional.isPresent()) {
                 log.warn("User with ID {} not found in database", userId);
                 throw new ResourceNotFoundException("User", "id", userId);
             }
-            
+
             User user = userOptional.get();
             log.debug("Found user: {}", user.getUsername());
-            
-            // Check if email is already used by another user
-            if (((user.getEmail() == null && updateRequest.getEmail() != null) ||
-                (user.getEmail() != null && !user.getEmail().equals(updateRequest.getEmail()))) && 
-                userService.existsByEmail(updateRequest.getEmail())) {
-                throw new BadRequestException("邮箱已被使用");
-            }
-            
+
             // Create a copy of the existing user with only updated fields
             User updatedUser = new User();
             updatedUser.setId(user.getId());
@@ -199,27 +193,27 @@ public class UserController {
             updatedUser.setRole(user.getRole()); // Preserve role
             updatedUser.setIsEnabled(user.getIsEnabled()); // Preserve enabled status
             updatedUser.setCreatedAt(user.getCreatedAt()); // Preserve creation timestamp
-            
+
             // Preserve the fields that cannot be modified
             updatedUser.setRealName(user.getRealName());
             updatedUser.setAddress(user.getAddress());
-            
+
             // Update the fields that were part of the request
             updatedUser.setEmail(updateRequest.getEmail());
             updatedUser.setPhone(updateRequest.getPhone());
-            
+
             if (updateRequest.getAvatar() != null && !updateRequest.getAvatar().isEmpty()) {
                 updatedUser.setAvatar(updateRequest.getAvatar());
             } else {
                 updatedUser.setAvatar(user.getAvatar()); // Preserve avatar if not in request
             }
-            
+
             updatedUser.setUpdatedAt(LocalDateTime.now());
-            
+
             // Save updated user
             User resultUser = userService.updateUser(updatedUser);
             log.debug("User profile updated successfully for user: {}", resultUser.getUsername());
-            
+
             // Convert to DTO
             UserProfileDto profileDto = new UserProfileDto(
                     resultUser.getId(),
@@ -233,14 +227,14 @@ public class UserController {
                     resultUser.getCreatedAt(),
                     resultUser.getUpdatedAt()
             );
-            
+
             return ResponseEntity.ok(ApiResponse.success("个人信息更新成功", profileDto));
         }
-        
+
         log.warn("No authenticated user found or principal is not UserDetailsImpl");
         return ResponseEntity.status(401).body(ApiResponse.fail("用户未认证"));
     }
-    
+
     /**
      * Change the current user's password
      * @param passwordRequest the password change request
@@ -249,28 +243,28 @@ public class UserController {
     @PutMapping("/change-password")
     public ResponseEntity<ApiResponse<String>> changePassword(@Valid @RequestBody ChangePasswordRequest passwordRequest) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        
+
         log.debug("Changing password for authenticated user: {}", authentication.getName());
-        
+
         if (authentication != null && authentication.getPrincipal() instanceof UserDetailsImpl) {
             UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
             Long userId = userDetails.getId();
-            
+
             Optional<User> userOptional = userService.getUserById(userId);
             if (!userOptional.isPresent()) {
                 log.warn("User with ID {} not found in database", userId);
                 throw new ResourceNotFoundException("User", "id", userId);
             }
-            
+
             User user = userOptional.get();
             log.debug("Found user: {}", user.getUsername());
-            
+
             // Verify current password
             if (!passwordEncoder.matches(passwordRequest.getOldPassword(), user.getPassword())) {
                 log.warn("Invalid current password for user: {}", user.getUsername());
                 throw new BadCredentialsException("当前密码不正确");
             }
-            
+
             // Create a new user object with only the password updated
             User passwordUpdateUser = new User();
             passwordUpdateUser.setId(user.getId());
@@ -282,19 +276,19 @@ public class UserController {
             passwordUpdateUser.setRealName(user.getRealName());
             passwordUpdateUser.setCreatedAt(user.getCreatedAt());
             passwordUpdateUser.setIsEnabled(user.getIsEnabled());
-            
+
             // Set new password - this will be encoded in the service layer
             passwordUpdateUser.setPassword(passwordRequest.getNewPassword());
             passwordUpdateUser.setUpdatedAt(LocalDateTime.now());
-            
+
             // Save updated user (password will be encoded in service layer)
             userService.updateUser(passwordUpdateUser);
             log.debug("Password changed successfully for user: {}", user.getUsername());
-            
+
             return ResponseEntity.ok(ApiResponse.success("密码修改成功", null));
         }
-        
+
         log.warn("No authenticated user found or principal is not UserDetailsImpl");
         return ResponseEntity.status(401).body(ApiResponse.fail("用户未认证"));
     }
-} 
+}

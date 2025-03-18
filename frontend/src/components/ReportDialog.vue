@@ -124,12 +124,10 @@ const mapItemTypeToReportType = (itemType: string) => {
     'LOST_ITEM': 'LOST_ITEM',
     'FOUND_ITEM': 'FOUND_ITEM',
     'COMMENT': 'COMMENT',
-    'POST': 'POST',
     // 如果前端使用的是小写形式，添加映射
     'lost_item': 'LOST_ITEM',
     'found_item': 'FOUND_ITEM',
-    'comment': 'COMMENT',
-    'post': 'POST'
+    'comment': 'COMMENT'
   }
 
   return typeMap[itemType.toUpperCase()] || itemType
