@@ -185,7 +185,8 @@ public class UserController {
             log.debug("Found user: {}", user.getUsername());
             
             // Check if email is already used by another user
-            if (!user.getEmail().equals(updateRequest.getEmail()) && 
+            if (((user.getEmail() == null && updateRequest.getEmail() != null) ||
+                (user.getEmail() != null && !user.getEmail().equals(updateRequest.getEmail()))) && 
                 userService.existsByEmail(updateRequest.getEmail())) {
                 throw new BadRequestException("邮箱已被使用");
             }

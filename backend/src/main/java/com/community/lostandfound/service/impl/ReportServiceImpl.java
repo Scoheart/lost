@@ -7,6 +7,7 @@ import com.community.lostandfound.dto.report.ReportResolutionRequest;
 import com.community.lostandfound.entity.Comment;
 import com.community.lostandfound.entity.FoundItem;
 import com.community.lostandfound.entity.LostItem;
+import com.community.lostandfound.entity.Post;
 import com.community.lostandfound.entity.Report;
 import com.community.lostandfound.entity.User;
 import com.community.lostandfound.exception.BadRequestException;
@@ -14,6 +15,7 @@ import com.community.lostandfound.exception.ResourceNotFoundException;
 import com.community.lostandfound.repository.CommentRepository;
 import com.community.lostandfound.repository.FoundItemRepository;
 import com.community.lostandfound.repository.LostItemRepository;
+import com.community.lostandfound.repository.PostRepository;
 import com.community.lostandfound.repository.ReportRepository;
 import com.community.lostandfound.service.ReportService;
 import com.community.lostandfound.service.UserService;
@@ -36,6 +38,7 @@ public class ReportServiceImpl implements ReportService {
     private final LostItemRepository lostItemRepository;
     private final FoundItemRepository foundItemRepository;
     private final CommentRepository commentRepository;
+    private final PostRepository postRepository;
 
     @Override
     @Transactional
@@ -68,6 +71,13 @@ public class ReportServiceImpl implements ReportService {
                         .orElseThrow(() -> new ResourceNotFoundException("留言不存在"));
                 reportedUserId = comment.getUserId();
                 reportedItemTitle = "留言ID: " + comment.getId();
+                break;
+                
+            case POST:
+                Post post = postRepository.findById(request.getReportedItemId())
+                        .orElseThrow(() -> new ResourceNotFoundException("帖子不存在"));
+                reportedUserId = post.getUserId();
+                reportedItemTitle = post.getTitle();
                 break;
                 
             default:
@@ -284,6 +294,11 @@ public class ReportServiceImpl implements ReportService {
                 commentRepository.deleteById(report.getReportedItemId());
                 break;
                 
+            case POST:
+                postRepository.deleteById(report.getReportedItemId());
+                log.info("已删除被举报的帖子: ID={}", report.getReportedItemId());
+                break;
+                
             default:
                 throw new BadRequestException("不支持的举报类型");
         }
@@ -372,6 +387,15 @@ public class ReportServiceImpl implements ReportService {
                     
                 case COMMENT:
                     title = "留言ID: " + dto.getReportedItemId();
+                    break;
+                    
+                case POST:
+                    Post post = postRepository.findById(dto.getReportedItemId()).orElse(null);
+                    if (post != null) {
+                        title = post.getTitle();
+                    } else {
+                        title = "帖子ID: " + dto.getReportedItemId() + " (已删除)";
+                    }
                     break;
                     
                 default:

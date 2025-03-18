@@ -8,6 +8,7 @@ export enum ReportType {
   LOST_ITEM = 'LOST_ITEM',
   FOUND_ITEM = 'FOUND_ITEM',
   COMMENT = 'COMMENT',
+  POST = 'POST',
 }
 
 /**

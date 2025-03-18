@@ -16,7 +16,7 @@ import lombok.NoArgsConstructor;
 public class ReportRequest {
     
     /**
-     * 举报类型: LOST_ITEM(寻物启事), FOUND_ITEM(失物招领), COMMENT(留言)
+     * 举报类型: LOST_ITEM(寻物启事), FOUND_ITEM(失物招领), COMMENT(留言), POST(论坛帖子)
      */
     @NotNull(message = "举报类型不能为空")
     private Report.ReportType reportType;

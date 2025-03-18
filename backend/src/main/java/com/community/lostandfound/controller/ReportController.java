@@ -18,6 +18,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @Slf4j
 @RestController
@@ -33,14 +34,109 @@ public class ReportController {
      */
     @PostMapping
     @PreAuthorize("hasRole('RESIDENT') or hasRole('ADMIN') or hasRole('SYSADMIN')")
-    public ResponseEntity<ApiResponse<ReportDto>> createReport(@Valid @RequestBody ReportRequest request) {
+    public ResponseEntity<ApiResponse<ReportDto>> createReport(@RequestBody Map<String, Object> requestMap) {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         Long userId = getUserIdFromAuthentication(auth);
         
-        log.info("用户 {} 创建举报: {}", userId, request);
-        ReportDto createdReport = reportService.createReport(request, userId);
+        log.info("用户 {} 创建举报: {}", userId, requestMap);
+        
+        // 处理两种不同格式的请求
+        ReportRequest reportRequest = convertRequestMap(requestMap);
+        
+        // 验证请求
+        if (reportRequest.getReportType() == null) {
+            return ResponseEntity.badRequest().body(
+                    ApiResponse.error("举报类型不能为空", HttpStatus.BAD_REQUEST)
+            );
+        }
+        
+        if (reportRequest.getReportedItemId() == null) {
+            return ResponseEntity.badRequest().body(
+                    ApiResponse.error("被举报内容ID不能为空", HttpStatus.BAD_REQUEST)
+            );
+        }
+        
+        if (reportRequest.getReason() == null || reportRequest.getReason().trim().length() < 5) {
+            return ResponseEntity.badRequest().body(
+                    ApiResponse.error("举报原因长度必须在5-500个字符之间", HttpStatus.BAD_REQUEST)
+            );
+        }
+        
+        ReportDto createdReport = reportService.createReport(reportRequest, userId);
         
         return ResponseEntity.ok(ApiResponse.success("举报提交成功", createdReport));
+    }
+    
+    /**
+     * 将请求体转换为ReportRequest对象
+     * 支持两种格式：
+     * 1. 新版：{ reportedItemId, reportType, reason }
+     * 2. 旧版：{ itemId, itemType, reason, description }
+     */
+    private ReportRequest convertRequestMap(Map<String, Object> requestMap) {
+        ReportRequest reportRequest = new ReportRequest();
+        
+        // 处理旧版格式
+        if (requestMap.containsKey("itemId") && requestMap.containsKey("itemType")) {
+            // 设置被举报内容ID
+            reportRequest.setReportedItemId(
+                    requestMap.get("itemId") instanceof Number 
+                            ? ((Number) requestMap.get("itemId")).longValue() 
+                            : null
+            );
+            
+            // 设置举报类型
+            String itemType = (String) requestMap.get("itemType");
+            if (itemType != null) {
+                try {
+                    reportRequest.setReportType(Report.ReportType.valueOf(itemType.toUpperCase()));
+                } catch (IllegalArgumentException e) {
+                    log.warn("无效的举报类型: {}", itemType);
+                    // 默认为COMMENT类型
+                    reportRequest.setReportType(Report.ReportType.COMMENT);
+                }
+            }
+            
+            // 合并原因和描述
+            String reason = (String) requestMap.get("reason");
+            String description = (String) requestMap.get("description");
+            if (reason != null && description != null) {
+                reportRequest.setReason(reason + ": " + description);
+            } else if (reason != null) {
+                reportRequest.setReason(reason);
+            } else if (description != null) {
+                reportRequest.setReason(description);
+            }
+        } 
+        // 处理新版格式
+        else if (requestMap.containsKey("reportedItemId") && requestMap.containsKey("reportType")) {
+            // 设置被举报内容ID
+            reportRequest.setReportedItemId(
+                    requestMap.get("reportedItemId") instanceof Number 
+                            ? ((Number) requestMap.get("reportedItemId")).longValue() 
+                            : null
+            );
+            
+            // 设置举报类型
+            String reportType = (String) requestMap.get("reportType");
+            if (reportType != null) {
+                try {
+                    reportRequest.setReportType(Report.ReportType.valueOf(reportType.toUpperCase()));
+                } catch (IllegalArgumentException e) {
+                    log.warn("无效的举报类型: {}", reportType);
+                    // 默认为COMMENT类型
+                    reportRequest.setReportType(Report.ReportType.COMMENT);
+                }
+            }
+            
+            // 设置举报原因
+            String reason = (String) requestMap.get("reason");
+            if (reason != null) {
+                reportRequest.setReason(reason);
+            }
+        }
+        
+        return reportRequest;
     }
 
     /**
@@ -70,7 +166,7 @@ public class ReportController {
             reportType = Report.ReportType.valueOf(type.toUpperCase());
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(
-                    ApiResponse.error("无效的举报类型，有效值: LOST_ITEM, FOUND_ITEM, COMMENT", HttpStatus.BAD_REQUEST)
+                    ApiResponse.error("无效的举报类型，有效值: LOST_ITEM, FOUND_ITEM, COMMENT, POST", HttpStatus.BAD_REQUEST)
             );
         }
         

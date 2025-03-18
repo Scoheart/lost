@@ -18,7 +18,7 @@ public class Report {
     private Long id;
     
     /**
-     * 举报类型: LOST_ITEM(寻物启事), FOUND_ITEM(失物招领), COMMENT(留言)
+     * 举报类型: LOST_ITEM(寻物启事), FOUND_ITEM(失物招领), COMMENT(留言), POST(论坛帖子)
      */
     private ReportType reportType;
     
@@ -73,7 +73,8 @@ public class Report {
     public enum ReportType {
         LOST_ITEM,    // 寻物启事
         FOUND_ITEM,   // 失物招领
-        COMMENT       // 留言
+        COMMENT,      // 留言
+        POST          // 论坛帖子
     }
     
     /**
