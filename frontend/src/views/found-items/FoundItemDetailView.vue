@@ -115,7 +115,7 @@
                   {{ getCategoryName(foundItem.category) }}
                 </el-descriptions-item>
                 <el-descriptions-item label="拾获时间">
-                  {{ formatDate(foundItem.foundDate, true) }}
+                  {{ foundItem.foundDate ? formatDate(foundItem.foundDate, true) : formatDate(foundItem.createdAt, true) }}
                 </el-descriptions-item>
                 <el-descriptions-item label="拾获地点">
                   {{ foundItem.foundLocation }}
@@ -353,63 +353,35 @@ const initiateClaimProcess = () => {
 }
 
 // 加载物品详情
-async function loadItemDetail() {
-  if (!route.params.id) {
-    error.value = true
-    ElMessage.error('无效的物品ID')
-    return
-  }
-
+const loadItemDetail = async () => {
   loading.value = true
   error.value = false
 
   try {
-    console.log('正在加载失物招领详情，ID:', route.params.id)
-    const parsedItemId = parseInt(route.params.id as string, 10)
-    if (isNaN(parsedItemId)) {
+    if (!itemId.value) {
       error.value = true
-      ElMessage.error('无效的物品ID格式')
+      ElMessage.error('无效的物品ID')
       return
     }
 
-    itemId.value = parsedItemId
+    // Fetch the found item
+    await foundItemsStore.fetchFoundItemById(itemId.value)
 
-    // 获取物品详情
-    const itemResult = await foundItemsStore.fetchFoundItemById(parsedItemId)
-    console.log('获取物品详情API响应:', itemResult)
-
-    if (!itemResult.success) {
-      error.value = true
-      ElMessage.error(itemResult.message || '获取失物招领失败')
-      return
-    }
-
-    // 检查store中是否有currentItem，并更新本地的foundItem
+    // Set found item from the store
     if (foundItemsStore.currentItem) {
-      foundItem.value = { ...foundItemsStore.currentItem }
-      console.log('成功加载失物招领数据:', foundItem.value)
+      foundItem.value = foundItemsStore.currentItem
+
+      // Set report info
+      reportItemId.value = foundItem.value.id
+      reportItemTitle.value = foundItem.value.title
     } else {
-      console.error('物品详情加载失败: store.currentItem为空')
       error.value = true
-      ElMessage.error('获取失物招领数据失败')
-      return
+      ElMessage.error('未找到该物品')
     }
-
-    // Check if foundItem has a valid foundDate, if not, leave it empty
-    if (foundItem.value && foundItem.value.foundDate) {
-      // If found date is in ISO format, it's fine, otherwise convert it
-      if (typeof foundItem.value.foundDate === 'string' && foundItem.value.foundDate.startsWith('1970')) {
-        foundItem.value.foundDate = null
-      }
-    }
-
-    // 滚动到顶部
-    window.scrollTo(0, 0)
   } catch (err) {
-    console.error('加载失物招领详情时发生错误:', err)
+    console.error('Failed to load found item details:', err)
     error.value = true
-    const errorMessage = err instanceof Error ? err.message : '获取失物招领详情时发生错误'
-    ElMessage.error(errorMessage)
+    ElMessage.error('加载物品详情失败')
   } finally {
     loading.value = false
   }

@@ -61,13 +61,13 @@
             <p class="item-description">{{ item.description }}</p>
             <div class="item-meta">
               <div class="meta-item">
-                <el-icon><Calendar /></el-icon>
+                <el-icon><Discount /></el-icon>
                 <span>{{ item[locationField] }}</span>
               </div>
               <div class="meta-item">
                 <el-icon><Calendar /></el-icon>
                 <span>
-                  {{ formatDate(item[dateField] || item.createdAt) }}
+                  {{ item[dateField] ? formatDate(item[dateField]) : formatDate(item.createdAt) }}
                 </span>
               </div>
               <div class="meta-item">
@@ -103,7 +103,7 @@
 <script setup lang="ts">
 import { defineProps, defineEmits, computed } from 'vue'
 import { useRouter } from 'vue-router'
-import { Picture, Calendar, UserFilled } from '@element-plus/icons-vue'
+import { Picture, Calendar, UserFilled, Discount } from '@element-plus/icons-vue'
 import { formatDate } from '@/utils/dateHelpers'
 import ItemStatusTag from './ItemStatusTag.vue'
 import type { LostItem } from '@/stores/lostItems'
@@ -129,7 +129,7 @@ const props = withDefaults(defineProps<Props>(), {
   totalCount: 0,
   currentPage: 1,
   pageSize: 10,
-  categories: () => []
+  categories: () => [],
 })
 
 const emit = defineEmits(['page-change', 'view-details', 'add'])
@@ -137,8 +137,8 @@ const emit = defineEmits(['page-change', 'view-details', 'add'])
 const router = useRouter()
 
 // Compute field names based on item type
-const dateField = computed(() => props.itemType === 'lost' ? 'lostDate' : 'foundDate')
-const locationField = computed(() => props.itemType === 'lost' ? 'lostLocation' : 'foundLocation')
+const dateField = computed(() => (props.itemType === 'lost' ? 'lostDate' : 'foundDate'))
+const locationField = computed(() => (props.itemType === 'lost' ? 'lostLocation' : 'foundLocation'))
 
 // Get contact name from item
 const getContactName = (item: any) => {

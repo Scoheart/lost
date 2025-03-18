@@ -104,7 +104,7 @@
                   {{ getCategoryName(lostItem.category) }}
                 </el-descriptions-item>
                 <el-descriptions-item label="丢失时间">
-                  {{ formatDate(lostItem.lostDate, true) }}
+                  {{ lostItem.lostDate ? formatDate(lostItem.lostDate, true) : formatDate(lostItem.createdAt, true) }}
                 </el-descriptions-item>
                 <el-descriptions-item label="丢失地点">
                   {{ lostItem.lostLocation }}
@@ -615,56 +615,35 @@ const deleteItem = () => {
 
 // 加载物品详情
 const loadItemDetail = async () => {
-  try {
-    loading.value = true
-    error.value = false
+  loading.value = true
+  error.value = false
 
-    // 获取物品ID
-    const itemId = Number(route.params.id)
-    if (isNaN(itemId)) {
+  try {
+    if (!itemId.value) {
       error.value = true
       ElMessage.error('无效的物品ID')
       return
     }
 
-    // 分别获取物品详情和评论
-    const itemResult = await lostItemsStore.fetchLostItemById(itemId)
+    // Fetch the lost item
+    await lostItemsStore.fetchLostItemById(itemId.value)
 
-    if (!itemResult.success) {
+    // Check if we have a valid item
+    if (lostItemsStore.currentItem) {
+      // Set report info
+      reportItemId.value = lostItemsStore.currentItem.id
+      reportItemTitle.value = lostItemsStore.currentItem.title
+
+      // Load comments for this item
+      await loadComments()
+    } else {
       error.value = true
-      ElMessage.error(itemResult.message || '获取寻物启事失败')
-      return
+      ElMessage.error('未找到该物品')
     }
-
-    // 物品详情获取成功后，获取评论
-    const commentsResult = await lostItemsStore.fetchComments(
-      itemId,
-      currentPage.value,
-      pageSize.value
-    )
-
-    // 如果评论获取失败，只记录警告但继续显示物品详情
-    if (!commentsResult.success) {
-      console.warn('Failed to fetch comments:', commentsResult.message)
-      // 不阻止页面显示，只显示物品信息
-    }
-
-    // 获取相关物品
-    if (lostItem.value && lostItem.value.category) {
-      await lostItemsStore.fetchLostItems({
-        category: lostItem.value.category,
-        page: 1,
-        pageSize: 4
-      })
-    }
-
-    // 滚动到顶部
-    window.scrollTo(0, 0)
   } catch (err) {
-    console.error('Error loading lost item details:', err)
+    console.error('Failed to load lost item details:', err)
     error.value = true
-    const errorMessage = err instanceof Error ? err.message : '获取寻物启事详情时发生错误'
-    ElMessage.error(errorMessage)
+    ElMessage.error('加载物品详情失败')
   } finally {
     loading.value = false
   }
