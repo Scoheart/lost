@@ -251,7 +251,6 @@ import { useFoundItemsStore } from '@/stores/foundItems'
 import { useUserStore } from '@/stores/user'
 import { useClaimsStore } from '@/stores/claims'
 import MainLayout from '@/components/layout/MainLayout.vue'
-import ItemStatusTag from '@/components/common/ItemStatusTag.vue'
 import ReportDialog from '@/components/ReportDialog.vue'
 import type { FormInstance } from 'element-plus'
 

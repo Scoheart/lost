@@ -365,7 +365,6 @@ import MainLayout from '@/components/layout/MainLayout.vue'
 import { useLostItemsStore } from '@/stores/lostItems'
 import { useUserStore } from '@/stores/user'
 import type { LostItem, Comment } from '@/stores/lostItems'
-import ItemStatusTag from '@/components/common/ItemStatusTag.vue'
 import ReportDialog from '@/components/ReportDialog.vue'
 
 const router = useRouter()
