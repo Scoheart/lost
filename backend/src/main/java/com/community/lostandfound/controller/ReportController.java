@@ -3,6 +3,7 @@ package com.community.lostandfound.controller;
 import com.community.lostandfound.dto.common.ApiResponse;
 import com.community.lostandfound.dto.report.ReportDto;
 import com.community.lostandfound.dto.report.ReportRequest;
+import com.community.lostandfound.dto.report.ReportResolutionRequest;
 import com.community.lostandfound.entity.Report;
 import com.community.lostandfound.security.UserDetailsImpl;
 import com.community.lostandfound.service.ReportService;
@@ -183,5 +184,53 @@ public class ReportController {
             return userDetails.getId();
         }
         return null;
+    }
+
+    /**
+     * 处理举报
+     */
+    @PutMapping("/{id}/resolve")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('SYSADMIN')")
+    public ResponseEntity<ApiResponse<ReportDto>> resolveReport(
+            @PathVariable Long id,
+            @Valid @RequestBody ReportResolutionRequest request) {
+        
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        Long adminId = getUserIdFromAuthentication(auth);
+        
+        if (adminId == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(ApiResponse.fail("未授权操作，请重新登录"));
+        }
+        
+        log.info("管理员 {} 处理举报 {}: {}", adminId, id, request);
+        
+        // 验证处理方式
+        if (request.getStatus() == Report.ReportStatus.RESOLVED) {
+            if (request.getActionType() == null) {
+                return ResponseEntity.badRequest().body(
+                    ApiResponse.fail("确认违规时必须选择处理方式")
+                );
+            }
+            
+            // 只允许 NONE 和 USER_LOCK 两种处理方式
+            if (!"NONE".equals(request.getActionType()) && !"USER_LOCK".equals(request.getActionType())) {
+                return ResponseEntity.badRequest().body(
+                    ApiResponse.fail("无效的处理方式，只允许不采取行动或锁定用户")
+                );
+            }
+            
+            // 如果选择锁定用户，必须指定天数
+            if ("USER_LOCK".equals(request.getActionType()) && 
+                (request.getActionDays() == null || request.getActionDays() < 1)) {
+                return ResponseEntity.badRequest().body(
+                    ApiResponse.fail("锁定用户时必须指定天数（1-365天）")
+                );
+            }
+        }
+        
+        ReportDto resolvedReport = reportService.resolveReport(id, request, adminId);
+        
+        return ResponseEntity.ok(ApiResponse.success("处理举报成功", resolvedReport));
     }
 } 

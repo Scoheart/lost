@@ -37,6 +37,7 @@ public class UserDetailsImpl implements UserDetails {
     private String role;
     private Collection<? extends GrantedAuthority> authorities;
     private boolean enabled;
+    private boolean locked;
 
     /**
      * 从User实体创建UserDetailsImpl实例
@@ -56,6 +57,7 @@ public class UserDetailsImpl implements UserDetails {
                 .role(user.getRole())
                 .authorities(authorities)
                 .enabled(user.getIsEnabled())
+                .locked(user.isLocked())
                 .build();
     }
 
@@ -81,7 +83,7 @@ public class UserDetailsImpl implements UserDetails {
 
     @Override
     public boolean isAccountNonLocked() {
-        return true;
+        return !locked;
     }
 
     @Override

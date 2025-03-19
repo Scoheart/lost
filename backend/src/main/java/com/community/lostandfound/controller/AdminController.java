@@ -735,9 +735,9 @@ public class AdminController {
             @RequestParam(value = "days", defaultValue = "7") Integer days,
             @RequestParam(value = "reason", required = false) String reason) {
         
-        if (days <= 0) {
+        if (days <= 0 || days > 365) {
             return ResponseEntity.badRequest().body(
-                ApiResponse.fail("锁定天数必须大于0")
+                ApiResponse.fail("锁定天数必须在1-365天之间")
             );
         }
         

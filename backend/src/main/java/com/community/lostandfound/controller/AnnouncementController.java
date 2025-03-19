@@ -35,12 +35,14 @@ public class AnnouncementController {
     private final AnnouncementService announcementService;
 
     /**
-     * 【管理员接口】获取所有公告（分页），包括未发布的公告
+     * 【管理员接口】获取公告（分页）
+     * 系统管理员可以获取所有公告，小区管理员只能获取自己发布的公告
      *
      * @param page      页码（从1开始）
      * @param pageSize  每页条数
      * @param keyword   搜索关键词（模糊匹配标题或内容）
-     * @param adminName 管理员用户名筛选
+     * @param adminName 管理员用户名筛选（仅系统管理员可用）
+     * @param currentUser 当前用户
      * @return 分页公告列表
      */
     @GetMapping("/admin")
@@ -49,12 +51,35 @@ public class AnnouncementController {
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "10") int pageSize,
             @RequestParam(required = false) String keyword,
-            @RequestParam(required = false) String adminName) {
+            @RequestParam(required = false) String adminName,
+            @CurrentUser UserDetailsImpl currentUser) {
 
-        log.info("获取所有公告列表, 页码: {}, 每页条数: {}, 关键词: {}, 管理员: {}",
+        log.info("获取公告列表, 页码: {}, 每页条数: {}, 关键词: {}, 管理员: {}",
                 page, pageSize, keyword, adminName);
-        AnnouncementPageDto result = announcementService.getAllAnnouncements(page, pageSize, keyword, adminName);
-        return ResponseEntity.ok(ApiResponse.success("获取所有公告成功", result));
+                
+        // 获取当前用户ID
+        Long userId = getCurrentUserId(currentUser);
+        if (userId == null) {
+            log.error("获取公告列表失败: 无法获取当前用户信息");
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(ApiResponse.fail("未授权操作，请重新登录"));
+        }
+        
+        // 判断当前用户是否为系统管理员
+        boolean isSysAdmin = isCurrentUserSysAdmin();
+        
+        AnnouncementPageDto result;
+        if (isSysAdmin) {
+            // 系统管理员可以获取所有公告
+            result = announcementService.getAllAnnouncements(page, pageSize, keyword, adminName);
+        } else {
+            // 小区管理员只能获取自己发布的公告
+            // 使用getAllAnnouncements方法，但只过滤当前管理员的公告
+            // 这样保留了关键词搜索功能
+            result = announcementService.getAllAnnouncements(page, pageSize, keyword, currentUser.getUsername());
+        }
+        
+        return ResponseEntity.ok(ApiResponse.success("获取公告列表成功", result));
     }
 
     /**
@@ -141,6 +166,7 @@ public class AnnouncementController {
 
     /**
      * 【管理员接口】更新公告
+     * 系统管理员可以更新任何公告，小区管理员只能更新自己发布的公告
      *
      * @param id          公告ID
      * @param request     更新公告请求
@@ -165,6 +191,19 @@ public class AnnouncementController {
         log.info("更新公告, ID: {}, 用户ID: {}", id, userId);
 
         try {
+            // 检查是否为系统管理员
+            boolean isSysAdmin = isCurrentUserSysAdmin();
+            
+            // 如果不是系统管理员，检查公告是否属于当前用户
+            if (!isSysAdmin) {
+                AnnouncementDto announcement = announcementService.getAnnouncementById(id);
+                if (!userId.equals(announcement.getAdminId())) {
+                    log.warn("用户尝试更新不属于自己的公告, 用户ID: {}, 公告ID: {}", userId, id);
+                    return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                            .body(ApiResponse.fail("您无权更新此公告"));
+                }
+            }
+            
             AnnouncementDto updatedAnnouncement = announcementService.updateAnnouncement(id, request, userId);
             return ResponseEntity.ok(ApiResponse.success("公告更新成功", updatedAnnouncement));
         } catch (ResourceNotFoundException e) {
@@ -184,6 +223,7 @@ public class AnnouncementController {
 
     /**
      * 【管理员接口】删除公告
+     * 系统管理员可以删除任何公告，小区管理员只能删除自己发布的公告
      *
      * @param id          公告ID
      * @param currentUser 当前用户
@@ -206,6 +246,19 @@ public class AnnouncementController {
         log.info("删除公告, ID: {}, 用户ID: {}", id, userId);
 
         try {
+            // 检查是否为系统管理员
+            boolean isSysAdmin = isCurrentUserSysAdmin();
+            
+            // 如果不是系统管理员，检查公告是否属于当前用户
+            if (!isSysAdmin) {
+                AnnouncementDto announcement = announcementService.getAnnouncementById(id);
+                if (!userId.equals(announcement.getAdminId())) {
+                    log.warn("用户尝试删除不属于自己的公告, 用户ID: {}, 公告ID: {}", userId, id);
+                    return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                            .body(ApiResponse.fail("您无权删除此公告"));
+                }
+            }
+            
             boolean deleted = announcementService.deleteAnnouncement(id, userId);
 
             if (deleted) {
@@ -231,6 +284,7 @@ public class AnnouncementController {
 
     /**
      * 【管理员接口】获取当前管理员发布的公告（分页）
+     * （已废弃，对于小区管理员，/admin 接口已能满足需求）
      *
      * @param page        页码（从1开始）
      * @param pageSize    每页条数
@@ -281,6 +335,21 @@ public class AnnouncementController {
         return authentication.getAuthorities().stream()
                 .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN") ||
                         a.getAuthority().equals("ROLE_SYSADMIN"));
+    }
+    
+    /**
+     * 检查当前用户是否为系统管理员
+     *
+     * @return 是否为系统管理员
+     */
+    private boolean isCurrentUserSysAdmin() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null || !authentication.isAuthenticated()) {
+            return false;
+        }
+
+        return authentication.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("ROLE_SYSADMIN"));
     }
 
     /**

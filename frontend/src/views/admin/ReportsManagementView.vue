@@ -258,24 +258,12 @@
         <el-form-item label="处理方式" prop="actionType" v-if="resolveForm.status === 'RESOLVED'">
           <el-select v-model="resolveForm.actionType" placeholder="请选择处理方式" style="width: 100%">
             <el-option label="不采取行动" value="NONE" />
-            <el-option label="删除内容" value="CONTENT_DELETE" />
-            <el-option label="警告用户" value="USER_WARNING" />
-            <el-option label="封禁用户" value="USER_BAN" />
             <el-option label="锁定用户" value="USER_LOCK" />
           </el-select>
           <div class="form-help-text">
             <el-text size="small" type="info">
-              <template v-if="resolveForm.actionType === 'CONTENT_DELETE'">
-                删除内容：将删除被举报的内容，但不影响用户账号。
-              </template>
-              <template v-else-if="resolveForm.actionType === 'USER_WARNING'">
-                警告用户：发送警告，但不影响用户账号和内容。
-              </template>
-              <template v-else-if="resolveForm.actionType === 'USER_BAN'">
-                封禁用户：用户被封禁期间无法登录系统。
-              </template>
-              <template v-else-if="resolveForm.actionType === 'USER_LOCK'">
-                锁定用户：用户被锁定期间可以登录但无法发布内容。
+              <template v-if="resolveForm.actionType === 'USER_LOCK'">
+                锁定用户：用户被锁定期间无法登录系统。
               </template>
             </el-text>
           </div>
@@ -284,7 +272,7 @@
         <el-form-item
           label="处理天数"
           prop="actionDays"
-          v-if="resolveForm.status === 'RESOLVED' && ['USER_BAN', 'USER_LOCK'].includes(resolveForm.actionType)"
+          v-if="resolveForm.status === 'RESOLVED' && resolveForm.actionType === 'USER_LOCK'"
         >
           <el-input-number
             v-model="resolveForm.actionDays"
@@ -677,7 +665,9 @@ async function submitResolve() {
 
             // 提示用户确认处理操作
             const actionDesc = resolveForm.actionType === 'USER_BAN' ? '封禁' : '锁定'
-            const confirmMessage = `您将${actionDesc}用户 "${currentReport.value.reportedUsername}" ${resolveForm.actionDays}天，确认继续吗？`
+            const confirmMessage = `您将${actionDesc}用户 "${currentReport.value.reportedUsername}" ${resolveForm.actionDays}天，${
+              resolveForm.actionType === 'USER_LOCK' ? '锁定期间该用户将无法登录系统' : ''
+            }，确认继续吗？`
 
             try {
               await ElMessageBox.confirm(confirmMessage, '确认操作', {

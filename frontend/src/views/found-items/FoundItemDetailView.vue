@@ -264,7 +264,10 @@ const claimsStore = useClaimsStore()
 const foundItem = ref<any>(null)
 const loading = ref(true)
 const error = ref<boolean>(false)
-const itemId = ref<number | null>(null)
+const itemId = computed<number | undefined>(() => {
+  const id = route.params.id;
+  return id ? Number(id) : undefined;
+})
 
 // 图片查看器
 const imageViewerVisible = ref(false)
@@ -281,7 +284,7 @@ const claimSubmitting = ref(false)
 // 举报相关数据
 const reportDialogVisible = ref(false)
 const reportItemType = ref('FOUND_ITEM')
-const reportItemId = ref<number | null>(null)
+const reportItemId = ref<number | undefined>(undefined)
 const reportItemTitle = ref('')
 
 // 辅助状态计算
@@ -407,8 +410,8 @@ function closeItem() {
     .then(async () => {
       try {
         // 使用专用的关闭函数
-        const id = itemId.value
-        if (!id) {
+        const id = Number(itemId.value)
+        if (isNaN(id)) {
           ElMessage.warning('物品ID无效')
           return
         }
@@ -460,8 +463,8 @@ function deleteItem() {
   })
     .then(async () => {
       try {
-        const id = itemId.value
-        if (!id) {
+        const id = Number(itemId.value)
+        if (isNaN(id)) {
           ElMessage.warning('物品ID无效')
           return
         }
@@ -488,9 +491,7 @@ function deleteItem() {
 watch(
   () => route.params.id,
   () => {
-    if (itemId.value) {
-      loadItemDetail()
-    }
+    loadItemDetail()
   },
 )
 
@@ -510,7 +511,7 @@ const submitClaimApplication = async () => {
     }
 
     claimSubmitting.value = true
-    const result = await claimsStore.applyForClaim(itemId.value, {
+    const result = await claimsStore.applyForClaim(Number(itemId.value), {
       description: claimForm.value.description,
     })
 

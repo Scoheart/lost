@@ -139,7 +139,10 @@ public class UserServiceImpl implements UserService {
     private boolean updateUserDirectly(User user) {
         try {
             String sql = "UPDATE users SET username = ?, email = ?, password = ?, " +
-                   "role = ?, updated_at = ?, is_enabled = ?, real_name = ?, phone = ?, avatar = ?, address = ? WHERE id = ?";
+                   "role = ?, updated_at = ?, is_enabled = ?, real_name = ?, phone = ?, avatar = ?, address = ?, " +
+                   "is_locked = ?, lock_end_time = ?, lock_reason = ?, " +
+                   "is_banned = ?, ban_end_time = ?, ban_reason = ? " +
+                   "WHERE id = ?";
             
             int updated = jdbcTemplate.update(sql,
                 user.getUsername(),
@@ -152,6 +155,12 @@ public class UserServiceImpl implements UserService {
                 user.getPhone(),
                 user.getAvatar(),
                 user.getAddress(),
+                user.getIsLocked(),
+                user.getLockEndTime(),
+                user.getLockReason(),
+                user.getIsBanned(),
+                user.getBanEndTime(),
+                user.getBanReason(),
                 user.getId()
             );
             

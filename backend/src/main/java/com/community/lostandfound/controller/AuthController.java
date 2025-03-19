@@ -26,6 +26,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import java.time.LocalDateTime;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.http.HttpStatus;
 
 @Slf4j
 @RestController
@@ -84,7 +85,8 @@ public class AuthController {
             }
         } catch (LockedException ex) {
             log.error("Account locked: {}", ex.getMessage());
-            throw ex; // Let the global exception handler handle this
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                   .body(ApiResponse.fail("账户已被锁定，请联系管理员或稍后再试"));
         } catch (UsernameNotFoundException ex) {
             log.error("User not found: {}", ex.getMessage());
             throw new BadCredentialsException("用户名或密码错误");

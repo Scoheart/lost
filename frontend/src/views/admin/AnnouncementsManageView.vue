@@ -18,7 +18,7 @@
             @keyup.enter="handleSearch"
           />
         </el-form-item>
-        <el-form-item label="发布人">
+        <el-form-item label="发布人" v-if="userStore.isSysAdmin">
           <el-input
             v-model="filterForm.adminName"
             placeholder="输入发布人名称"
@@ -251,7 +251,9 @@ const formatDate = (dateString: string) => {
 // 重置过滤条件
 const resetFilter = () => {
   filterForm.keyword = ''
-  filterForm.adminName = ''
+  if (userStore.isSysAdmin) {
+    filterForm.adminName = ''
+  }
   handleSearch()
 }
 
@@ -278,7 +280,8 @@ const fetchAnnouncements = async () => {
       searchParams.keyword = filterForm.keyword.trim()
     }
 
-    if (filterForm.adminName && filterForm.adminName.trim() !== '') {
+    // 只有系统管理员才使用adminName筛选
+    if (userStore.isSysAdmin && filterForm.adminName && filterForm.adminName.trim() !== '') {
       searchParams.adminName = filterForm.adminName.trim()
     }
 
