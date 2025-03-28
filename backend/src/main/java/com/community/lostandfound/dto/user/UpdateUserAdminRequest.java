@@ -18,6 +18,8 @@ public class UpdateUserAdminRequest {
     
     private String avatar;
     
+    private String address;
+    
     @Pattern(regexp = "^(resident|admin|sysadmin)$", message = "角色必须是 resident, admin 或 sysadmin")
     private String role;
     

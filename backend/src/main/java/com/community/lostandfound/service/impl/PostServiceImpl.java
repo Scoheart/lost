@@ -8,7 +8,7 @@ import com.community.lostandfound.entity.Post;
 import com.community.lostandfound.entity.User;
 import com.community.lostandfound.exception.ResourceNotFoundException;
 import com.community.lostandfound.exception.UnauthorizedException;
-import com.community.lostandfound.repository.CommentRepository;
+import com.community.lostandfound.repository.PostCommentRepository;
 import com.community.lostandfound.repository.PostRepository;
 import com.community.lostandfound.repository.UserRepository;
 import com.community.lostandfound.service.PostService;
@@ -29,7 +29,7 @@ public class PostServiceImpl implements PostService {
 
     private final PostRepository postRepository;
     private final UserRepository userRepository;
-    private final CommentRepository commentRepository;
+    private final PostCommentRepository postCommentRepository;
 
     @Override
     @Transactional
@@ -66,7 +66,7 @@ public class PostServiceImpl implements PostService {
         post.setUpdatedAt(LocalDateTime.now());
 
         postRepository.update(post);
-        int commentCount = commentRepository.countByItemIdAndItemType(postId, "post");
+        int commentCount = postCommentRepository.countByPostId(postId);
         return convertToPostResponse(post, commentCount);
     }
 
@@ -81,7 +81,7 @@ public class PostServiceImpl implements PostService {
         }
 
         // 删除帖子相关的评论
-        commentRepository.deleteByItemIdAndItemType(postId, "post");
+        postCommentRepository.deleteByPostId(postId);
         // 删除帖子
         postRepository.deleteById(postId);
     }
@@ -91,7 +91,7 @@ public class PostServiceImpl implements PostService {
         Post post = postRepository.findById(postId)
                 .orElseThrow(() -> new ResourceNotFoundException("帖子不存在"));
 
-        int commentCount = commentRepository.countByItemIdAndItemType(postId, "post");
+        int commentCount = postCommentRepository.countByPostId(postId);
         return convertToPostResponse(post, commentCount);
     }
 
@@ -126,7 +126,7 @@ public class PostServiceImpl implements PostService {
     private PagedResponse<PostResponse> createPagedResponse(List<Post> posts, int page, int size, long total) {
         List<PostResponse> postResponses = posts.stream()
                 .map(post -> {
-                    int commentCount = commentRepository.countByItemIdAndItemType(post.getId(), "post");
+                    int commentCount = postCommentRepository.countByPostId(post.getId());
                     return convertToPostResponse(post, commentCount);
                 })
                 .collect(Collectors.toList());

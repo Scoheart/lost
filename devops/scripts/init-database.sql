@@ -108,21 +108,37 @@ CREATE TABLE IF NOT EXISTS `claim_applications` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ----------------------------
--- 评论表
+-- 物品评论表 (替代旧的comments表)
 -- ----------------------------
-DROP TABLE IF EXISTS `comments`;
-CREATE TABLE IF NOT EXISTS `comments` (
+DROP TABLE IF EXISTS `item_comments`;
+CREATE TABLE IF NOT EXISTS `item_comments` (
   `id` bigint NOT NULL AUTO_INCREMENT,
   `content` text NOT NULL,
-  `item_id` bigint NOT NULL COMMENT '关联的ID，可能是物品ID或帖子ID',
-  `item_type` varchar(20) NOT NULL COMMENT '类型: lost, found, post',
+  `item_id` bigint NOT NULL COMMENT '物品ID',
+  `item_type` varchar(20) NOT NULL COMMENT '物品类型: lost, found',
   `user_id` bigint NOT NULL,
   `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
   `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
   KEY `idx_item_id_type` (`item_id`, `item_type`),
   KEY `idx_user_id` (`user_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='评论表 - 支持物品评论和帖子评论';
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='物品评论表 - 寻物启事和失物招领的评论';
+
+-- ----------------------------
+-- 帖子评论表 (替代旧的comments表中的帖子评论)
+-- ----------------------------
+DROP TABLE IF EXISTS `post_comments`;
+CREATE TABLE IF NOT EXISTS `post_comments` (
+  `id` bigint NOT NULL AUTO_INCREMENT,
+  `content` text NOT NULL,
+  `post_id` bigint NOT NULL COMMENT '帖子ID',
+  `user_id` bigint NOT NULL,
+  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `idx_post_id` (`post_id`),
+  KEY `idx_user_id` (`user_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='帖子评论表 - 论坛帖子的评论';
 
 -- ----------------------------
 -- 公告表

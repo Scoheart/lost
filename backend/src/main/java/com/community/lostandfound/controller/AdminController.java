@@ -425,6 +425,10 @@ public class AdminController {
             user.setAvatar(request.getAvatar());
         }
         
+        if (request.getAddress() != null) {
+            user.setAddress(request.getAddress());
+        }
+        
         // 处理角色更新
         if (request.getRole() != null && !request.getRole().equals(user.getRole())) {
             // 只有系统管理员可以更改角色

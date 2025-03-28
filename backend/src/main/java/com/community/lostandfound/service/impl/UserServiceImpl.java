@@ -344,8 +344,8 @@ public class UserServiceImpl implements UserService {
             
             // 添加可选字段
             try {
-                sql.append(", created_at, updated_at, is_enabled");
-                values.append(", ?, ?, ?");
+                sql.append(", address, created_at, updated_at, is_enabled");
+                values.append(", ?, ?, ?, ?");
             } catch (Exception e) {
                 log.warn("添加可选字段失败，继续使用基本字段");
             }
@@ -361,6 +361,7 @@ public class UserServiceImpl implements UserService {
                     user.getEmail(),
                     user.getPassword(),
                     user.getRole(),
+                    user.getAddress(),
                     user.getCreatedAt(),
                     user.getUpdatedAt(),
                     user.getIsEnabled()

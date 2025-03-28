@@ -196,11 +196,17 @@ public class UserController {
 
             // Preserve the fields that cannot be modified
             updatedUser.setRealName(user.getRealName());
-            updatedUser.setAddress(user.getAddress());
 
             // Update the fields that were part of the request
             updatedUser.setEmail(updateRequest.getEmail());
             updatedUser.setPhone(updateRequest.getPhone());
+            
+            // Allow users to update their address
+            if (updateRequest.getAddress() != null && !updateRequest.getAddress().isEmpty()) {
+                updatedUser.setAddress(updateRequest.getAddress());
+            } else {
+                updatedUser.setAddress(user.getAddress()); // Preserve existing address if not provided
+            }
 
             if (updateRequest.getAvatar() != null && !updateRequest.getAvatar().isEmpty()) {
                 updatedUser.setAvatar(updateRequest.getAvatar());

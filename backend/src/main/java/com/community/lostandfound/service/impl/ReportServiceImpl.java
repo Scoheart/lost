@@ -4,17 +4,19 @@ import com.community.lostandfound.dto.report.ReportDto;
 import com.community.lostandfound.dto.report.ReportPageDto;
 import com.community.lostandfound.dto.report.ReportRequest;
 import com.community.lostandfound.dto.report.ReportResolutionRequest;
-import com.community.lostandfound.entity.Comment;
 import com.community.lostandfound.entity.FoundItem;
+import com.community.lostandfound.entity.ItemComment;
 import com.community.lostandfound.entity.LostItem;
 import com.community.lostandfound.entity.Post;
+import com.community.lostandfound.entity.PostComment;
 import com.community.lostandfound.entity.Report;
 import com.community.lostandfound.entity.User;
 import com.community.lostandfound.exception.BadRequestException;
 import com.community.lostandfound.exception.ResourceNotFoundException;
-import com.community.lostandfound.repository.CommentRepository;
 import com.community.lostandfound.repository.FoundItemRepository;
+import com.community.lostandfound.repository.ItemCommentRepository;
 import com.community.lostandfound.repository.LostItemRepository;
+import com.community.lostandfound.repository.PostCommentRepository;
 import com.community.lostandfound.repository.PostRepository;
 import com.community.lostandfound.repository.ReportRepository;
 import com.community.lostandfound.service.ReportService;
@@ -37,7 +39,8 @@ public class ReportServiceImpl implements ReportService {
     private final UserService userService;
     private final LostItemRepository lostItemRepository;
     private final FoundItemRepository foundItemRepository;
-    private final CommentRepository commentRepository;
+    private final ItemCommentRepository itemCommentRepository;
+    private final PostCommentRepository postCommentRepository;
     private final PostRepository postRepository;
 
     @Override
@@ -67,10 +70,20 @@ public class ReportServiceImpl implements ReportService {
                 break;
                 
             case COMMENT:
-                Comment comment = commentRepository.findById(request.getReportedItemId())
-                        .orElseThrow(() -> new ResourceNotFoundException("留言不存在"));
-                reportedUserId = comment.getUserId();
-                reportedItemTitle = "留言ID: " + comment.getId();
+                // 尝试从ItemComment查找
+                ItemComment itemComment = itemCommentRepository.findById(request.getReportedItemId())
+                        .orElse(null);
+                
+                if (itemComment != null) {
+                    reportedUserId = itemComment.getUserId();
+                    reportedItemTitle = "物品留言ID: " + itemComment.getId();
+                } else {
+                    // 尝试从PostComment查找
+                    PostComment postComment = postCommentRepository.findById(request.getReportedItemId())
+                            .orElseThrow(() -> new ResourceNotFoundException("留言不存在"));
+                    reportedUserId = postComment.getUserId();
+                    reportedItemTitle = "帖子留言ID: " + postComment.getId();
+                }
                 break;
                 
             case POST:
@@ -291,12 +304,22 @@ public class ReportServiceImpl implements ReportService {
                 break;
                 
             case COMMENT:
-                commentRepository.deleteById(report.getReportedItemId());
+                // 尝试删除ItemComment
+                try {
+                    itemCommentRepository.deleteById(report.getReportedItemId());
+                } catch (Exception e) {
+                    // 如果不是ItemComment，尝试删除PostComment
+                    try {
+                        postCommentRepository.deleteById(report.getReportedItemId());
+                    } catch (Exception ex) {
+                        log.error("删除评论失败，ID: {}", report.getReportedItemId(), ex);
+                        throw new ResourceNotFoundException("评论不存在或无法删除");
+                    }
+                }
                 break;
                 
             case POST:
                 postRepository.deleteById(report.getReportedItemId());
-                log.info("已删除被举报的帖子: ID={}", report.getReportedItemId());
                 break;
                 
             default:

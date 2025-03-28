@@ -28,6 +28,7 @@ public interface UserRepository {
         @Result(property = "avatar", column = "avatar"),
         @Result(property = "phone", column = "phone"),
         @Result(property = "realName", column = "real_name"),
+        @Result(property = "address", column = "address"),
         @Result(property = "createdAt", column = "created_at"),
         @Result(property = "updatedAt", column = "updated_at"),
         @Result(property = "isEnabled", column = "is_enabled"),
@@ -50,6 +51,7 @@ public interface UserRepository {
         @Result(property = "avatar", column = "avatar"),
         @Result(property = "phone", column = "phone"),
         @Result(property = "realName", column = "real_name"),
+        @Result(property = "address", column = "address"),
         @Result(property = "createdAt", column = "created_at"),
         @Result(property = "updatedAt", column = "updated_at"),
         @Result(property = "isEnabled", column = "is_enabled"),
@@ -72,6 +74,7 @@ public interface UserRepository {
         @Result(property = "avatar", column = "avatar"),
         @Result(property = "phone", column = "phone"),
         @Result(property = "realName", column = "real_name"),
+        @Result(property = "address", column = "address"),
         @Result(property = "createdAt", column = "created_at"),
         @Result(property = "updatedAt", column = "updated_at"),
         @Result(property = "isEnabled", column = "is_enabled"),
@@ -84,8 +87,8 @@ public interface UserRepository {
     })
     Optional<User> findById(@Param("id") Long id);
     
-    @Insert("INSERT INTO users(username, email, password, role, avatar, phone, real_name, created_at, updated_at, is_enabled) " +
-            "VALUES(#{username}, #{email}, #{password}, #{role}, #{avatar}, #{phone}, #{realName}, #{createdAt}, #{updatedAt}, #{isEnabled})")
+    @Insert("INSERT INTO users(username, email, password, role, avatar, phone, real_name, address, created_at, updated_at, is_enabled) " +
+            "VALUES(#{username}, #{email}, #{password}, #{role}, #{avatar}, #{phone}, #{realName}, #{address}, #{createdAt}, #{updatedAt}, #{isEnabled})")
     @Options(useGeneratedKeys = true, keyProperty = "id")
     void save(User user);
     
@@ -107,6 +110,7 @@ public interface UserRepository {
         @Result(property = "avatar", column = "avatar"),
         @Result(property = "phone", column = "phone"),
         @Result(property = "realName", column = "real_name"),
+        @Result(property = "address", column = "address"),
         @Result(property = "createdAt", column = "created_at"),
         @Result(property = "updatedAt", column = "updated_at"),
         @Result(property = "isEnabled", column = "is_enabled"),
@@ -171,6 +175,7 @@ public interface UserRepository {
         @Result(property = "avatar", column = "avatar"),
         @Result(property = "phone", column = "phone"),
         @Result(property = "realName", column = "real_name"),
+        @Result(property = "address", column = "address"),
         @Result(property = "createdAt", column = "created_at"),
         @Result(property = "updatedAt", column = "updated_at"),
         @Result(property = "isEnabled", column = "is_enabled"),

@@ -18,10 +18,9 @@ file:
 # 开发环境的数据库配置
 spring:
   datasource:
-    # url: jdbc:mysql://39.101.76.177:3306/lost_and_found?useSSL=false&serverTimezone=UTC
-    url: jdbc:mysql://121.40.52.9:3306/lost_and_found?useSSL=false&serverTimezone=UTC
-    username: root
-    password: aliyun888
+    url: jdbc:mysql://8.130.169.44:3306/lost_and_found?useSSL=false&serverTimezone=UTC
+    username: scoheart
+    password: 88888888
     driver-class-name: com.mysql.cj.jdbc.Driver
   
   # Redis配置
