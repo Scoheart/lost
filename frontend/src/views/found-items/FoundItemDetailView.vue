@@ -149,7 +149,6 @@
 
             <div class="owner-actions" v-if="isItemOwner">
               <el-button type="primary" @click="redirectToEdit"> 编辑招领 </el-button>
-              <el-button type="info" @click="closeItem"> 删除招领 </el-button>
               <el-button type="danger" @click="deleteItem"> 删除招领 </el-button>
             </div>
           </div>

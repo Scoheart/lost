@@ -6,6 +6,7 @@ import com.community.lostandfound.dto.auth.RegisterRequest;
 import com.community.lostandfound.dto.common.ApiResponse;
 import com.community.lostandfound.entity.User;
 import com.community.lostandfound.exception.BadRequestException;
+import com.community.lostandfound.exception.ResourceNotFoundException;
 import com.community.lostandfound.security.JwtUtils;
 import com.community.lostandfound.security.UserDetailsImpl;
 import com.community.lostandfound.service.UserService;
@@ -27,6 +28,7 @@ import org.springframework.web.bind.annotation.RestController;
 import java.time.LocalDateTime;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.http.HttpStatus;
+import java.util.Optional;
 
 @Slf4j
 @RestController
@@ -68,13 +70,29 @@ public class AuthController {
                 UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
                 log.debug("User details retrieved: {}", userDetails.getUsername());
 
+                // Fetch complete user information from database
+                Optional<User> userOptional = userService.getUserById(userDetails.getId());
+                if (!userOptional.isPresent()) {
+                    log.warn("User with ID {} not found in database", userDetails.getId());
+                    throw new ResourceNotFoundException("User", "id", userDetails.getId());
+                }
+
+                User user = userOptional.get();
+                log.debug("Complete user information retrieved from database: {}", user.getUsername());
+
+                // Create response with complete user information
                 JwtResponse response = new JwtResponse(
                         jwt,
-                        userDetails.getId(),
-                        userDetails.getUsername(),
-                        userDetails.getEmail(),
-                        userDetails.getRole(),
-                        null // Avatar is null for now, can be added later
+                        user.getId(),
+                        user.getUsername(),
+                        user.getEmail(),
+                        user.getRole(),
+                        user.getAvatar(),
+                        user.getPhone(),
+                        user.getRealName(),
+                        user.getAddress(),
+                        user.getCreatedAt(),
+                        user.getUpdatedAt()
                 );
 
                 return ResponseEntity.ok(ApiResponse.success("登录成功", response));

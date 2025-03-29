@@ -5,23 +5,32 @@
       <div v-if="loading" class="loading-container">
         <el-skeleton animated>
           <template #template>
-            <div style="padding: 20px;">
-              <el-skeleton-item variant="h1" style="width: 70%; height: 40px; margin-bottom: 20px;" />
-              <div style="display: flex; align-items: center; margin-bottom: 20px;">
-                <el-skeleton-item variant="image" style="width: 32px; height: 32px; margin-right: 16px;" />
-                <el-skeleton-item variant="text" style="width: 100px;" />
+            <div style="padding: 20px">
+              <el-skeleton-item
+                variant="h1"
+                style="width: 70%; height: 40px; margin-bottom: 20px"
+              />
+              <div style="display: flex; align-items: center; margin-bottom: 20px">
+                <el-skeleton-item
+                  variant="image"
+                  style="width: 32px; height: 32px; margin-right: 16px"
+                />
+                <el-skeleton-item variant="text" style="width: 100px" />
               </div>
               <div style="display: flex; gap: 20px; margin-bottom: 20px">
                 <el-skeleton-item variant="image" style="width: 300px; height: 200px" />
                 <el-skeleton-item variant="text" style="width: 100%; height: 200px" />
               </div>
-              <div style="margin-top: 30px;">
-                <el-skeleton-item variant="h3" style="width: 50%; margin-bottom: 10px;" />
-                <div v-for="i in 3" :key="i" style="margin-bottom: 20px;">
-                  <el-skeleton-item variant="image" style="width: 32px; height: 32px; margin-right: 16px; float: left;" />
+              <div style="margin-top: 30px">
+                <el-skeleton-item variant="h3" style="width: 50%; margin-bottom: 10px" />
+                <div v-for="i in 3" :key="i" style="margin-bottom: 20px">
+                  <el-skeleton-item
+                    variant="image"
+                    style="width: 32px; height: 32px; margin-right: 16px; float: left"
+                  />
                   <div>
-                    <el-skeleton-item variant="text" style="width: 40%; margin-bottom: 8px;" />
-                    <el-skeleton-item variant="text" style="width: 100%;" />
+                    <el-skeleton-item variant="text" style="width: 40%; margin-bottom: 8px" />
+                    <el-skeleton-item variant="text" style="width: 100%" />
                   </div>
                 </div>
               </div>
@@ -45,10 +54,7 @@
       </el-result>
 
       <!-- 无数据状态 -->
-      <el-empty
-        v-else-if="!lostItem"
-        description="未找到该寻物启事"
-      >
+      <el-empty v-else-if="!lostItem" description="未找到该寻物启事">
         <el-button type="primary" @click="$router.push('/lost-items')">
           返回寻物启事列表
         </el-button>
@@ -104,15 +110,16 @@
                   {{ getCategoryName(lostItem.category) }}
                 </el-descriptions-item>
                 <el-descriptions-item label="丢失时间">
-                  {{ lostItem.lostDate ? formatDate(lostItem.lostDate, true) : formatDate(lostItem.createdAt, true) }}
+                  {{
+                    lostItem.lostDate
+                      ? formatDate(lostItem.lostDate, true)
+                      : formatDate(lostItem.createdAt, true)
+                  }}
                 </el-descriptions-item>
                 <el-descriptions-item label="丢失地点">
                   {{ lostItem.lostLocation }}
                 </el-descriptions-item>
-                <el-descriptions-item
-                  label="悬赏金额"
-                  v-if="lostItem.reward"
-                >
+                <el-descriptions-item label="悬赏金额" v-if="lostItem.reward">
                   <span class="reward">¥ {{ lostItem.reward }}</span>
                 </el-descriptions-item>
                 <el-descriptions-item label="联系方式">
@@ -128,33 +135,13 @@
           </div>
 
           <div class="item-actions">
-            <el-button
-              type="primary"
-              @click="contactOwner"
-              v-if="!isOwner"
-            >
+            <el-button type="primary" @click="contactOwner" v-if="!isOwner">
               我有这个物品
             </el-button>
 
             <div class="owner-actions" v-if="isOwner">
-              <el-button
-                type="primary"
-                @click="redirectToEdit"
-              >
-                编辑寻物启事
-              </el-button>
-              <el-button
-                type="success"
-                @click="markAsFound"
-              >
-                已找到物品
-              </el-button>
-              <el-button
-                type="danger"
-                @click="deleteItem"
-              >
-                删除寻物启事
-              </el-button>
+              <el-button type="primary" @click="redirectToEdit"> 编辑寻物启事 </el-button>
+              <el-button type="danger" @click="deleteItem"> 删除寻物启事 </el-button>
             </div>
           </div>
         </el-card>
@@ -174,7 +161,9 @@
               >
                 <el-card class="comment-card">
                   <div class="comment-author">
-                    <el-avatar :size="32" :src="comment.userAvatar || ''">{{ getInitials(comment.username) }}</el-avatar>
+                    <el-avatar :size="32" :src="comment.userAvatar || ''">{{
+                      getInitials(comment.username)
+                    }}</el-avatar>
                     <span class="author-name">{{ comment.username }}</span>
                     <span class="comment-actions">
                       <!-- 评论举报按钮 - 仅对他人评论显示 -->
@@ -223,12 +212,7 @@
           </div>
 
           <!-- 无评论提示 -->
-          <el-empty
-            v-else
-            description="暂无留言"
-            :image-size="100"
-          >
-          </el-empty>
+          <el-empty v-else description="暂无留言" :image-size="100"> </el-empty>
 
           <!-- 评论输入框 -->
           <el-card class="comment-form-card" v-if="isLoggedIn">
@@ -268,7 +252,7 @@
             :closable="false"
             center
             show-icon
-            style="margin-top: 20px;"
+            style="margin-top: 20px"
           >
             <template #default>
               <el-button
@@ -276,7 +260,7 @@
                 @click="goToLogin"
                 plain
                 size="small"
-                style="margin-left: 10px;"
+                style="margin-left: 10px"
               >
                 去登录
               </el-button>
@@ -288,21 +272,14 @@
         <div class="related-items" v-if="relatedItems.length > 0">
           <h2 class="section-title">相似丢失物品</h2>
           <el-row :gutter="20">
-            <el-col
-              v-for="item in relatedItems"
-              :key="item.id"
-              :xs="24"
-              :sm="12"
-              :md="8"
-              :lg="6"
-            >
-              <el-card
-                shadow="hover"
-                class="related-item-card"
-                @click="goToItem(item.id)"
-              >
+            <el-col v-for="item in relatedItems" :key="item.id" :xs="24" :sm="12" :md="8" :lg="6">
+              <el-card shadow="hover" class="related-item-card" @click="goToItem(item.id)">
                 <div class="related-item-image">
-                  <img :src="item.images && item.images.length > 0 ? item.images[0] : '/placeholder.jpg'" />
+                  <img
+                    :src="
+                      item.images && item.images.length > 0 ? item.images[0] : '/placeholder.jpg'
+                    "
+                  />
                 </div>
                 <h3 class="related-item-title">{{ item.title }}</h3>
                 <div class="related-item-footer">
@@ -315,22 +292,12 @@
       </template>
 
       <!-- 联系对话框 -->
-      <el-dialog
-        v-model="contactDialogVisible"
-        title="联系失主"
-        width="500px"
-      >
+      <el-dialog v-model="contactDialogVisible" title="联系失主" width="500px">
         <div class="contact-dialog-content">
           <p>如果您认为自己拥有或发现了这个物品，请使用以下联系方式联系失主：</p>
 
-          <el-alert
-            type="success"
-            :closable="false"
-            show-icon
-          >
-            <template #title>
-              联系方式: {{ lostItem?.contactInfo }}
-            </template>
+          <el-alert type="success" :closable="false" show-icon>
+            <template #title> 联系方式: {{ lostItem?.contactInfo }} </template>
           </el-alert>
 
           <p class="contact-note">您也可以在下方留言，我们会通知失主查看。</p>
@@ -376,7 +343,7 @@ const userStore = useUserStore()
 const loading = ref(false)
 const error = ref(false)
 const commentForm = ref({
-  content: ''
+  content: '',
 })
 const commentSubmitting = ref(false)
 const contactDialogVisible = ref(false)
@@ -414,10 +381,7 @@ const isAuthenticated = computed(() => userStore.isAuthenticated)
 const relatedItems = computed(() => {
   if (!lostItem.value) return []
   return lostItemsStore.items
-    .filter(item =>
-      item.id !== lostItem.value!.id &&
-      item.category === lostItem.value!.category
-    )
+    .filter((item) => item.id !== lostItem.value!.id && item.category === lostItem.value!.category)
     .slice(0, 4) // 最多显示4个相关物品
 })
 
@@ -430,14 +394,14 @@ const getInitials = (username: string) => {
 // 获取物品类别名称
 const getCategoryName = (category: string) => {
   const categories = {
-    'electronics': '电子设备',
-    'documents': '证件/文件',
-    'clothing': '衣物/包包',
-    'keys': '钥匙/门禁卡',
-    'jewelry': '首饰/配饰',
-    'books': '书籍/教材',
-    'pets': '宠物',
-    'other': '其他物品'
+    electronics: '电子设备',
+    documents: '证件/文件',
+    clothing: '衣物/包包',
+    keys: '钥匙/门禁卡',
+    jewelry: '首饰/配饰',
+    books: '书籍/教材',
+    pets: '宠物',
+    other: '其他物品',
   }
   return categories[category as keyof typeof categories] || category
 }
@@ -462,7 +426,7 @@ const goToItem = (id: number) => {
 // 预览图片
 const previewImage = (url: string) => {
   ElImage.PreviewService({
-    urlList: lostItem.value?.images || [url]
+    urlList: lostItem.value?.images || [url],
   })
 }
 
@@ -586,31 +550,29 @@ const redirectToEdit = () => {
 const deleteItem = () => {
   if (!itemId.value) return
 
-  ElMessageBox.confirm(
-    '确定要删除这个寻物启事吗？删除后将无法恢复。',
-    '删除寻物启事',
-    {
-      confirmButtonText: '确定删除',
-      cancelButtonText: '取消',
-      type: 'error'
-    }
-  ).then(async () => {
-    try {
-      const result = await lostItemsStore.deleteLostItem(itemId.value!)
-
-      if (result.success) {
-        ElMessage.success('寻物启事已删除')
-        router.push('/lost-items')
-      } else {
-        ElMessage.error(result.message || '删除失败')
-      }
-    } catch (error) {
-      console.error('Failed to delete item:', error)
-      ElMessage.error('删除失败，请稍后再试')
-    }
-  }).catch(() => {
-    // 用户取消删除
+  ElMessageBox.confirm('确定要删除这个寻物启事吗？删除后将无法恢复。', '删除寻物启事', {
+    confirmButtonText: '确定删除',
+    cancelButtonText: '取消',
+    type: 'error',
   })
+    .then(async () => {
+      try {
+        const result = await lostItemsStore.deleteLostItem(itemId.value!)
+
+        if (result.success) {
+          ElMessage.success('寻物启事已删除')
+          router.push('/lost-items')
+        } else {
+          ElMessage.error(result.message || '删除失败')
+        }
+      } catch (error) {
+        console.error('Failed to delete item:', error)
+        ElMessage.error('删除失败，请稍后再试')
+      }
+    })
+    .catch(() => {
+      // 用户取消删除
+    })
 }
 
 // 加载物品详情
@@ -656,7 +618,7 @@ watch(
     if (itemId.value) {
       loadItemDetail()
     }
-  }
+  },
 )
 
 onMounted(() => {

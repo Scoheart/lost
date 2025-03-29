@@ -206,9 +206,11 @@ const passwordRules = reactive<FormRules>({
 
 // 方法
 const loadUserData = () => {
+  console.log('loadUserData')
   isLoading.value = true
 
   const user = userStore.user
+  console.log('loadUserData', user)
   if (!user) {
     isLoading.value = false
     return
