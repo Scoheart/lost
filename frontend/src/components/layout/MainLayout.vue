@@ -59,14 +59,6 @@
                   登录
                 </el-button>
                 <el-button @click="$router.push('/register')">注册</el-button>
-                <el-link
-                  type="info"
-                  :underline="false"
-                  class="admin-link"
-                  @click="$router.push('/login')"
-                >
-                  管理员入口
-                </el-link>
               </template>
             </template>
             <template v-else>

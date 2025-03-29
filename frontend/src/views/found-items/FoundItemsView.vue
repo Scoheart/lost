@@ -99,6 +99,11 @@ const filters = reactive({
 const handleSearch = async () => {
   loading.value = true
 
+  console.log('Searching found items with:', {
+    keyword: filters.keyword,
+    category: filters.category
+  })
+
   try {
     await foundItemsStore.fetchFoundItems({
       page: 1,

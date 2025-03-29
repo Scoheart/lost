@@ -131,12 +131,15 @@ export const useLostItemsStore = defineStore('lostItems', {
         if (pageSize) queryParams.append('pageSize', pageSize.toString())
         if (status) queryParams.append('status', status)
         if (category) queryParams.append('category', category)
-        if (query) queryParams.append('query', query)
+        if (query) queryParams.append('keyword', query)
 
         const queryString = queryParams.toString()
         const url = queryString ? `/lost-items?${queryString}` : '/lost-items'
 
+        console.log('Requesting lost items with URL:', url)
+
         const response = await apiClient.get(url)
+        console.log('Lost items response:', response.data)
 
         // 根据API响应格式处理数据
         if (response.data.data?.items) {

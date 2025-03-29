@@ -1,0 +1,63 @@
+pipeline {
+    agent any
+
+    environment {
+        JAR_NAME = "lost.jar"                         // 产出 jar 名
+        DEPLOY_DIR = "/home/jenkins/deploy"      // jar 要部署的路径（可自定义）
+        RUN_COMMAND = "java -jar $DEPLOY_DIR/$JAR_NAME"  // 启动命令
+    }
+
+    tools {
+        maven 'Maven 3.8.6'  // Jenkins 全局工具里配置的 Maven 名称
+    }
+
+    stages {
+        stage('拉取代码') {
+            steps {
+                git branch: 'main', url: 'git@github.com:Scoheart/lost.git'
+            }
+        }
+
+        stage('构建项目') {
+            steps {
+                sh 'mvn clean package -DskipTests'
+            }
+        }
+
+        stage('部署项目') {
+            steps {
+                echo "🔄 开始部署到 $DEPLOY_DIR"
+
+                // 创建部署目录（如果不存在）
+                sh 'mkdir -p $DEPLOY_DIR'
+
+                // 拷贝 jar 包
+                sh 'cp target/$JAR_NAME $DEPLOY_DIR/'
+
+                // 杀掉旧进程
+                sh '''
+                PID=$(ps -ef | grep "$JAR_NAME" | grep -v grep | awk '{print $2}')
+                if [ ! -z "$PID" ]; then
+                    echo "🛑 正在停止旧进程 $PID"
+                    kill -9 $PID
+                fi
+                '''
+
+                // 启动新进程（后台）
+                sh '''
+                echo "🚀 正在启动新进程..."
+                nohup $RUN_COMMAND > $DEPLOY_DIR/nohup.out 2>&1 &
+                '''
+            }
+        }
+    }
+
+    post {
+        success {
+            echo "✅ 构建 & 部署成功"
+        }
+        failure {
+            echo "❌ 构建或部署失败，请检查日志"
+        }
+    }
+}
