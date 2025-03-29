@@ -16,7 +16,7 @@
         @submit.prevent="handleSubmit"
         class="compact-form"
       >
-        <el-form-item prop="username" label="用户名/邮箱">
+        <el-form-item prop="username" label="用户名">
           <el-input
             v-model="loginForm.username"
             placeholder="请输入用户名或邮箱"
