@@ -7,10 +7,6 @@ pipeline {
         RUN_COMMAND = "java -jar $DEPLOY_DIR/$JAR_NAME"  // 启动命令
     }
 
-    tools {
-        maven 'Maven 3.8.6'  // Jenkins 全局工具里配置的 Maven 名称
-    }
-
     stages {
         stage('拉取代码') {
             steps {
