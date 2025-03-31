@@ -10,7 +10,7 @@ pipeline {
     stages {
         stage('拉取代码') {
             steps {
-                git branch: 'main', url: 'git@github.com:Scoheart/lost.git'
+                git branch: 'main', url: 'git@gitee.com:Scoheart/lost.git'
             }
         }
 
