@@ -1,13 +1,12 @@
 FROM node:20-alpine AS builder
-WORKDIR /app
-COPY package.json pnpm-lock.yaml ./
-RUN npm install -g pnpm@9 && pnpm install --frozen-lockfile
-COPY . .
-RUN pnpm build:prod
 
-FROM nginx:alpine
-COPY --from=builder /app/dist /usr/share/nginx/html
-COPY nginx.conf /etc/nginx/conf.d/default.conf
-EXPOSE 80
-HEALTHCHECK --interval=30s --timeout=3s CMD wget --quiet --tries=1 --spider http://localhost:80/ || exit 1
-CMD ["nginx", "-g", "daemon off;"]
+WORKDIR /app
+
+# 一次性复制全部文件
+COPY . .
+
+# 安装 pnpm 并安装依赖
+RUN npm install -g pnpm@9 && pnpm install
+
+# 构建生产版本
+RUN pnpm build:prod
