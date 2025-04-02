@@ -9,4 +9,4 @@ COPY . .
 RUN npm install -g pnpm@9 && pnpm install
 
 # 构建生产版本
-RUN pnpm build:prod
+RUN pnpm run dev
