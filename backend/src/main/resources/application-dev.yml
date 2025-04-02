@@ -18,8 +18,8 @@ file:
 # 开发环境的数据库配置
 spring:
   datasource:
-    url: jdbc:mysql://8.130.169.44:3306/lost_and_found?useSSL=false&serverTimezone=UTC
-    username: scoheart
+    url: jdbc:mysql://115.29.176.56:3306/lost_and_found?useSSL=false&serverTimezone=UTC
+    username: root
     password: 88888888
     driver-class-name: com.mysql.cj.jdbc.Driver
   

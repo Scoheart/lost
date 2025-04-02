@@ -389,6 +389,38 @@ const loadItemDetail = async () => {
   }
 }
 
+// 静默加载物品详情（不显示错误消息）
+const loadItemDetailSilently = async () => {
+  loading.value = true
+  error.value = false
+
+  try {
+    if (!itemId.value) {
+      error.value = true
+      return
+    }
+
+    // Fetch the found item
+    await foundItemsStore.fetchFoundItemById(itemId.value)
+
+    // Set found item from the store
+    if (foundItemsStore.currentItem) {
+      foundItem.value = foundItemsStore.currentItem
+
+      // Set report info
+      reportItemId.value = foundItem.value.id
+      reportItemTitle.value = foundItem.value.title
+    } else {
+      error.value = true
+    }
+  } catch (err) {
+    console.error('Failed to load found item details silently:', err)
+    error.value = true
+  } finally {
+    loading.value = false
+  }
+}
+
 // 关闭失物招领
 function closeItem() {
   if (!isLoggedIn.value) {
@@ -510,22 +542,27 @@ const submitClaimApplication = async () => {
     }
 
     claimSubmitting.value = true
-    const result = await claimsStore.applyForClaim(Number(itemId.value), {
-      description: claimForm.value.description,
-    })
 
-    if (result.success) {
-      ElMessage.success('认领申请已提交成功')
-      claimDialogVisible.value = false
+    try {
+      const result = await claimsStore.applyForClaim(Number(itemId.value), {
+        description: claimForm.value.description,
+      })
 
-      // 重新加载物品详情，显示最新状态
-      await loadItemDetail()
-    } else {
-      ElMessage.error(result.message || '提交认领申请失败')
+      if (result.success) {
+        // store已经显示了成功消息，不需要重复显示
+        claimDialogVisible.value = false
+        // 使用静默版本重新加载物品详情
+        await loadItemDetailSilently()
+      }
+      // store已经处理了错误消息，不需要重复显示
+    } catch (apiError) {
+      // store已经处理了API错误，这里不需要额外处理
+      console.error('API error during claim application:', apiError)
     }
   } catch (error) {
-    console.error('Failed to submit claim application:', error)
-    ElMessage.error('提交认领申请时发生错误，请稍后再试')
+    // 这里捕获的是表单验证之外的其他未预期错误
+    console.error('Unexpected error during claim application:', error)
+    ElMessage.error('提交认领申请时发生意外错误，请稍后再试')
   } finally {
     claimSubmitting.value = false
   }
