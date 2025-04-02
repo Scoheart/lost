@@ -17,7 +17,7 @@ public interface ItemCommentRepository {
      *
      * @param comment 评论对象
      */
-    @Insert("INSERT INTO comments (content, item_id, item_type, user_id, created_at, updated_at) " +
+    @Insert("INSERT INTO item_comments (content, item_id, item_type, user_id, created_at, updated_at) " +
             "VALUES (#{content}, #{itemId}, #{itemType}, #{userId}, #{createdAt}, #{updatedAt})")
     @Options(useGeneratedKeys = true, keyProperty = "id")
     void save(ItemComment comment);
@@ -29,7 +29,7 @@ public interface ItemCommentRepository {
      * @return 评论对象
      */
     @Select("SELECT c.*, u.username, u.avatar as user_avatar " +
-            "FROM comments c " +
+            "FROM item_comments c " +
             "JOIN users u ON c.user_id = u.id " +
             "WHERE c.id = #{id} AND (c.item_type = 'lost' OR c.item_type = 'found')")
     @Results({
@@ -53,7 +53,7 @@ public interface ItemCommentRepository {
      * @return 评论列表
      */
     @Select("SELECT c.*, u.username, u.avatar as user_avatar " +
-            "FROM comments c " +
+            "FROM item_comments c " +
             "JOIN users u ON c.user_id = u.id " +
             "WHERE c.item_id = #{itemId} AND c.item_type = #{itemType} " +
             "ORDER BY c.created_at DESC")
@@ -80,7 +80,7 @@ public interface ItemCommentRepository {
      * @return 评论列表
      */
     @Select("SELECT c.*, u.username, u.avatar as user_avatar " +
-            "FROM comments c " +
+            "FROM item_comments c " +
             "JOIN users u ON c.user_id = u.id " +
             "WHERE c.item_id = #{itemId} AND c.item_type = #{itemType} " +
             "ORDER BY c.created_at DESC " +
@@ -109,7 +109,7 @@ public interface ItemCommentRepository {
      * @param itemType 物品类型 (lost 或 found)
      * @return 评论数量
      */
-    @Select("SELECT COUNT(*) FROM comments WHERE item_id = #{itemId} AND item_type = #{itemType}")
+    @Select("SELECT COUNT(*) FROM item_comments WHERE item_id = #{itemId} AND item_type = #{itemType}")
     int countByItemIdAndType(@Param("itemId") Long itemId, @Param("itemType") String itemType);
     
     /**
@@ -117,7 +117,7 @@ public interface ItemCommentRepository {
      *
      * @param id 评论ID
      */
-    @Delete("DELETE FROM comments WHERE id = #{id}")
+    @Delete("DELETE FROM item_comments WHERE id = #{id}")
     void deleteById(Long id);
     
     /**
@@ -127,7 +127,7 @@ public interface ItemCommentRepository {
      * @return 评论列表
      */
     @Select("SELECT c.*, u.username, u.avatar as user_avatar " +
-            "FROM comments c " +
+            "FROM item_comments c " +
             "JOIN users u ON c.user_id = u.id " +
             "WHERE c.user_id = #{userId} AND (c.item_type = 'lost' OR c.item_type = 'found') " +
             "ORDER BY c.created_at DESC")
@@ -150,6 +150,6 @@ public interface ItemCommentRepository {
      * @param itemId   物品ID
      * @param itemType 物品类型 (lost 或 found)
      */
-    @Delete("DELETE FROM comments WHERE item_id = #{itemId} AND item_type = #{itemType}")
+    @Delete("DELETE FROM item_comments WHERE item_id = #{itemId} AND item_type = #{itemType}")
     void deleteByItemIdAndItemType(@Param("itemId") Long itemId, @Param("itemType") String itemType);
 } 
