@@ -298,7 +298,10 @@ const fileList = ref<UploadUserFile[]>([])
 // 计算属性
 const isAuthenticated = computed(() => userStore.isAuthenticated)
 const totalCount = computed(() => foundItemsStore.pagination.total)
-const filteredItems = computed(() => foundItemsStore.filteredItems)
+const filteredItems = computed(() => {
+  // Filter out items with status "claimed"
+  return foundItemsStore.filteredItems.filter(item => item.status !== 'claimed');
+})
 
 // 物品类别
 const categories = [

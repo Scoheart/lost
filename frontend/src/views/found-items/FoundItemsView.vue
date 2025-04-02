@@ -80,12 +80,14 @@ const error = ref<string | null>(null)
 // Computed
 const isAuthenticated = computed(() => userStore.isAuthenticated)
 const filteredFoundItems = computed(() => {
-  // Ensure dates are properly formatted for display
-  return foundItemsStore.filteredItems.map(item => ({
-    ...item,
-    // If foundDate is null, use createdAt as fallback
-    foundDate: item.foundDate || item.createdAt
-  }))
+  // Ensure dates are properly formatted for display and filter out claimed items
+  return foundItemsStore.filteredItems
+    .filter(item => item.status !== 'claimed')
+    .map(item => ({
+      ...item,
+      // If foundDate is null, use createdAt as fallback
+      foundDate: item.foundDate || item.createdAt
+    }))
 })
 const pagination = computed(() => foundItemsStore.pagination)
 

@@ -71,7 +71,7 @@
                                   @click="reportApplication(item)"
                                   title="举报申请"
                                 >
-                                  <el-icon><Warning /></el-icon> 举报
+                                  <!-- <el-icon><Warning /></el-icon> 举报 -->
                                 </el-button>
                               </div>
                             </div>
@@ -167,14 +167,17 @@
                               <p class="item-description">{{ item.description }}</p>
 
                               <!-- 添加举报按钮 -->
-                              <div class="report-action" v-if="item.applicantId !== userStore.user?.id">
+                              <div
+                                class="report-action"
+                                v-if="item.applicantId !== userStore.user?.id"
+                              >
                                 <el-button
                                   type="text"
                                   size="small"
                                   @click="reportApplication(item)"
                                   title="举报申请"
                                 >
-                                  <el-icon><Warning /></el-icon> 举报
+                                  <!-- <el-icon><Warning /></el-icon> 举报 -->
                                 </el-button>
                               </div>
                             </div>
@@ -206,9 +209,6 @@
 
                           <div class="item-footer" v-if="item.status === 'approved'">
                             <el-alert type="success" :closable="false" show-icon>
-                              <template #title>
-                                您已批准该认领申请，物品状态已更新为"已认领"
-                              </template>
                               <p v-if="item.applicantName">认领人：{{ item.applicantName }}</p>
                               <p v-if="item.applicantContact">
                                 联系方式：{{ item.applicantContact }}
@@ -497,7 +497,7 @@ const reportApplication = (application) => {
     return
   }
 
-  reportItemType.value = 'COMMENT'  // 使用COMMENT类型，因为后端API支持的类型有限
+  reportItemType.value = 'COMMENT' // 使用COMMENT类型，因为后端API支持的类型有限
   reportItemId.value = application.id
 
   // 提供更详细的举报描述

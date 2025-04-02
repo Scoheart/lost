@@ -218,7 +218,7 @@ const commentForm = ref({
 
 // 举报相关
 const reportDialogVisible = ref(false)
-const reportItemId = ref<number | null>(null)
+const reportItemId = ref<number>(0)
 const reportItemType = ref<string>('')
 const reportItemTitle = ref<string>('')
 
