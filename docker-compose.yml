@@ -14,7 +14,6 @@ services:
       - FILE_UPLOAD_DIR=/app/uploads
       - FILE_BASE_URL=http://localhost:8080/api
     volumes:
-      - backend-logs:/app/logs
       - backend-uploads:/app/uploads
     depends_on:
       - db
@@ -26,10 +25,6 @@ services:
       - '3333:3333'
     depends_on:
       - backend
-    volumes:
-      - nginx-pid:/var/run
-      - nginx-cache:/var/cache/nginx
-    user: root
 
   db:
     image: mysql:8.0
@@ -45,7 +40,4 @@ services:
 
 volumes:
   mysql-data:
-  backend-logs:
   backend-uploads:
-  nginx-pid:
-  nginx-cache:
