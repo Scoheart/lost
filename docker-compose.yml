@@ -28,6 +28,7 @@ services:
     user: root
     volumes:
       - nginx-pid:/var/run
+      - ./frontend/nginx.conf:/etc/nginx/conf.d/default.conf
 
   db:
     image: mysql:8.0
