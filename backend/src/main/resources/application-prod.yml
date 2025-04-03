@@ -18,10 +18,10 @@ file:
 # 生产环境数据库配置
 spring:
   datasource:
-    url: jdbc:mysql://39.101.76.177:3306/lost_and_found?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
+    url: jdbc:mysql://115.29.176.56:3306/lost?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
     username: root
     # 使用环境变量处理敏感信息
-    password: ${DB_PASSWORD:shuhao201028}
+    password: 88888888
     driver-class-name: com.mysql.cj.jdbc.Driver
     # 生产环境数据库连接池优化
     hikari:
