@@ -10,14 +10,11 @@ COPY . .
 RUN pnpm build:prod
 
 FROM nginx:alpine
-# 使用非root用户
-RUN addgroup -S appgroup && adduser -S appuser -G appgroup
-
 # 从builder阶段复制构建产物
 COPY --from=builder /app/dist /usr/share/nginx/html
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 
 EXPOSE 3333
 
-# 使用nginx默认用户启动
+# 以默认模式启动nginx
 CMD ["nginx", "-g", "daemon off;"]
