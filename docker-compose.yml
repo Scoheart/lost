@@ -26,6 +26,10 @@ services:
       - '3333:3333'
     depends_on:
       - backend
+    volumes:
+      - nginx-pid:/var/run
+      - nginx-cache:/var/cache/nginx
+    user: root
 
   db:
     image: mysql:8.0
@@ -43,3 +47,5 @@ volumes:
   mysql-data:
   backend-logs:
   backend-uploads:
+  nginx-pid:
+  nginx-cache:
