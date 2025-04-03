@@ -1,5 +1,9 @@
 FROM maven:3.9-eclipse-temurin-17-alpine AS builder
 WORKDIR /app
+
+# 复制Maven配置文件
+COPY settings.xml /root/.m2/settings.xml
+
 # 优先复制pom.xml利用Docker缓存机制
 COPY pom.xml .
 # 先下载依赖，如果pom.xml未变，可以使用缓存
