@@ -106,6 +106,11 @@
             {{ scope.row.phone || '-' }}
           </template>
         </el-table-column>
+        <el-table-column prop="address" label="住址" min-width="150">
+          <template #default="scope">
+            {{ scope.row.address || '-' }}
+          </template>
+        </el-table-column>
         <el-table-column prop="createdAt" label="创建时间" min-width="160" sortable>
           <template #default="scope">
             {{ formatDateTime(scope.row.createdAt) }}
