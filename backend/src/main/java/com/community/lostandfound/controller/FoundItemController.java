@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -58,19 +59,41 @@ public class FoundItemController {
         }
         
         // 处理日期格式
-        if (foundItem.getFoundDate() == null && foundItem.getFoundDateStr() != null) {
+        if (foundItem.getFoundDate() != null) {
+            // 直接设置了日期对象的情况，验证是否未来日期
+            if (foundItem.getFoundDate().isAfter(LocalDateTime.now())) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                        .body(ApiResponse.fail("日期不能是未来时间"));
+            }
+        } else if (foundItem.getFoundDateStr() != null) {
             try {
-                // 尝试从字符串中提取日期部分
+                // 解析日期时间字符串为LocalDateTime
                 String dateStr = foundItem.getFoundDateStr();
+                LocalDateTime parsedDate;
+                
                 if (dateStr.contains(" ")) {
-                    dateStr = dateStr.split(" ")[0];
+                    // 格式为 "yyyy-MM-dd HH:mm:ss"
+                    parsedDate = LocalDateTime.parse(dateStr, DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+                } else if (dateStr.contains("T")) {
+                    // 处理ISO-8601格式 "yyyy-MM-ddTHH:mm:ss"
+                    parsedDate = LocalDateTime.parse(dateStr);
+                } else {
+                    // 仅日期格式，添加默认时间
+                    parsedDate = LocalDate.parse(dateStr).atStartOfDay();
                 }
-                foundItem.setFoundDate(LocalDate.parse(dateStr));
-                log.info("成功解析日期: {}", dateStr);
+                
+                // 验证日期不是未来日期
+                if (parsedDate.isAfter(LocalDateTime.now())) {
+                    return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                            .body(ApiResponse.fail("日期不能是未来时间"));
+                }
+                
+                foundItem.setFoundDate(parsedDate);
+                log.info("成功解析日期时间: {}", dateStr);
             } catch (DateTimeParseException e) {
                 log.error("日期解析失败: {}", foundItem.getFoundDateStr(), e);
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                        .body(ApiResponse.fail("日期格式不正确，请使用yyyy-MM-dd格式"));
+                        .body(ApiResponse.fail("日期格式不正确，请使用yyyy-MM-dd HH:mm:ss、yyyy-MM-ddTHH:mm:ss或yyyy-MM-dd格式"));
             }
         }
         
@@ -182,19 +205,41 @@ public class FoundItemController {
         }
         
         // 处理日期格式
-        if (foundItem.getFoundDate() == null && foundItem.getFoundDateStr() != null) {
+        if (foundItem.getFoundDate() != null) {
+            // 直接设置了日期对象的情况，验证是否未来日期
+            if (foundItem.getFoundDate().isAfter(LocalDateTime.now())) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                        .body(ApiResponse.fail("日期不能是未来时间"));
+            }
+        } else if (foundItem.getFoundDateStr() != null) {
             try {
-                // 尝试从字符串中提取日期部分
+                // 解析日期时间字符串为LocalDateTime
                 String dateStr = foundItem.getFoundDateStr();
+                LocalDateTime parsedDate;
+                
                 if (dateStr.contains(" ")) {
-                    dateStr = dateStr.split(" ")[0];
+                    // 格式为 "yyyy-MM-dd HH:mm:ss"
+                    parsedDate = LocalDateTime.parse(dateStr, DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+                } else if (dateStr.contains("T")) {
+                    // 处理ISO-8601格式 "yyyy-MM-ddTHH:mm:ss"
+                    parsedDate = LocalDateTime.parse(dateStr);
+                } else {
+                    // 仅日期格式，添加默认时间
+                    parsedDate = LocalDate.parse(dateStr).atStartOfDay();
                 }
-                foundItem.setFoundDate(LocalDate.parse(dateStr));
-                log.info("成功解析日期: {}", dateStr);
+                
+                // 验证日期不是未来日期
+                if (parsedDate.isAfter(LocalDateTime.now())) {
+                    return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                            .body(ApiResponse.fail("日期不能是未来时间"));
+                }
+                
+                foundItem.setFoundDate(parsedDate);
+                log.info("成功解析日期时间: {}", dateStr);
             } catch (DateTimeParseException e) {
                 log.error("日期解析失败: {}", foundItem.getFoundDateStr(), e);
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                        .body(ApiResponse.fail("日期格式不正确，请使用yyyy-MM-dd格式"));
+                        .body(ApiResponse.fail("日期格式不正确，请使用yyyy-MM-dd HH:mm:ss、yyyy-MM-ddTHH:mm:ss或yyyy-MM-dd格式"));
             }
         }
         

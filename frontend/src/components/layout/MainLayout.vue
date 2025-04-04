@@ -79,7 +79,7 @@
           <div class="footer-section about">
             <h3>关于我们</h3>
             <p>
-              小区失物招领系统旨在帮助小区内丢失物品的居民快速找回物品，也为拾到物品的居民提供一个归还途径。
+              小区互助寻物系统旨在帮助小区内丢失物品的居民快速找回物品，也为拾到物品的居民提供一个归还途径。
             </p>
           </div>
           <div class="footer-section links">
@@ -91,7 +91,7 @@
           </div>
         </div>
         <div class="copyright">
-          <p>© {{ new Date().getFullYear() }} 小区失物招领系统 - 保留所有权利</p>
+          <p>© {{ new Date().getFullYear() }} 小区互助寻物系统 - 保留所有权利</p>
         </div>
       </el-footer>
     </el-container>
