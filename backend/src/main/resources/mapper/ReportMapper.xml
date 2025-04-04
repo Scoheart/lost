@@ -178,4 +178,46 @@
     <delete id="deleteByReportedUserId">
         DELETE FROM reports WHERE reported_user_id = #{reportedUserId}
     </delete>
+    
+    <!-- 通过多个过滤条件查询举报（分页） -->
+    <select id="findByFilters" resultMap="ReportResultMap">
+        SELECT <include refid="Base_Column_List" />
+        FROM reports 
+        <where>
+            <if test="status != null">
+                AND status = #{status, typeHandler=org.apache.ibatis.type.EnumTypeHandler}
+            </if>
+            <if test="reportType != null">
+                AND report_type = #{reportType, typeHandler=org.apache.ibatis.type.EnumTypeHandler}
+            </if>
+            <if test="startDate != null">
+                AND created_at >= #{startDate}
+            </if>
+            <if test="endDate != null">
+                AND created_at &lt;= #{endDate}
+            </if>
+        </where>
+        ORDER BY created_at DESC
+        LIMIT #{offset}, #{limit}
+    </select>
+    
+    <!-- 通过多个过滤条件统计举报数量 -->
+    <select id="countByFilters" resultType="int">
+        SELECT COUNT(*)
+        FROM reports 
+        <where>
+            <if test="status != null">
+                AND status = #{status, typeHandler=org.apache.ibatis.type.EnumTypeHandler}
+            </if>
+            <if test="reportType != null">
+                AND report_type = #{reportType, typeHandler=org.apache.ibatis.type.EnumTypeHandler}
+            </if>
+            <if test="startDate != null">
+                AND created_at >= #{startDate}
+            </if>
+            <if test="endDate != null">
+                AND created_at &lt;= #{endDate}
+            </if>
+        </where>
+    </select>
 </mapper> 

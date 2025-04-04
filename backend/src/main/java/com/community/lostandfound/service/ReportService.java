@@ -57,4 +57,19 @@ public interface ReportService {
      * 根据用户ID删除所有相关举报
      */
     void deleteReportsByUser(Long userId);
+    
+    /**
+     * 获取管理员可见的所有举报列表（带筛选和分页）
+     */
+    List<ReportDto> getReportsForAdmin(int page, int size, String status, String type, String startDate, String endDate);
+    
+    /**
+     * 统计符合筛选条件的举报数量
+     */
+    int countReportsForAdmin(String status, String type, String startDate, String endDate);
+    
+    /**
+     * 统计待处理的举报数量
+     */
+    int countPendingReports();
 } 

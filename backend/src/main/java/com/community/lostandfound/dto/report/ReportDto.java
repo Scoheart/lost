@@ -25,6 +25,9 @@ public class ReportDto {
     // 被举报内容标题或摘要 (根据类型不同而不同)
     private String reportedItemTitle;
     
+    // 被举报内容的详细内容（例如：评论的实际内容）
+    private String reportedItemContent;
+    
     // 举报者ID
     private Long reporterId;
     

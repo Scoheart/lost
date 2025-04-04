@@ -129,4 +129,24 @@ public interface ReportRepository {
      * 删除针对用户的举报
      */
     int deleteByReportedUserId(Long reportedUserId);
+    
+    /**
+     * 通过多个过滤条件查询举报（分页）
+     */
+    List<Report> findByFilters(
+            @Param("status") Report.ReportStatus status,
+            @Param("reportType") Report.ReportType reportType,
+            @Param("startDate") java.time.LocalDateTime startDate,
+            @Param("endDate") java.time.LocalDateTime endDate,
+            @Param("offset") int offset,
+            @Param("limit") int limit);
+    
+    /**
+     * 通过多个过滤条件统计举报数量
+     */
+    int countByFilters(
+            @Param("status") Report.ReportStatus status,
+            @Param("reportType") Report.ReportType reportType,
+            @Param("startDate") java.time.LocalDateTime startDate,
+            @Param("endDate") java.time.LocalDateTime endDate);
 } 

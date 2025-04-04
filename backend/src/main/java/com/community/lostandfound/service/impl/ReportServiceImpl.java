@@ -143,7 +143,7 @@ public class ReportServiceImpl implements ReportService {
         Report report = reportRepository.findById(reportId)
                 .orElseThrow(() -> new ResourceNotFoundException("举报不存在"));
         
-        return enrichReportDto(convertToDto(report));
+        return enrichWithReportContent(enrichReportDto(convertToDto(report)));
     }
 
     @Override
@@ -174,6 +174,7 @@ public class ReportServiceImpl implements ReportService {
         List<ReportDto> reportDtos = reports.stream()
                 .map(this::convertToDto)
                 .map(this::enrichReportDto)
+                .map(this::enrichWithReportContent)
                 .collect(Collectors.toList());
         
         // 计算总页数
@@ -251,7 +252,7 @@ public class ReportServiceImpl implements ReportService {
         
         // 更新举报
         reportRepository.update(report);
-        return enrichReportDto(convertToDto(report));
+        return enrichWithReportContent(enrichReportDto(convertToDto(report)));
     }
 
     @Override
@@ -262,6 +263,7 @@ public class ReportServiceImpl implements ReportService {
         return reports.stream()
                 .map(this::convertToDto)
                 .map(this::enrichReportDto)
+                .map(this::enrichWithReportContent)
                 .collect(Collectors.toList());
     }
 
@@ -272,6 +274,7 @@ public class ReportServiceImpl implements ReportService {
         return reports.stream()
                 .map(this::convertToDto)
                 .map(this::enrichReportDto)
+                .map(this::enrichWithReportContent)
                 .collect(Collectors.toList());
     }
 
@@ -288,6 +291,78 @@ public class ReportServiceImpl implements ReportService {
         
         // 删除针对用户的所有举报（作为被举报者）
         reportRepository.deleteByReportedUserId(userId);
+    }
+    
+    @Override
+    public List<ReportDto> getReportsForAdmin(int page, int size, String status, String type, String startDate, String endDate) {
+        // 计算分页偏移量
+        int offset = (page - 1) * size;
+        
+        // 转换状态
+        Report.ReportStatus reportStatus = null;
+        if (status != null && !status.isEmpty() && !status.equals("ALL")) {
+            reportStatus = Report.ReportStatus.valueOf(status);
+        }
+        
+        // 转换类型
+        Report.ReportType reportType = null;
+        if (type != null && !type.isEmpty() && !type.equals("ALL")) {
+            reportType = Report.ReportType.valueOf(type);
+        }
+        
+        // 转换日期
+        LocalDateTime start = null;
+        if (startDate != null && !startDate.isEmpty()) {
+            start = LocalDateTime.parse(startDate + "T00:00:00");
+        }
+        
+        LocalDateTime end = null;
+        if (endDate != null && !endDate.isEmpty()) {
+            end = LocalDateTime.parse(endDate + "T23:59:59");
+        }
+        
+        // 查询举报
+        List<Report> reports = reportRepository.findByFilters(reportStatus, reportType, start, end, offset, size);
+        
+        // 转换并丰富DTO
+        return reports.stream()
+                .map(this::convertToDto)
+                .map(this::enrichReportDto)
+                .map(this::enrichWithReportContent)  // 添加举报内容字段
+                .collect(Collectors.toList());
+    }
+    
+    @Override
+    public int countReportsForAdmin(String status, String type, String startDate, String endDate) {
+        // 转换状态
+        Report.ReportStatus reportStatus = null;
+        if (status != null && !status.isEmpty() && !status.equals("ALL")) {
+            reportStatus = Report.ReportStatus.valueOf(status);
+        }
+        
+        // 转换类型
+        Report.ReportType reportType = null;
+        if (type != null && !type.isEmpty() && !type.equals("ALL")) {
+            reportType = Report.ReportType.valueOf(type);
+        }
+        
+        // 转换日期
+        LocalDateTime start = null;
+        if (startDate != null && !startDate.isEmpty()) {
+            start = LocalDateTime.parse(startDate + "T00:00:00");
+        }
+        
+        LocalDateTime end = null;
+        if (endDate != null && !endDate.isEmpty()) {
+            end = LocalDateTime.parse(endDate + "T23:59:59");
+        }
+        
+        return reportRepository.countByFilters(reportStatus, reportType, start, end);
+    }
+    
+    @Override
+    public int countPendingReports() {
+        return (int) reportRepository.countByStatus(Report.ReportStatus.PENDING);
     }
     
     /**
@@ -417,6 +492,95 @@ public class ReportServiceImpl implements ReportService {
             
         } catch (Exception e) {
             log.error("填充举报DTO失败", e);
+        }
+        
+        return dto;
+    }
+    
+    /**
+     * 添加举报内容的实际内容
+     */
+    private ReportDto enrichWithReportContent(ReportDto dto) {
+        if (dto == null) {
+            return null;
+        }
+        
+        try {
+            log.debug("为举报ID={}, 类型={}, 内容ID={} 获取实际内容", 
+                dto.getId(), dto.getReportType(), dto.getReportedItemId());
+                
+            // 根据举报类型获取实际内容
+            String content = "";
+            switch (dto.getReportType()) {
+                case COMMENT:
+                    // 尝试从ItemComment获取内容
+                    ItemComment itemComment = itemCommentRepository.findById(dto.getReportedItemId()).orElse(null);
+                    if (itemComment != null) {
+                        content = itemComment.getContent();
+                        log.debug("从ItemComment获取内容成功: {}", content);
+                    } else {
+                        // 尝试从PostComment获取内容
+                        PostComment postComment = postCommentRepository.findById(dto.getReportedItemId()).orElse(null);
+                        if (postComment != null) {
+                            content = postComment.getContent();
+                            log.debug("从PostComment获取内容成功: {}", content);
+                        } else {
+                            log.warn("无法找到评论内容, 评论ID: {}", dto.getReportedItemId());
+                        }
+                    }
+                    break;
+                    
+                case LOST_ITEM:
+                    LostItem lostItem = lostItemRepository.findById(dto.getReportedItemId()).orElse(null);
+                    if (lostItem != null) {
+                        content = lostItem.getDescription();
+                        log.debug("从LostItem获取内容成功: {}", content);
+                    } else {
+                        log.warn("无法找到寻物启事内容, 寻物启事ID: {}", dto.getReportedItemId());
+                    }
+                    break;
+                    
+                case FOUND_ITEM:
+                    FoundItem foundItem = foundItemRepository.findById(dto.getReportedItemId()).orElse(null);
+                    if (foundItem != null) {
+                        content = foundItem.getDescription();
+                        log.debug("从FoundItem获取内容成功: {}", content);
+                    } else {
+                        log.warn("无法找到失物招领内容, 失物招领ID: {}", dto.getReportedItemId());
+                    }
+                    break;
+                    
+                case POST:
+                    Post post = postRepository.findById(dto.getReportedItemId()).orElse(null);
+                    if (post != null) {
+                        content = post.getContent();
+                        log.debug("从Post获取内容成功: {}", content);
+                    } else {
+                        log.warn("无法找到帖子内容, 帖子ID: {}", dto.getReportedItemId());
+                    }
+                    break;
+                    
+                default:
+                    log.warn("不支持的举报类型: {}", dto.getReportType());
+                    break;
+            }
+            
+            // 设置内容并记录日志
+            if (content != null && !content.isEmpty()) {
+                dto.setReportedItemContent(content);
+                
+                // 限制日志输出内容长度
+                String logContent = content.length() > 50 ? content.substring(0, 47) + "..." : content;
+                log.debug("设置举报内容成功, 内容: {}", logContent);
+            } else {
+                log.warn("获取到的内容为空");
+                // 设置一个默认消息，防止前端显示为null
+                dto.setReportedItemContent("(内容不可用)");
+            }
+        } catch (Exception e) {
+            log.error("获取举报内容失败: {}", e.getMessage(), e);
+            // 设置一个默认消息，防止前端显示为null
+            dto.setReportedItemContent("(获取内容时出错)");
         }
         
         return dto;

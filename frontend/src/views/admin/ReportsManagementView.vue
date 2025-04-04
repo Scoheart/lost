@@ -119,7 +119,6 @@
         >
           <el-table-column type="selection" width="55" />
           <el-table-column type="index" width="50" label="#" />
-          <el-table-column prop="id" label="举报ID" width="80" />
           <el-table-column prop="reportType" label="举报类型" width="120">
             <template #default="scope">
               <el-tag
@@ -130,7 +129,11 @@
               </el-tag>
             </template>
           </el-table-column>
-          <el-table-column prop="reportedItemTitle" label="被举报内容" min-width="180" show-overflow-tooltip />
+          <el-table-column prop="reportedItemContent" label="被举报内容" min-width="180" show-overflow-tooltip>
+            <template #default="scope">
+              {{ scope.row.reportedItemContent || scope.row.reportedItemTitle }}
+            </template>
+          </el-table-column>
           <el-table-column prop="reporterUsername" label="举报人" width="120" />
           <el-table-column prop="reportedUsername" label="被举报人" width="120" />
           <el-table-column prop="reason" label="举报原因" min-width="200" show-overflow-tooltip />
@@ -198,13 +201,10 @@
       >
         <div class="report-info">
           <div class="report-info-item">
-            <strong>举报ID:</strong> {{ currentReport.id }}
-          </div>
-          <div class="report-info-item">
             <strong>举报类型:</strong> {{ getReportDisplayType(currentReport) }}
           </div>
           <div class="report-info-item">
-            <strong>举报内容:</strong> {{ currentReport.reportedItemTitle }}
+            <strong>举报内容:</strong> {{ currentReport.reportedItemContent || currentReport.reportedItemTitle }}
             <el-button
               v-if="currentReport.reportType !== 'COMMENT' || isClaimReport(currentReport)"
               type="text"
@@ -302,12 +302,11 @@
     >
       <div class="report-detail" v-if="currentReport">
         <el-descriptions :column="1" border>
-          <el-descriptions-item label="举报ID">{{ currentReport.id }}</el-descriptions-item>
           <el-descriptions-item label="举报类型">
             {{ getReportDisplayType(currentReport) }}
           </el-descriptions-item>
           <el-descriptions-item label="被举报内容">
-            {{ currentReport.reportedItemTitle }}
+            {{ currentReport.reportedItemContent || currentReport.reportedItemTitle }}
           </el-descriptions-item>
           <el-descriptions-item label="举报人">
             {{ currentReport.reporterUsername }}
@@ -750,17 +749,20 @@ function getReportTypeText(type) {
   return types[type] || type
 }
 
-// 根据标题判断是否是认领申请举报
-function isClaimReport(report) {
-  return report.reportType === 'COMMENT' && report.reportedItemTitle.includes('认领申请');
-}
-
 // 获取更专业的举报类型显示文本
 function getReportDisplayType(report) {
+  if (!report) return '';
   if (isClaimReport(report)) {
     return '认领申请';
   }
   return getReportTypeText(report.reportType);
+}
+
+// 根据标题判断是否是认领申请举报
+function isClaimReport(report) {
+  if (!report) return false;
+  return report.reportType === 'COMMENT' &&
+         (report.reportedItemTitle && report.reportedItemTitle.includes('认领申请'));
 }
 
 function getReportTypeTag(type) {

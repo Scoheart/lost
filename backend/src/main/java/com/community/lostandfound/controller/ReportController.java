@@ -20,6 +20,8 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
+import java.util.HashMap;
 
 @Slf4j
 @RestController
@@ -232,5 +234,43 @@ public class ReportController {
         ReportDto resolvedReport = reportService.resolveReport(id, request, adminId);
         
         return ResponseEntity.ok(ApiResponse.success("处理举报成功", resolvedReport));
+    }
+    
+    /**
+     * 获取待处理的举报列表（仅管理员可用）
+     */
+    @GetMapping("/admin")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('SYSADMIN')")
+    public ResponseEntity<ApiResponse<Map<String, Object>>> getAdminReports(
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(required = false) String status,
+            @RequestParam(required = false) String type,
+            @RequestParam(required = false) String startDate,
+            @RequestParam(required = false) String endDate) {
+        
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        Long adminId = getUserIdFromAuthentication(auth);
+        
+        if (adminId == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(ApiResponse.fail("未授权操作，请重新登录"));
+        }
+        
+        List<ReportDto> reports = reportService.getReportsForAdmin(page, size, status, type, startDate, endDate);
+        
+        // 服务层已经通过enrichWithReportContent完成了内容的填充，不需要在控制器中重复处理
+        
+        int totalCount = reportService.countReportsForAdmin(status, type, startDate, endDate);
+        int pendingCount = reportService.countPendingReports();
+        
+        Map<String, Object> result = new HashMap<>();
+        result.put("reports", reports);
+        result.put("totalItems", totalCount);
+        result.put("currentPage", page);
+        result.put("pageSize", size);
+        result.put("pendingReportsCount", pendingCount);
+        
+        return ResponseEntity.ok(ApiResponse.success("获取举报列表成功", result));
     }
 } 
