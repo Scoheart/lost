@@ -48,7 +48,7 @@
 
         <el-table-column label="丢失时间" width="120">
           <template #default="scope">
-            {{ formatDate(scope.row.lostDate) }}
+            {{ scope.row.lostDate ? formatDate(scope.row.lostDate) : formatDate(scope.row.createdAt) }}
           </template>
         </el-table-column>
 

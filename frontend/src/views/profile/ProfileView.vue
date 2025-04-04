@@ -48,7 +48,7 @@
               </el-menu-item>
               <el-menu-item index="/profile/my-posts">
                 <el-icon><ChatDotRound /></el-icon>
-                <span>我的论坛帖子</span>
+                <span>我的帖子</span>
               </el-menu-item>
             </el-menu>
           </el-card>

@@ -96,12 +96,4 @@ public class User {
         }
         return Boolean.TRUE.equals(isLocked);
     }
-    
-    /**
-     * 判断账号是否可用
-     * @return 如果账号未锁定，返回true；否则返回false
-     */
-    public boolean isEnabled() {
-        return !isLocked();
-    }
 } 

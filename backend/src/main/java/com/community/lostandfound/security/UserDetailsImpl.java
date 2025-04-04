@@ -36,7 +36,6 @@ public class UserDetailsImpl implements UserDetails {
     
     private String role;
     private Collection<? extends GrantedAuthority> authorities;
-    private boolean enabled;
     private boolean locked;
 
     /**
@@ -56,7 +55,6 @@ public class UserDetailsImpl implements UserDetails {
                 .password(user.getPassword())
                 .role(user.getRole())
                 .authorities(authorities)
-                .enabled(!user.getIsLocked())
                 .locked(user.isLocked())
                 .build();
     }
@@ -91,8 +89,13 @@ public class UserDetailsImpl implements UserDetails {
         return true;
     }
 
+    /**
+     * Spring Security 要求的方法，判断账号是否可用
+     * 在我们的系统中，账号可用性与锁定状态相反
+     * @return 账号未锁定时返回true, 锁定时返回false
+     */
     @Override
     public boolean isEnabled() {
-        return enabled;
+        return !locked;
     }
 } 

@@ -100,6 +100,7 @@
                     format="YYYY-MM-DD HH:mm"
                     value-format="YYYY-MM-DD HH:mm:ss"
                     :disabled-date="disableFutureDates"
+                    @focus="handleDateFocus"
                   />
                 </el-form-item>
 
@@ -334,6 +335,22 @@ const formRules = {
 }
 
 // Methods
+// Handle focus on date picker to set default value
+const handleDateFocus = () => {
+  if (!formData.foundDate) {
+    // If date is not set, default to current time
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const day = String(now.getDate()).padStart(2, '0');
+    const hours = String(now.getHours()).padStart(2, '0');
+    const minutes = String(now.getMinutes()).padStart(2, '0');
+    const seconds = String(now.getSeconds()).padStart(2, '0');
+
+    formData.foundDate = `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
+  }
+}
+
 // Disable future dates in date picker
 const disableFutureDates = (time: Date) => {
   return time.getTime() > Date.now()
@@ -499,7 +516,11 @@ const loadItemData = async () => {
       // Populate form data
       formData.title = item.title || ''
       formData.category = item.category || ''
-      formData.foundDate = item.foundDate || ''
+      if (!item.foundDate) {
+        formData.foundDate = item.createdAt || new Date().toISOString().slice(0, 19).replace('T', ' ');
+      } else {
+        formData.foundDate = item.foundDate
+      }
       formData.foundLocation = item.foundLocation || ''
       formData.storageLocation = item.storageLocation || ''
       formData.description = item.description || ''

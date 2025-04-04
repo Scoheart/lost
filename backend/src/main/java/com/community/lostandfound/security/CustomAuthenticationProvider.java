@@ -39,12 +39,6 @@ public class CustomAuthenticationProvider implements AuthenticationProvider {
             throw new LockedException("User account is locked");
         }
         
-        // Check if the account is enabled
-        if (!userDetails.isEnabled()) {
-            log.warn("Account is disabled for user: {}", usernameOrEmail);
-            throw new BadCredentialsException("User account is disabled");
-        }
-        
         // Verify password
         log.debug("Verifying password for user: {}", usernameOrEmail);
         log.debug("Stored password hash: {}", userDetails.getPassword());
