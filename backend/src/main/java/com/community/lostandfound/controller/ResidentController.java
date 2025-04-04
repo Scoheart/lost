@@ -55,8 +55,8 @@ public class ResidentController {
         String phone = (String) residentData.get("phone");
         String realName = (String) residentData.get("realName");
         String address = (String) residentData.get("address");
-        Boolean isEnabled = residentData.containsKey("isEnabled") ? 
-                (Boolean) residentData.get("isEnabled") : true;
+        Boolean isActive = residentData.containsKey("isActive") ? 
+                (Boolean) residentData.get("isActive") : true;
         
         // Validate required fields
         if (username == null || username.isEmpty()) {
@@ -99,7 +99,7 @@ public class ResidentController {
             resident.setAvatar((String) residentData.get("avatar"));
         }
         
-        resident.setIsEnabled(isEnabled);
+        resident.setIsLocked(!isActive);
         resident.setCreatedAt(LocalDateTime.now());
         resident.setUpdatedAt(LocalDateTime.now());
         
@@ -130,12 +130,12 @@ public class ResidentController {
             @RequestParam(value = "page", defaultValue = "1") int page,
             @RequestParam(value = "size", defaultValue = "10") int pageSize,
             @RequestParam(value = "search", required = false) String search,
-            @RequestParam(value = "status", required = false) Boolean status,
+            @RequestParam(value = "status", required = false) Boolean isActive,
             @RequestParam(value = "startDate", required = false) String startDate,
             @RequestParam(value = "endDate", required = false) String endDate) {
         
-        log.debug("Fetching resident users with filters: page={}, pageSize={}, search={}, status={}, dateRange={} to {}", 
-                page, pageSize, search, status, startDate, endDate);
+        log.debug("Fetching resident users with filters: page={}, pageSize={}, search={}, isActive={}, dateRange={} to {}", 
+                page, pageSize, search, isActive, startDate, endDate);
         
         // Convert pagination (1-indexed to 0-indexed for service)
         page = Math.max(1, page);
@@ -164,13 +164,16 @@ public class ResidentController {
             }
         }
         
+        // 如果提供了活跃状态参数，转换为锁定状态的反义
+        Boolean isLocked = isActive != null ? !isActive : null;
+        
         // Get filtered resident users
         List<User> filteredUsers = userService.getFilteredUsers(
-                search, "resident", status, startDateTime, endDateTime, effectivePage, pageSize);
+                search, "resident", isLocked, startDateTime, endDateTime, effectivePage, pageSize);
         
         // Get count of filtered resident users
         int totalItems = userService.countFilteredUsers(
-                search, "resident", status, startDateTime, endDateTime);
+                search, "resident", isLocked, startDateTime, endDateTime);
         
         int totalPages = (int) Math.ceil((double) totalItems / pageSize);
         
@@ -226,8 +229,8 @@ public class ResidentController {
             @PathVariable Long id,
             @Valid @RequestBody UpdateAdminStatusRequest request) {
         
-        log.debug("Updating resident user status for ID {}: enabled={}", 
-                id, request.getIsEnabled());
+        log.debug("Updating resident user status for ID {}: locked={}", 
+                id, request.getIsLocked());
         
         User user = userService.getUserById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Resident", "id", id));
@@ -237,8 +240,8 @@ public class ResidentController {
             throw new BadRequestException("指定用户不是居民");
         }
         
-        // Update user status
-        user.setIsEnabled(request.getIsEnabled());
+        // Update user lock status
+        user.setIsLocked(request.getIsLocked());
         user.setUpdatedAt(LocalDateTime.now());
         
         User updatedUser = userService.updateUser(user);
@@ -325,7 +328,7 @@ public class ResidentController {
                 user.getPhone(),
                 user.getRealName(),
                 user.getAddress(),
-                user.getIsEnabled(),
+                user.getIsLocked(),
                 user.getCreatedAt(),
                 user.getUpdatedAt()
         );

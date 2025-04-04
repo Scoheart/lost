@@ -139,9 +139,8 @@ public class UserServiceImpl implements UserService {
     private boolean updateUserDirectly(User user) {
         try {
             String sql = "UPDATE users SET username = ?, email = ?, password = ?, " +
-                   "role = ?, updated_at = ?, is_enabled = ?, real_name = ?, phone = ?, avatar = ?, address = ?, " +
-                   "is_locked = ?, lock_end_time = ?, lock_reason = ?, " +
-                   "is_banned = ?, ban_end_time = ?, ban_reason = ? " +
+                   "role = ?, updated_at = ?, real_name = ?, phone = ?, avatar = ?, address = ?, " +
+                   "is_locked = ?, lock_end_time = ?, lock_reason = ? " +
                    "WHERE id = ?";
             
             int updated = jdbcTemplate.update(sql,
@@ -150,7 +149,6 @@ public class UserServiceImpl implements UserService {
                 user.getPassword(),
                 user.getRole(),
                 user.getUpdatedAt(),
-                user.getIsEnabled(),
                 user.getRealName(),
                 user.getPhone(),
                 user.getAvatar(),
@@ -238,7 +236,7 @@ public class UserServiceImpl implements UserService {
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("User", "id", id));
         
-        user.setIsEnabled(true);
+        user.setIsLocked(false);
         user.setUpdatedAt(LocalDateTime.now());
         
         userRepository.update(user);
@@ -252,7 +250,7 @@ public class UserServiceImpl implements UserService {
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("User", "id", id));
         
-        user.setIsEnabled(false);
+        user.setIsLocked(true);
         user.setUpdatedAt(LocalDateTime.now());
         
         userRepository.update(user);
@@ -260,35 +258,39 @@ public class UserServiceImpl implements UserService {
         return user;
     }
 
+    @Override
+    @Transactional
     public User lockUser(Long userId) {
         User user = getUserById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User", "id", userId));
         
-        user.setIsEnabled(false);
+        user.setIsLocked(true);
         user.setUpdatedAt(LocalDateTime.now());
         return updateUser(user);
     }
     
+    @Override
+    @Transactional
     public User unlockUser(Long userId) {
         User user = getUserById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User", "id", userId));
         
-        user.setIsEnabled(true);
+        user.setIsLocked(false);
         user.setUpdatedAt(LocalDateTime.now());
         return updateUser(user);
     }
 
     @Override
-    public List<User> getFilteredUsers(String search, String role, Boolean isEnabled, 
+    public List<User> getFilteredUsers(String search, String role, Boolean isLocked, 
             LocalDateTime startDate, LocalDateTime endDate, int page, int size) {
         int offset = page * size;
-        return userRepository.findWithFilters(search, role, isEnabled, startDate, endDate, offset, size);
+        return userRepository.findWithFilters(search, role, isLocked, startDate, endDate, offset, size);
     }
     
     @Override
-    public int countFilteredUsers(String search, String role, Boolean isEnabled,
+    public int countFilteredUsers(String search, String role, Boolean isLocked,
             LocalDateTime startDate, LocalDateTime endDate) {
-        return userRepository.countWithFilters(search, role, isEnabled, startDate, endDate);
+        return userRepository.countWithFilters(search, role, isLocked, startDate, endDate);
     }
 
     @Override
@@ -341,7 +343,7 @@ public class UserServiceImpl implements UserService {
             
             // 添加可选字段
             try {
-                sql.append(", address, created_at, updated_at, is_enabled");
+                sql.append(", address, created_at, updated_at, is_locked");
                 values.append(", ?, ?, ?, ?");
             } catch (Exception e) {
                 log.warn("添加可选字段失败，继续使用基本字段");
@@ -361,7 +363,7 @@ public class UserServiceImpl implements UserService {
                     user.getAddress(),
                     user.getCreatedAt(),
                     user.getUpdatedAt(),
-                    user.getIsEnabled()
+                    user.getIsLocked()
                 };
             } catch (Exception e) {
                 // 如果获取可选字段失败，使用更简单的参数集

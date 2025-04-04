@@ -21,7 +21,7 @@ public class AdminUserDto {
     private String phone;
     private String realName;
     private String address;
-    private Boolean isEnabled;
+    private Boolean isLocked;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 } 

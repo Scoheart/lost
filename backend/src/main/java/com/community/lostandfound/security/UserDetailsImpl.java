@@ -56,7 +56,7 @@ public class UserDetailsImpl implements UserDetails {
                 .password(user.getPassword())
                 .role(user.getRole())
                 .authorities(authorities)
-                .enabled(user.getIsEnabled())
+                .enabled(!user.getIsLocked())
                 .locked(user.isLocked())
                 .build();
     }

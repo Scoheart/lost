@@ -93,7 +93,7 @@ public class SystemInitController {
         admin.setRealName(request.getRealName());
         admin.setPhone(request.getPhone());
         admin.setAddress(request.getAddress());
-        admin.setIsEnabled(true);
+        admin.setIsLocked(false);
         admin.setCreatedAt(LocalDateTime.now());
         admin.setUpdatedAt(LocalDateTime.now());
         

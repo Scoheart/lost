@@ -27,7 +27,6 @@ CREATE TABLE IF NOT EXISTS `users` (
   `address` varchar(200) DEFAULT NULL,
   `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
   `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  `is_enabled` boolean DEFAULT TRUE,
   `is_locked` boolean DEFAULT FALSE,
   `lock_end_time` timestamp NULL DEFAULT NULL,
   `lock_reason` varchar(255) DEFAULT NULL,

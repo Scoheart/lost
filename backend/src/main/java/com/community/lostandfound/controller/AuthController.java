@@ -51,7 +51,7 @@ public class AuthController {
                     loginRequest.getUsernameOrEmail(),
                     loginRequest.getPassword() != null ? loginRequest.getPassword().length() : 0);
 
-            // 检查用户是否被锁定 - 添加这段预检查逻辑
+            // 检查用户是否被锁定
             Optional<User> userOpt = userService.getUserByUsernameOrEmail(loginRequest.getUsernameOrEmail());
             if (userOpt.isPresent()) {
                 User user = userOpt.get();
@@ -60,11 +60,6 @@ public class AuthController {
                     log.warn("用户被锁定，无法登录: {}", user.getUsername());
                     return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                         .body(ApiResponse.fail("账户已被锁定，请联系管理员解锁"));
-                }
-                if (!user.getIsEnabled()) {
-                    log.warn("用户被禁用，无法登录: {}", user.getUsername());
-                    return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                        .body(ApiResponse.fail("账户已被禁用，请联系管理员"));
                 }
             }
 
@@ -152,7 +147,7 @@ public class AuthController {
                 .address(request.getAddress())
                 .password(passwordEncoder.encode(request.getPassword()))
                 .role("resident")
-                .isEnabled(true)
+                .isLocked(false) // 默认不锁定
                 .createdAt(LocalDateTime.now())
                 .updatedAt(LocalDateTime.now())
                 .build();

@@ -31,7 +31,6 @@ public interface UserRepository {
         @Result(property = "address", column = "address"),
         @Result(property = "createdAt", column = "created_at"),
         @Result(property = "updatedAt", column = "updated_at"),
-        @Result(property = "isEnabled", column = "is_enabled"),
         @Result(property = "isLocked", column = "is_locked"),
         @Result(property = "lockEndTime", column = "lock_end_time"),
         @Result(property = "lockReason", column = "lock_reason")
@@ -51,7 +50,6 @@ public interface UserRepository {
         @Result(property = "address", column = "address"),
         @Result(property = "createdAt", column = "created_at"),
         @Result(property = "updatedAt", column = "updated_at"),
-        @Result(property = "isEnabled", column = "is_enabled"),
         @Result(property = "isLocked", column = "is_locked"),
         @Result(property = "lockEndTime", column = "lock_end_time"),
         @Result(property = "lockReason", column = "lock_reason")
@@ -71,21 +69,20 @@ public interface UserRepository {
         @Result(property = "address", column = "address"),
         @Result(property = "createdAt", column = "created_at"),
         @Result(property = "updatedAt", column = "updated_at"),
-        @Result(property = "isEnabled", column = "is_enabled"),
         @Result(property = "isLocked", column = "is_locked"),
         @Result(property = "lockEndTime", column = "lock_end_time"),
         @Result(property = "lockReason", column = "lock_reason")
     })
     Optional<User> findById(@Param("id") Long id);
     
-    @Insert("INSERT INTO users(username, email, password, role, avatar, phone, real_name, address, created_at, updated_at, is_enabled) " +
-            "VALUES(#{username}, #{email}, #{password}, #{role}, #{avatar}, #{phone}, #{realName}, #{address}, #{createdAt}, #{updatedAt}, #{isEnabled})")
+    @Insert("INSERT INTO users(username, email, password, role, avatar, phone, real_name, address, created_at, updated_at, is_locked) " +
+            "VALUES(#{username}, #{email}, #{password}, #{role}, #{avatar}, #{phone}, #{realName}, #{address}, #{createdAt}, #{updatedAt}, #{isLocked})")
     @Options(useGeneratedKeys = true, keyProperty = "id")
     void save(User user);
     
     @Update("UPDATE users SET username = #{username}, email = #{email}, password = #{password}, " +
             "role = #{role}, avatar = #{avatar}, phone = #{phone}, real_name = #{realName}, " +
-            "updated_at = #{updatedAt}, is_enabled = #{isEnabled}, address = #{address}, " +
+            "updated_at = #{updatedAt}, address = #{address}, " +
             "is_locked = #{isLocked}, lock_end_time = #{lockEndTime}, lock_reason = #{lockReason} " +
             "WHERE id = #{id}")
     void update(User user);
@@ -103,7 +100,6 @@ public interface UserRepository {
         @Result(property = "address", column = "address"),
         @Result(property = "createdAt", column = "created_at"),
         @Result(property = "updatedAt", column = "updated_at"),
-        @Result(property = "isEnabled", column = "is_enabled"),
         @Result(property = "isLocked", column = "is_locked"),
         @Result(property = "lockEndTime", column = "lock_end_time"),
         @Result(property = "lockReason", column = "lock_reason")
@@ -123,7 +119,7 @@ public interface UserRepository {
      * 根据条件查询用户并分页
      * @param search 搜索词（匹配用户名、邮箱或电话）
      * @param role 用户角色
-     * @param isEnabled 账号状态
+     * @param isLocked 账号锁定状态，true表示已锁定，false表示正常
      * @param startDate 注册开始日期
      * @param endDate 注册结束日期
      * @param offset 偏移量
@@ -141,8 +137,8 @@ public interface UserRepository {
             "<if test='role != null and role != \"\"'>",
             "  AND role = #{role}",
             "</if>",
-            "<if test='isEnabled != null'>",
-            "  AND is_enabled = #{isEnabled}",
+            "<if test='isLocked != null'>",
+            "  AND is_locked = #{isLocked}",
             "</if>",
             "<if test='startDate != null'>",
             "  AND created_at >= #{startDate}",
@@ -165,7 +161,6 @@ public interface UserRepository {
         @Result(property = "address", column = "address"),
         @Result(property = "createdAt", column = "created_at"),
         @Result(property = "updatedAt", column = "updated_at"),
-        @Result(property = "isEnabled", column = "is_enabled"),
         @Result(property = "isLocked", column = "is_locked"),
         @Result(property = "lockEndTime", column = "lock_end_time"),
         @Result(property = "lockReason", column = "lock_reason")
@@ -173,7 +168,7 @@ public interface UserRepository {
     List<User> findWithFilters(
             @Param("search") String search,
             @Param("role") String role,
-            @Param("isEnabled") Boolean isEnabled,
+            @Param("isLocked") Boolean isLocked,
             @Param("startDate") LocalDateTime startDate,
             @Param("endDate") LocalDateTime endDate,
             @Param("offset") int offset,
@@ -183,7 +178,7 @@ public interface UserRepository {
      * 统计符合条件的用户总数
      * @param search 搜索词（匹配用户名、邮箱或电话）
      * @param role 用户角色
-     * @param isEnabled 账号状态
+     * @param isLocked 账号锁定状态，true表示已锁定，false表示正常
      * @param startDate 注册开始日期
      * @param endDate 注册结束日期
      * @return 用户总数
@@ -199,8 +194,8 @@ public interface UserRepository {
             "<if test='role != null and role != \"\"'>",
             "  AND role = #{role}",
             "</if>",
-            "<if test='isEnabled != null'>",
-            "  AND is_enabled = #{isEnabled}",
+            "<if test='isLocked != null'>",
+            "  AND is_locked = #{isLocked}",
             "</if>",
             "<if test='startDate != null'>",
             "  AND created_at >= #{startDate}",
@@ -212,7 +207,7 @@ public interface UserRepository {
     int countWithFilters(
             @Param("search") String search,
             @Param("role") String role,
-            @Param("isEnabled") Boolean isEnabled,
+            @Param("isLocked") Boolean isLocked,
             @Param("startDate") LocalDateTime startDate,
             @Param("endDate") LocalDateTime endDate);
 } 

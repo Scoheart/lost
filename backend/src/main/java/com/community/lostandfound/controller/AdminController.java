@@ -82,7 +82,7 @@ public class AdminController {
         // realName 可以为空
         admin.setRealName(request.getRealName());
         admin.setPhone(request.getPhone());
-        admin.setIsEnabled(true);
+        admin.setIsLocked(false); // 默认未锁定
         admin.setCreatedAt(LocalDateTime.now());
         admin.setUpdatedAt(LocalDateTime.now());
         
@@ -127,7 +127,7 @@ public class AdminController {
         // realName 可以为空
         admin.setRealName(request.getRealName());
         admin.setPhone(request.getPhone());
-        admin.setIsEnabled(true);
+        admin.setIsLocked(false); // 默认未锁定
         admin.setCreatedAt(LocalDateTime.now());
         admin.setUpdatedAt(LocalDateTime.now());
         
@@ -235,13 +235,14 @@ public class AdminController {
         }
         
         // 系统管理员不能被禁用
-        if ("sysadmin".equals(user.getRole()) && Boolean.FALSE.equals(request.getIsEnabled())) {
+        if ("sysadmin".equals(user.getRole()) && Boolean.TRUE.equals(request.getIsLocked())) {
             return ResponseEntity.badRequest().body(
                 ApiResponse.fail("不能禁用系统管理员账号")
             );
         }
         
-        user.setIsEnabled(request.getIsEnabled());
+        // 将锁定状态直接设置为请求中的值
+        user.setIsLocked(request.getIsLocked());
         User updatedUser = userService.updateUser(user);
         
         AdminUserDto adminDto = convertToAdminDto(updatedUser);
@@ -375,7 +376,7 @@ public class AdminController {
         user.setRealName(request.getRealName());
         user.setPhone(request.getPhone());
         user.setAddress(request.getAddress());
-        user.setIsEnabled(true);
+        user.setIsLocked(false); // 默认未锁定
         user.setCreatedAt(LocalDateTime.now());
         user.setUpdatedAt(LocalDateTime.now());
         
@@ -451,17 +452,16 @@ public class AdminController {
             log.info("用户角色已更新: {} -> {}", user.getUsername(), request.getRole());
         }
         
-        // 处理启用状态
-        if (request.getIsEnabled() != null && request.getIsEnabled() != user.getIsEnabled()) {
-            // 管理员账号不能被禁用
-            if (("admin".equals(user.getRole()) || "sysadmin".equals(user.getRole())) 
-                    && Boolean.FALSE.equals(request.getIsEnabled())) {
+        // 处理账号锁定状态
+        if (request.getIsLocked() != null && request.getIsLocked() != user.getIsLocked()) {
+            // 如果修改了账号状态，检查权限
+            if ("sysadmin".equals(user.getRole()) 
+                && Boolean.TRUE.equals(request.getIsLocked())) {
                 return ResponseEntity.badRequest().body(
-                    ApiResponse.fail("不能禁用管理员账号")
+                    ApiResponse.fail("不能锁定系统管理员账号")
                 );
             }
-            
-            user.setIsEnabled(request.getIsEnabled());
+            user.setIsLocked(request.getIsLocked());
         }
         
         user.setUpdatedAt(LocalDateTime.now());
@@ -488,14 +488,14 @@ public class AdminController {
                 .orElseThrow(() -> new ResourceNotFoundException("用户不存在"));
         
         // 管理员账号不能被禁用
-        if (("admin".equals(user.getRole()) || "sysadmin".equals(user.getRole())) 
-                && Boolean.FALSE.equals(request.getIsEnabled())) {
+        if ("sysadmin".equals(user.getRole()) 
+            && Boolean.TRUE.equals(request.getIsLocked())) {
             return ResponseEntity.badRequest().body(
-                ApiResponse.fail("不能禁用管理员账号")
+                ApiResponse.fail("不能锁定系统管理员账号")
             );
         }
         
-        user.setIsEnabled(request.getIsEnabled());
+        user.setIsLocked(request.getIsLocked());
         User updatedUser = userService.updateUser(user);
         
         AdminUserDto userDto = convertToAdminDto(updatedUser);
@@ -580,7 +580,7 @@ public class AdminController {
                 user.getPhone(),
                 user.getRealName(),
                 user.getAddress(),
-                user.getIsEnabled(),
+                user.getIsLocked(),
                 user.getCreatedAt(),
                 user.getUpdatedAt()
         );

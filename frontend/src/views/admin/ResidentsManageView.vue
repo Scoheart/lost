@@ -24,13 +24,13 @@
 
         <el-form-item label="账号状态">
           <el-select
-            v-model="filterForm.isEnabled"
+            v-model="filterForm.isLocked"
             placeholder="选择状态"
             clearable
             style="width: 120px"
           >
-            <el-option label="正常" :value="true" />
-            <el-option label="锁定" :value="false" />
+            <el-option label="正常" :value="false" />
+            <el-option label="锁定" :value="true" />
           </el-select>
         </el-form-item>
 
@@ -88,8 +88,8 @@
         </el-table-column>
         <el-table-column label="状态" width="100">
           <template #default="scope">
-            <el-tag :type="scope.row.isEnabled ? 'success' : 'danger'">
-              {{ scope.row.isEnabled ? '正常' : '锁定' }}
+            <el-tag :type="getStatusTagType(scope.row)">
+              {{ getStatusLabel(scope.row) }}
             </el-tag>
           </template>
         </el-table-column>
@@ -105,12 +105,12 @@
                 编辑
               </el-button>
               <el-button
-                :type="scope.row.isEnabled ? 'warning' : 'success'"
+                :type="scope.row.isLocked ? 'warning' : 'success'"
                 size="small"
                 @click="toggleResidentStatus(scope.row)"
                 text
               >
-                {{ scope.row.isEnabled ? '锁定' : '解锁' }}
+                {{ scope.row.isLocked ? '解锁' : '锁定' }}
               </el-button>
             </div>
           </template>
@@ -215,7 +215,6 @@ interface Resident {
   avatar?: string | null
   realName?: string | null
   address?: string | null
-  isEnabled: boolean
   isLocked: boolean
   createdAt: string
   updatedAt: string
@@ -235,7 +234,7 @@ const residentFormRef = ref<FormInstance>()
 // 筛选表单
 const filterForm = reactive({
   search: '',
-  isEnabled: null as boolean | null,
+  isLocked: null as boolean | null,
   dateRange: [] as string[]
 })
 
@@ -338,7 +337,7 @@ const loadResidents = async () => {
       page: currentPage.value,
       size: pageSize.value,
       search: filterForm.search || undefined,
-      status: filterForm.isEnabled !== null ? filterForm.isEnabled : undefined
+      status: filterForm.isLocked !== null ? !filterForm.isLocked : undefined
     }
 
     // 添加日期范围过滤
@@ -368,7 +367,7 @@ const loadResidents = async () => {
 // 重置筛选条件
 const resetFilters = () => {
   filterForm.search = ''
-  filterForm.isEnabled = null
+  filterForm.isLocked = null
   filterForm.dateRange = []
   currentPage.value = 1
   loadResidents()
@@ -457,10 +456,10 @@ const handleSaveResident = async () => {
             submitData.email = null;
           }
 
-          // 添加默认启用状态
+          // 添加默认锁定状态为未锁定(false)
           const residentData = {
             ...submitData,
-            isEnabled: true
+            isLocked: false
           };
 
           const result = await apiClient.post('/residents', residentData)
@@ -484,8 +483,8 @@ const handleSaveResident = async () => {
 }
 
 const toggleResidentStatus = async (resident: Resident) => {
-  const action = resident.isEnabled ? '锁定' : '解锁'
-  const newStatus = resident.isEnabled ? false : true
+  const action = resident.isLocked ? '解锁' : '锁定'
+  const newStatus = !resident.isLocked
 
   try {
     await ElMessageBox.confirm(
@@ -499,11 +498,11 @@ const toggleResidentStatus = async (resident: Resident) => {
     )
 
     const result = await apiClient.put(`/residents/${resident.id}/status`, {
-      isEnabled: newStatus
+      isLocked: newStatus
     })
 
     if (result.data.success) {
-      resident.isEnabled = newStatus
+      resident.isLocked = newStatus
       ElMessage.success(`用户${action}成功`)
     } else {
       ElMessage.error(result.data.message || `${action}失败，请稍后再试`)
@@ -518,11 +517,11 @@ const toggleResidentStatus = async (resident: Resident) => {
 
 // 辅助函数用于获取状态标签类型和文本
 const getStatusTagType = (resident: Resident): string => {
-  return resident.isEnabled ? 'success' : 'danger'
+  return resident.isLocked ? 'danger' : 'success'
 }
 
 const getStatusLabel = (resident: Resident): string => {
-  return resident.isEnabled ? '正常' : '锁定'
+  return resident.isLocked ? '锁定' : '正常'
 }
 </script>
 

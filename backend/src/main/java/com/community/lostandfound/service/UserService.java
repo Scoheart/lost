@@ -28,35 +28,35 @@ public interface UserService {
      * 获取过滤后的用户列表
      * @param search 搜索词（用户名、邮箱或电话号码）
      * @param role 用户角色
-     * @param isEnabled 账号状态
+     * @param isLocked 账号锁定状态，true表示已锁定，false表示正常
      * @param startDate 注册开始日期
      * @param endDate 注册结束日期
      * @param page 页码（从0开始）
      * @param size 每页大小
      * @return 用户列表
      */
-    List<User> getFilteredUsers(String search, String role, Boolean isEnabled, 
+    List<User> getFilteredUsers(String search, String role, Boolean isLocked, 
             LocalDateTime startDate, LocalDateTime endDate, int page, int size);
     
     /**
      * 获取符合过滤条件的用户总数
      * @param search 搜索词（用户名、邮箱或电话号码）
      * @param role 用户角色
-     * @param isEnabled 账号状态
+     * @param isLocked 账号锁定状态，true表示已锁定，false表示正常
      * @param startDate 注册开始日期
      * @param endDate 注册结束日期
      * @return 用户总数
      */
-    int countFilteredUsers(String search, String role, Boolean isEnabled,
+    int countFilteredUsers(String search, String role, Boolean isLocked,
             LocalDateTime startDate, LocalDateTime endDate);
     
     // Overloaded methods for backward compatibility
-    default List<User> getFilteredUsers(String search, String role, Boolean isEnabled, int page, int size) {
-        return getFilteredUsers(search, role, isEnabled, null, null, page, size);
+    default List<User> getFilteredUsers(String search, String role, Boolean isLocked, int page, int size) {
+        return getFilteredUsers(search, role, isLocked, null, null, page, size);
     }
     
-    default int countFilteredUsers(String search, String role, Boolean isEnabled) {
-        return countFilteredUsers(search, role, isEnabled, null, null);
+    default int countFilteredUsers(String search, String role, Boolean isLocked) {
+        return countFilteredUsers(search, role, isLocked, null, null);
     }
     
     boolean existsByUsername(String username);
@@ -70,6 +70,20 @@ public interface UserService {
     User enableUser(Long id);
     
     User disableUser(Long id);
+    
+    /**
+     * 锁定用户账号
+     * @param userId 用户ID
+     * @return 更新后的用户对象
+     */
+    User lockUser(Long userId);
+    
+    /**
+     * 解锁用户账号
+     * @param userId 用户ID
+     * @return 更新后的用户对象
+     */
+    User unlockUser(Long userId);
     
     /**
      * 检查用户表结构

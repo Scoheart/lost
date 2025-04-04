@@ -71,12 +71,8 @@ public class User {
     private LocalDateTime updatedAt;
     
     /**
-     * 账号是否启用
-     */
-    private Boolean isEnabled;
-    
-    /**
      * 账号是否被锁定
+     * true表示锁定（不可用），false表示正常（可用）
      */
     private Boolean isLocked;
     
@@ -92,12 +88,20 @@ public class User {
     
     /**
      * 判断用户是否被锁定
-     * @return 如果用户被锁定且锁定期未结束，返回true
+     * @return 如果用户被锁定且锁定期未结束，返回true；否则返回false（账户可用）
      */
     public boolean isLocked() {
         if (Boolean.TRUE.equals(isLocked) && lockEndTime != null) {
             return lockEndTime.isAfter(LocalDateTime.now());
         }
         return Boolean.TRUE.equals(isLocked);
+    }
+    
+    /**
+     * 判断账号是否可用
+     * @return 如果账号未锁定，返回true；否则返回false
+     */
+    public boolean isEnabled() {
+        return !isLocked();
     }
 } 

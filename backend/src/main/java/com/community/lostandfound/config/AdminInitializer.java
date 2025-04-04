@@ -103,7 +103,7 @@ public class AdminInitializer implements ApplicationRunner {
                 log.warn("设置realName字段失败，该字段可能不存在", e);
             }
             admin.setPhone("");
-            admin.setIsEnabled(true);
+            admin.setIsLocked(false);
             admin.setCreatedAt(LocalDateTime.now());
             admin.setUpdatedAt(LocalDateTime.now());
             
@@ -144,7 +144,7 @@ public class AdminInitializer implements ApplicationRunner {
             String encryptedPassword = passwordEncoder.encode(DEFAULT_SYSADMIN_PASSWORD);
             admin.setPassword(encryptedPassword);
             admin.setRole("sysadmin");
-            admin.setIsEnabled(true);
+            admin.setIsLocked(false);
             admin.setCreatedAt(LocalDateTime.now());
             admin.setUpdatedAt(LocalDateTime.now());
             
