@@ -51,6 +51,23 @@ public class AuthController {
                     loginRequest.getUsernameOrEmail(),
                     loginRequest.getPassword() != null ? loginRequest.getPassword().length() : 0);
 
+            // 检查用户是否被锁定 - 添加这段预检查逻辑
+            Optional<User> userOpt = userService.getUserByUsernameOrEmail(loginRequest.getUsernameOrEmail());
+            if (userOpt.isPresent()) {
+                User user = userOpt.get();
+                // 明确检查用户的锁定状态
+                if (user.isLocked()) {
+                    log.warn("用户被锁定，无法登录: {}", user.getUsername());
+                    return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                        .body(ApiResponse.fail("账户已被锁定，请联系管理员解锁"));
+                }
+                if (!user.getIsEnabled()) {
+                    log.warn("用户被禁用，无法登录: {}", user.getUsername());
+                    return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                        .body(ApiResponse.fail("账户已被禁用，请联系管理员"));
+                }
+            }
+
             Authentication authentication = authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(
                             loginRequest.getUsernameOrEmail(),
@@ -104,16 +121,19 @@ public class AuthController {
         } catch (LockedException ex) {
             log.error("Account locked: {}", ex.getMessage());
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                   .body(ApiResponse.fail("账户已被锁定，请联系管理员或稍后再试"));
+                   .body(ApiResponse.fail("账户已被锁定，请联系管理员解锁"));
         } catch (UsernameNotFoundException ex) {
             log.error("User not found: {}", ex.getMessage());
-            throw new BadCredentialsException("用户名或密码错误");
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                   .body(ApiResponse.fail("用户名或密码错误"));
         } catch (BadCredentialsException ex) {
             log.error("Bad credentials: {}", ex.getMessage());
-            throw ex; // Just rethrow to be handled by global exception handler
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                   .body(ApiResponse.fail("用户名或密码错误"));
         } catch (Exception ex) {
             log.error("Login error: ", ex); // Log the full exception with stack trace
-            throw new BadCredentialsException("用户名或密码错误");
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                   .body(ApiResponse.fail("用户名或密码错误"));
         }
     }
 

@@ -229,11 +229,11 @@ public class ReportServiceImpl implements ReportService {
                     break;
                     
                 case USER_BAN:
-                    // 封禁用户
+                    // 锁定用户
                     if (resolution.getActionDays() == null || resolution.getActionDays() <= 0) {
-                        throw new BadRequestException("封禁天数必须大于0");
+                        throw new BadRequestException("锁定天数必须大于0");
                     }
-                    banUser(reportedUser, resolution.getActionDays(), "违反平台规则: " + resolution.getResolutionNotes());
+                    lockUser(reportedUser, resolution.getActionDays(), "违反平台规则: " + resolution.getResolutionNotes());
                     break;
                     
                 case USER_LOCK:
@@ -325,18 +325,6 @@ public class ReportServiceImpl implements ReportService {
             default:
                 throw new BadRequestException("不支持的举报类型");
         }
-    }
-    
-    /**
-     * 封禁用户
-     */
-    private void banUser(User user, int days, String reason) {
-        user.setIsBanned(true);
-        user.setBanEndTime(LocalDateTime.now().plusDays(days));
-        user.setBanReason(reason);
-        userService.updateUser(user);
-        
-        log.info("用户 {} 被封禁 {} 天，原因: {}", user.getUsername(), days, reason);
     }
     
     /**

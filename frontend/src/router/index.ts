@@ -235,8 +235,8 @@ router.beforeEach(async (to, from, next) => {
   if (userStore.isAuthenticated) {
     console.log('[Router Guard] User is already authenticated')
 
-    // 检查用户是否被锁定或禁言
-    if (userStore.user?.isBanned || userStore.user?.isLocked) {
+    // 检查用户是否被锁定
+    if (userStore.user?.isLocked) {
       // 如果是去登录页面，允许访问
       if (to.path === '/login') {
         next()
@@ -244,30 +244,15 @@ router.beforeEach(async (to, from, next) => {
       }
 
       // 如果用户被锁定，注销并重定向到登录页
-      if (userStore.user?.isLocked) {
-        console.log('[Router Guard] User account is locked, logging out')
-        userStore.logout()
-        next({
-          name: 'login',
-          query: {
-            message: '您的账号已被锁定，请联系管理员解锁'
-          }
-        })
-        return
-      }
-
-      // 如果用户被禁言，提示但可以继续访问非发布/编辑相关页面
-      if (userStore.user?.isBanned) {
-        // 如果是尝试发布或编辑内容，阻止并重定向
-        if (to.path.includes('/create') || to.path.includes('/edit')) {
-          console.log('[Router Guard] Banned user attempting to create/edit content, redirecting')
-          next({
-            name: 'home',
-            query: { message: '您的账号已被禁言，无法发布或编辑内容' }
-          })
-          return
+      console.log('[Router Guard] User account is locked, logging out')
+      userStore.logout()
+      next({
+        name: 'login',
+        query: {
+          message: '您的账号已被锁定，请联系管理员解锁'
         }
-      }
+      })
+      return
     }
 
     // 检查是否需要管理员权限

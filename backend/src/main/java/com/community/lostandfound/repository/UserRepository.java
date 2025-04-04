@@ -34,10 +34,7 @@ public interface UserRepository {
         @Result(property = "isEnabled", column = "is_enabled"),
         @Result(property = "isLocked", column = "is_locked"),
         @Result(property = "lockEndTime", column = "lock_end_time"),
-        @Result(property = "lockReason", column = "lock_reason"),
-        @Result(property = "isBanned", column = "is_banned"),
-        @Result(property = "banEndTime", column = "ban_end_time"),
-        @Result(property = "banReason", column = "ban_reason")
+        @Result(property = "lockReason", column = "lock_reason")
     })
     Optional<User> findByUsername(@Param("username") String username);
     
@@ -57,10 +54,7 @@ public interface UserRepository {
         @Result(property = "isEnabled", column = "is_enabled"),
         @Result(property = "isLocked", column = "is_locked"),
         @Result(property = "lockEndTime", column = "lock_end_time"),
-        @Result(property = "lockReason", column = "lock_reason"),
-        @Result(property = "isBanned", column = "is_banned"),
-        @Result(property = "banEndTime", column = "ban_end_time"),
-        @Result(property = "banReason", column = "ban_reason")
+        @Result(property = "lockReason", column = "lock_reason")
     })
     Optional<User> findByEmail(@Param("email") String email);
     
@@ -80,10 +74,7 @@ public interface UserRepository {
         @Result(property = "isEnabled", column = "is_enabled"),
         @Result(property = "isLocked", column = "is_locked"),
         @Result(property = "lockEndTime", column = "lock_end_time"),
-        @Result(property = "lockReason", column = "lock_reason"),
-        @Result(property = "isBanned", column = "is_banned"),
-        @Result(property = "banEndTime", column = "ban_end_time"),
-        @Result(property = "banReason", column = "ban_reason")
+        @Result(property = "lockReason", column = "lock_reason")
     })
     Optional<User> findById(@Param("id") Long id);
     
@@ -95,8 +86,7 @@ public interface UserRepository {
     @Update("UPDATE users SET username = #{username}, email = #{email}, password = #{password}, " +
             "role = #{role}, avatar = #{avatar}, phone = #{phone}, real_name = #{realName}, " +
             "updated_at = #{updatedAt}, is_enabled = #{isEnabled}, address = #{address}, " +
-            "is_locked = #{isLocked}, lock_end_time = #{lockEndTime}, lock_reason = #{lockReason}, " +
-            "is_banned = #{isBanned}, ban_end_time = #{banEndTime}, ban_reason = #{banReason} " +
+            "is_locked = #{isLocked}, lock_end_time = #{lockEndTime}, lock_reason = #{lockReason} " +
             "WHERE id = #{id}")
     void update(User user);
     
@@ -116,10 +106,7 @@ public interface UserRepository {
         @Result(property = "isEnabled", column = "is_enabled"),
         @Result(property = "isLocked", column = "is_locked"),
         @Result(property = "lockEndTime", column = "lock_end_time"),
-        @Result(property = "lockReason", column = "lock_reason"),
-        @Result(property = "isBanned", column = "is_banned"),
-        @Result(property = "banEndTime", column = "ban_end_time"),
-        @Result(property = "banReason", column = "ban_reason")
+        @Result(property = "lockReason", column = "lock_reason")
     })
     List<User> findAll();
     
@@ -181,10 +168,7 @@ public interface UserRepository {
         @Result(property = "isEnabled", column = "is_enabled"),
         @Result(property = "isLocked", column = "is_locked"),
         @Result(property = "lockEndTime", column = "lock_end_time"),
-        @Result(property = "lockReason", column = "lock_reason"),
-        @Result(property = "isBanned", column = "is_banned"),
-        @Result(property = "banEndTime", column = "ban_end_time"),
-        @Result(property = "banReason", column = "ban_reason")
+        @Result(property = "lockReason", column = "lock_reason")
     })
     List<User> findWithFilters(
             @Param("search") String search,

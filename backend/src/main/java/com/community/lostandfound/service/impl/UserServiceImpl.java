@@ -158,9 +158,6 @@ public class UserServiceImpl implements UserService {
                 user.getIsLocked(),
                 user.getLockEndTime(),
                 user.getLockReason(),
-                user.getIsBanned(),
-                user.getBanEndTime(),
-                user.getBanReason(),
                 user.getId()
             );
             

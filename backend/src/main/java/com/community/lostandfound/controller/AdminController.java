@@ -671,65 +671,6 @@ public class AdminController {
     }
     
     /**
-     * 封禁用户
-     */
-    @PutMapping("/users/{id}/ban")
-    @PreAuthorize("hasRole('ADMIN') or hasRole('SYSADMIN')")
-    public ResponseEntity<ApiResponse<AdminUserDto>> banUser(
-            @PathVariable Long id,
-            @RequestParam(value = "days", defaultValue = "7") Integer days,
-            @RequestParam(value = "reason", required = false) String reason) {
-        
-        if (days <= 0) {
-            return ResponseEntity.badRequest().body(
-                ApiResponse.fail("封禁天数必须大于0")
-            );
-        }
-        
-        User user = userService.getUserById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("用户不存在"));
-        
-        // 不能封禁管理员和系统管理员
-        if ("admin".equals(user.getRole()) || "sysadmin".equals(user.getRole())) {
-            return ResponseEntity.badRequest().body(
-                ApiResponse.fail("不能封禁管理员账号")
-            );
-        }
-        
-        user.setIsBanned(true);
-        user.setBanEndTime(LocalDateTime.now().plusDays(days));
-        user.setBanReason(reason != null ? reason : "违反平台规则");
-        
-        User updatedUser = userService.updateUser(user);
-        
-        log.info("用户 {} 被封禁 {} 天，原因: {}", updatedUser.getUsername(), days, reason);
-        
-        AdminUserDto adminUserDto = convertToAdminDto(updatedUser);
-        return ResponseEntity.ok(ApiResponse.success("用户封禁成功", adminUserDto));
-    }
-    
-    /**
-     * 解除用户封禁
-     */
-    @PutMapping("/users/{id}/unban")
-    @PreAuthorize("hasRole('ADMIN') or hasRole('SYSADMIN')")
-    public ResponseEntity<ApiResponse<AdminUserDto>> unbanUser(@PathVariable Long id) {
-        User user = userService.getUserById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("用户不存在"));
-        
-        user.setIsBanned(false);
-        user.setBanEndTime(null);
-        user.setBanReason(null);
-        
-        User updatedUser = userService.updateUser(user);
-        
-        log.info("用户 {} 的封禁已解除", updatedUser.getUsername());
-        
-        AdminUserDto adminUserDto = convertToAdminDto(updatedUser);
-        return ResponseEntity.ok(ApiResponse.success("解除用户封禁成功", adminUserDto));
-    }
-    
-    /**
      * 锁定用户
      */
     @PutMapping("/users/{id}/lock")

@@ -10,7 +10,6 @@
               <el-option label="待审核" value="pending" />
               <el-option label="已批准" value="approved" />
               <el-option label="已拒绝" value="rejected" />
-              <el-option label="已完成" value="completed" />
             </el-select>
           </el-form-item>
 
