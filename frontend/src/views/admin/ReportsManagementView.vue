@@ -219,13 +219,6 @@
           </div>
           <div class="report-info-item">
             <strong>被举报人:</strong> {{ currentReport.reportedUsername }}
-            <el-button
-              type="text"
-              size="small"
-              @click="viewUserProfile(currentReport.reportedUserId)"
-            >
-              查看用户
-            </el-button>
           </div>
           <div class="report-info-item">
             <strong>举报原因:</strong> {{ currentReport.reason }}
