@@ -244,6 +244,19 @@ public class LostItemController {
             log.debug("未接收到图片或图片列表为空");
         }
         
+        // 获取原始的寻物启事数据，确保状态字段不会丢失
+        Optional<LostItem> existingItemOpt = lostItemService.getLostItemById(id);
+        if (!existingItemOpt.isPresent()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(ApiResponse.fail("寻物启事不存在"));
+        }
+        
+        // 如果请求中没有提供状态字段或为null，则保留原来的状态值
+        if (lostItem.getStatus() == null) {
+            lostItem.setStatus(existingItemOpt.get().getStatus());
+            log.debug("请求中未提供状态，保留原状态值: {}", lostItem.getStatus());
+        }
+        
         // 记录状态信息，帮助诊断问题
         log.debug("更新请求中的状态值: {}", lostItem.getStatus());
         

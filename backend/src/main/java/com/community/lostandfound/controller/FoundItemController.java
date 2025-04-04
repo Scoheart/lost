@@ -254,6 +254,19 @@ public class FoundItemController {
         log.debug("存放位置: {}", foundItem.getStorageLocation());
         log.debug("认领要求: {}", foundItem.getClaimRequirements());
         
+        // 获取原始的失物招领数据，确保状态字段不会丢失
+        Optional<FoundItem> existingItemOpt = foundItemService.getFoundItemById(id);
+        if (!existingItemOpt.isPresent()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(ApiResponse.fail("失物招领不存在"));
+        }
+        
+        // 如果请求中没有提供状态字段或为null，则保留原来的状态值
+        if (foundItem.getStatus() == null) {
+            foundItem.setStatus(existingItemOpt.get().getStatus());
+            log.debug("请求中未提供状态，保留原状态值: {}", foundItem.getStatus());
+        }
+        
         // 记录状态信息，帮助诊断问题
         log.debug("更新请求中的状态值: {}", foundItem.getStatus());
         

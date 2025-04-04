@@ -291,6 +291,9 @@ const formData = reactive({
   images: [] as string[]
 })
 
+// Store the status separately from the form data
+const itemStatus = ref<string | undefined>(undefined)
+
 // Form validation rules
 const formRules = {
   title: [
@@ -446,7 +449,13 @@ const submitForm = async () => {
 
         if (isEditing.value && itemId.value) {
           // Update existing item
-          result = await lostItemsStore.updateLostItem(itemId.value, formData)
+          // Include the status if it was loaded from the existing item
+          const updateData: any = { ...formData }
+          if (itemStatus.value) {
+            // Add the status to the update data
+            updateData.status = itemStatus.value
+          }
+          result = await lostItemsStore.updateLostItem(itemId.value, updateData)
         } else {
           // Create new item
           result = await lostItemsStore.createLostItem(formData)
@@ -508,6 +517,9 @@ const loadItemData = async () => {
       formData.contactInfo = item.contactInfo || ''
       formData.reward = item.reward || 0
       formData.images = item.images || []
+
+      // Store the current status separately
+      itemStatus.value = item.status
 
       // Prepare file list for upload component
       fileList.value = formData.images.map((url, index) => ({
