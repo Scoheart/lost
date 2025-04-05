@@ -3,7 +3,7 @@ WORKDIR /app
 
 # 分步复制依赖文件，优先安装依赖，利用Docker缓存
 COPY package.json pnpm-lock.yaml ./
-RUN npm install -g pnpm@9 && pnpm install --frozen-lockfile
+RUN npm install -g pnpm@9 && pnpm config set registry ${NPM_REGISTRY} && pnpm install --frozen-lockfile
 
 # 复制源代码并构建
 COPY . .

@@ -21,6 +21,9 @@ services:
   frontend:
     build:
       context: ./frontend
+      args:
+        - NPM_REGISTRY=https://registry.npmmirror.com
+        - NODE_DISTURL=https://npmmirror.com/mirrors/node
     ports:
       - '3333:3333'
     depends_on:
