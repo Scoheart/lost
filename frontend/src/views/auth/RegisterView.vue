@@ -25,6 +25,15 @@
           />
         </el-form-item>
 
+        <el-form-item prop="email" label="邮箱 (选填)">
+          <el-input
+            v-model="registerForm.email"
+            placeholder="请输入邮箱地址"
+            :prefix-icon="Message"
+            :disabled="loading"
+          />
+        </el-form-item>
+
         <el-form-item prop="realName" label="真实姓名">
           <el-input
             v-model="registerForm.realName"
@@ -175,6 +184,7 @@ const handleSubmit = async () => {
           realName: registerForm.realName,
           password: registerForm.password,
           address: registerForm.address,
+          email: registerForm.email,
         })
 
         if (result.success) {

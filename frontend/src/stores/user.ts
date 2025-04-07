@@ -198,6 +198,7 @@ export const useUserStore = defineStore('user', {
       password: string,
       realName: string,
       address: string,
+      email?: string,
       phone?: string
     }): Promise<ApiResult> {
       this.loading = true

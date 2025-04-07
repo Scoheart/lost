@@ -95,15 +95,18 @@
                       </el-col>
                     </el-row>
 
-                    <div class="pagination-container">
-                      <el-pagination
-                        background
-                        layout="prev, pager, next"
-                        :total="myApplicationsTotalItems"
-                        :page-size="pageSize"
-                        :current-page="myApplicationsCurrentPage"
-                        @current-change="handleMyApplicationsPageChange"
-                      />
+                    <div class="clearfix"></div>
+                    <div class="pagination-wrapper">
+                      <div class="pagination-container">
+                        <el-pagination
+                          background
+                          layout="prev, pager, next"
+                          :total="myApplicationsTotalItems"
+                          :page-size="pageSize"
+                          :current-page="myApplicationsCurrentPage"
+                          @current-change="handleMyApplicationsPageChange"
+                        />
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -219,15 +222,18 @@
                       </el-col>
                     </el-row>
 
-                    <div class="pagination-container">
-                      <el-pagination
-                        background
-                        layout="prev, pager, next"
-                        :total="processingApplicationsTotalItems"
-                        :page-size="pageSize"
-                        :current-page="processingApplicationsCurrentPage"
-                        @current-change="handleProcessingApplicationsPageChange"
-                      />
+                    <div class="clearfix"></div>
+                    <div class="pagination-wrapper">
+                      <div class="pagination-container">
+                        <el-pagination
+                          background
+                          layout="prev, pager, next"
+                          :total="processingApplicationsTotalItems"
+                          :page-size="pageSize"
+                          :current-page="processingApplicationsCurrentPage"
+                          @current-change="handleProcessingApplicationsPageChange"
+                        />
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -578,6 +584,7 @@ const handleReportSubmitted = (report) => {
 
 .application-list {
   min-height: 300px;
+  padding-bottom: 20px;
 }
 
 .empty-list {
@@ -589,7 +596,7 @@ const handleReportSubmitted = (report) => {
   border: 1px solid #ebeef5;
   border-radius: 8px;
   padding: 16px;
-  margin-bottom: 20px;
+  margin-bottom: 32px;
   height: 100%;
   transition:
     box-shadow 0.3s,
@@ -689,8 +696,20 @@ const handleReportSubmitted = (report) => {
   border-top: 1px dashed #ebeef5;
 }
 
+.pagination-wrapper {
+  margin-top: 32px;
+  margin-bottom: 20px;
+  display: flex;
+  justify-content: center;
+  width: 100%;
+  position: relative;
+  clear: both;
+  padding-top: 10px;
+  border-top: 1px solid #f0f2f5;
+}
+
 .pagination-container {
-  margin-top: 20px;
+  width: 100%;
   display: flex;
   justify-content: center;
 }
@@ -755,5 +774,18 @@ const handleReportSubmitted = (report) => {
 
 .report-action .el-button:hover {
   color: #f56c6c;
+}
+
+/* Add clearfix class */
+.clearfix {
+  clear: both;
+  height: 16px;
+  width: 100%;
+  display: block;
+}
+
+/* Ensure cards don't overflow */
+.el-row {
+  margin-bottom: 8px;
 }
 </style>
