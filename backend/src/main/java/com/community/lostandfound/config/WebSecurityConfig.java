@@ -96,7 +96,8 @@ public class WebSecurityConfig {
             "http://localhost:3333", 
             "http://localhost:5173", 
             "http://115.29.176.56:3333",
-            "http://8.130.132.197:3333"
+            "http://8.130.132.197:3333",
+            "http://8.130.172.82:3333"
         ));
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(Arrays.asList("Authorization", "Cache-Control", "Content-Type"));
