@@ -291,6 +291,7 @@ const formRules = reactive<FormRules>({
     { type: 'email', message: '请输入正确的邮箱格式', trigger: 'blur' }
   ],
   phone: [
+    { required: true, message: '请输入手机号码', trigger: 'blur' },
     {
       pattern: /^1[3456789]\d{9}$/,
       message: '请输入正确的手机号格式',

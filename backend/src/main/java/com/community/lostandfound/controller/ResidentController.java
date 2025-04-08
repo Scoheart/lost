@@ -75,6 +75,11 @@ public class ResidentController {
             throw new BadRequestException("地址不能为空");
         }
         
+        // Validate phone is provided
+        if (phone == null || phone.isEmpty()) {
+            throw new BadRequestException("手机号码不能为空");
+        }
+        
         // Check if username is already taken
         if (userService.existsByUsername(username)) {
             throw new BadRequestException("用户名已被使用");

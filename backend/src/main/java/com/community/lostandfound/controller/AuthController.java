@@ -145,6 +145,7 @@ public class AuthController {
                 .realName(request.getRealName())
                 .email(request.getEmail()) // 可能为null
                 .address(request.getAddress())
+                .phone(request.getPhone()) // 添加手机号
                 .password(passwordEncoder.encode(request.getPassword()))
                 .role("resident")
                 .isLocked(false) // 默认不锁定

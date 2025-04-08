@@ -35,5 +35,7 @@ public class RegisterRequest {
     @Size(max = 200, message = "住址长度不能超过200个字符")
     private String address;
     
+    @NotBlank(message = "手机号码不能为空")
+    @Pattern(regexp = "^1[3-9]\\d{9}$", message = "请提供有效的手机号码格式")
     private String phone;
 } 

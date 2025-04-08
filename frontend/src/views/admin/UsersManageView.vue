@@ -314,6 +314,7 @@ const formRules = reactive<FormRules>({
     { required: true, message: '请选择用户角色', trigger: 'change' }
   ],
   phone: [
+    { required: true, message: '请输入手机号码', trigger: 'blur' },
     {
       pattern: /^1[3456789]\d{9}$/,
       message: '请输入正确的手机号格式',

@@ -25,11 +25,11 @@
           />
         </el-form-item>
 
-        <el-form-item prop="email" label="邮箱 (选填)">
+        <el-form-item prop="phone" label="手机号码">
           <el-input
-            v-model="registerForm.email"
-            placeholder="请输入邮箱地址"
-            :prefix-icon="Message"
+            v-model="registerForm.phone"
+            placeholder="请输入手机号码"
+            :prefix-icon="Phone"
             :disabled="loading"
           />
         </el-form-item>
@@ -96,7 +96,7 @@
 <script setup lang="ts">
 import { ref, reactive } from 'vue'
 import { useRouter } from 'vue-router'
-import { User, Lock, Message, Location } from '@element-plus/icons-vue'
+import { User, Lock, Phone, Location } from '@element-plus/icons-vue'
 import type { FormInstance, FormRules } from 'element-plus'
 import { ElMessage } from 'element-plus'
 import { useUserStore } from '@/stores/user'
@@ -110,7 +110,7 @@ const error = ref('')
 const registerForm = reactive({
   username: '',
   realName: '',
-  email: '',
+  phone: '',
   password: '',
   confirmPassword: '',
   address: '',
@@ -139,16 +139,15 @@ const validatePassConfirm = (rule: any, value: string, callback: any) => {
   }
 }
 
-// 仅当邮箱字段有值时才验证格式
-const validateEmail = (rule: any, value: string, callback: any) => {
+// 验证手机号格式
+const validatePhone = (rule: any, value: string, callback: any) => {
   if (!value) {
-    // 邮箱为空，不做验证，直接通过
-    callback()
+    callback(new Error('请输入手机号码'))
   } else {
-    // 邮箱不为空，验证格式
-    const emailPattern = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,6}$/
-    if (!emailPattern.test(value)) {
-      callback(new Error('请输入有效的邮箱地址'))
+    // 中国手机号码格式验证（11位数字，以1开头）
+    const phonePattern = /^1[3-9]\d{9}$/
+    if (!phonePattern.test(value)) {
+      callback(new Error('请输入有效的手机号码'))
     } else {
       callback()
     }
@@ -162,7 +161,7 @@ const rules = reactive<FormRules>({
   ],
   realName: [{ required: true, message: '请输入真实姓名', trigger: 'blur' }],
   address: [{ required: true, message: '请输入住址信息', trigger: 'blur' }],
-  email: [{ required: false, validator: validateEmail, trigger: 'blur' }],
+  phone: [{ required: true, validator: validatePhone, trigger: 'blur' }],
   password: [
     { required: true, validator: validatePass, trigger: 'blur' },
     { min: 6, message: '密码不能少于6个字符', trigger: 'blur' },
@@ -184,7 +183,7 @@ const handleSubmit = async () => {
           realName: registerForm.realName,
           password: registerForm.password,
           address: registerForm.address,
-          email: registerForm.email,
+          phone: registerForm.phone,
         })
 
         if (result.success) {

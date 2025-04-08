@@ -69,19 +69,24 @@ public class SystemInitController {
             return ResponseEntity.badRequest().body(ApiResponse.fail("系统已初始化，无法创建初始管理员"));
         }
         
-        // 验证角色是否为管理员或系统管理员
+        // 检查邮箱是否已存在（仅当邮箱不为空时）
+        if (request.getEmail() != null && !request.getEmail().isEmpty() && userService.existsByEmail(request.getEmail())) {
+            throw new BadRequestException("邮箱已被使用");
+        }
+        
+        // 验证角色有效性（只允许管理员或系统管理员）
         if (!("admin".equals(request.getRole()) || "sysadmin".equals(request.getRole()))) {
             throw new BadRequestException("管理员类型必须是管理员(admin)或系统管理员(sysadmin)");
+        }
+        
+        // 验证手机号是否已提供
+        if (request.getPhone() == null || request.getPhone().isEmpty()) {
+            throw new BadRequestException("手机号码必须提供");
         }
         
         // 检查用户名是否已存在
         if (userService.existsByUsername(request.getUsername())) {
             throw new BadRequestException("用户名已被使用");
-        }
-        
-        // 检查邮箱是否已存在（仅当邮箱不为空时）
-        if (request.getEmail() != null && !request.getEmail().isEmpty() && userService.existsByEmail(request.getEmail())) {
-            throw new BadRequestException("邮箱已被使用");
         }
         
         // 创建管理员

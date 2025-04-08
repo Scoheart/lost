@@ -118,6 +118,11 @@ public class AdminController {
             throw new BadRequestException("邮箱已被使用");
         }
 
+        // 验证手机号是否已提供
+        if (request.getPhone() == null || request.getPhone().isEmpty()) {
+            throw new BadRequestException("手机号码必须提供");
+        }
+
         // Create new community admin
         User admin = new User();
         admin.setUsername(request.getUsername());
@@ -365,6 +370,11 @@ public class AdminController {
         // 验证角色有效性（只允许小区管理员或居民）
         if (!("resident".equals(request.getRole()) || "admin".equals(request.getRole()))) {
             throw new BadRequestException("角色必须是居民(resident)或小区管理员(admin)");
+        }
+
+        // 验证手机号是否已提供
+        if (request.getPhone() == null || request.getPhone().isEmpty()) {
+            throw new BadRequestException("手机号码必须提供");
         }
 
         // 创建新用户
